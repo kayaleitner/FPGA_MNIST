@@ -1,0 +1,5 @@
+numpy
+pandas
+matplotlib
+# tensorflow
+intel-tensorflow # use intels optimized library
