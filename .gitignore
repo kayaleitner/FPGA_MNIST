@@ -3,6 +3,9 @@
 ## Ignore the mnist files
 **/MNIST_data
 
+## Ignore Cache (if we have one)
+cache/
+
 ## IDEs
 .vscode/
 
