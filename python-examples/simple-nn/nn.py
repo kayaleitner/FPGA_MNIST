@@ -1,10 +1,31 @@
 import matplotlib
 import numpy as np
 import matplotlib.pyplot as plt
-
+import tensorflow as tf
 
 # Help for matlab users:
 # http://mathesaurus.sourceforge.net/matlab-numpy.html
+
+
+# define a learning rate
+mu = 0.0001 
+nepochs = 10000
+min_loss = 1e-3
+# Test the forward propagation
+N = 1000
+
+ # Example
+nx = 1
+ny = 1
+layers = [10, 5]
+
+x = np.linspace(0, 100, N).reshape((1, -1))
+y = 2.0 * x - 1 + 4.0 * x * np.sin(x/N * 32 * np.pi) # + 3*(np.random.rand(1,N)-0.5)
+
+#plt.plot(x.transpose(),y.transpose())
+#plt.show()
+
+
 
 
 # Forward propagation
@@ -28,12 +49,6 @@ def newB(n):
     return np.random.rand(n, 1)
 
 
- # Example
-nx = 1
-ny = 1
-
-layers = [10, 20]
-
 W1 = newW(layers[0], nx)
 b1 = newB(layers[0])
 
@@ -43,11 +58,6 @@ b2 = newB(layers[1])
 W3 = newW(ny, layers[1])
 b3 = newB(ny)
 
-# Test the forward propagation
-N = 1000
-x = np.linspace(0, 100, N).reshape((1, -1))
-
-y = 2.0 * x - 1
 
 # Dimension of x = [1 1000]
 z1 = np.matmul(W1, x)+b1    # z1 = [10 1] x [1 1000] = [10 1000]
@@ -90,13 +100,13 @@ print("The total loss is {}".format(J))
 # therefore the derivative is 0 if x < 0 and 1 if x > 0
 def drelu(x): return (x > 0)*1.0  # multiply to convert from boolean to float
 
-# define a learning rate
-mu = 0.0001 
 
 ##### BACK PROP ######
 
+
+Jhistory = []
 # Repeat until converge (or at least 1000 iterations)
-for i in range(1000):
+for i in range(nepochs):
 
     ## Step 1: Forward propagate and calculate all values
     z1 = np.matmul(W1, x)+b1
@@ -106,8 +116,20 @@ for i in range(1000):
     h = np.matmul(W3, z2)+b3   
 
     J, _ = loss_func(h,y) 
+    Jhistory.append(J)
     print("#{:03d} Loss: {:03f}".format(i, J))
 
+    # reduce plot frequency
+    if i % 100 == 0:
+        plt.semilogy(Jhistory, 'r')
+        plt.xlabel('Iteration')
+        plt.ylabel('MSE')
+        plt.title('Loss')
+        plt.pause(0.05)
+
+    if J < min_loss:
+        print("Training finished after {} epochs. Reason: Minimum loss ({:3g}) reached".format(i, min_loss))
+        break
 
     ## Step 2: Calculate the Derivatives terms
 
@@ -120,25 +142,31 @@ for i in range(1000):
     dW2 = 2/N  * np.matmul(d3,a1.transpose())
     dW1 = 2/N  * np.matmul(d2,x.transpose())
 
-    db3 = 2/N * d4
-    db2 = 2/N * d3
-    db1 = 2/N * d2
+    db3 = 2/N * np.sum(d4, axis=1, keepdims=True)
+    db2 = 2/N * np.sum(d3, axis=1, keepdims=True)
+    db1 = 2/N * np.sum(d2, axis=1, keepdims=True)
 
     W3 = W3 + mu*dW3
     W2 = W2 + mu*dW2
     W1 = W1 + mu*dW1
 
-    b3 = b3 + mu*db3
-    b2 = b2 + mu*db2
-    b1 = b1 + mu*db1
+    #b3 = b3 + mu/1000*db3
+    #b2 = b2 + mu/1000*db2
+    #b1 = b1 + mu/1000*db1
 
 
 print("Training is done")
 
+# Transpose data
+ht = h.transpose()
+xt = x.transpose()
+yt = y.transpose()
 
 plt.figure()
-plt.plot(x,y)
-plt.plot(x,h)
+plt.plot(xt,yt, 'bo')
+plt.plot(xt,ht, color='orange')
+# plt.ylim(-10,100)
+plt.legend(['Original', 'NN'])
 plt.show()
 
 print("")
