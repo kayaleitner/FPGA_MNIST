@@ -6,6 +6,12 @@ from typing import List
 
 import numpy as np
 import wget
+from enum import Enum
+
+
+class DataSetType(Enum):
+    TRAIN = 0
+    TEST = 1
 
 
 class MnistDataDownloader:
@@ -35,13 +41,27 @@ class MnistDataDownloader:
             wget.download(url, fullpath)
             self.datapaths.append(fullpath)
 
+    def get_path(self, dataset_type: DataSetType):
+
+        if self.datapaths is None:
+            self.download_mnist()
+
+        if dataset_type == DataSetType.TRAIN:
+            return self.datapaths[0], self.datapaths[1]
+        else:
+            return self.datapaths[2], self.datapaths[3]
+
 
 class MnistDataReader:
 
-    def __init__(self, filename):
+    def __init__(self, image_filename, label_filename):
         print("Init idx to numpy converter")
 
-        self.f = gz.open(filename, 'rb')
+        self.f = gz.open(image_filename, 'rb')
+        self.f_label = gz.open(label_filename, 'rb')
+
+        # Read the file offset of the label file. two 32bit integer = 8 Byte
+        _ = self.f_label.read(size=8)
 
         self.__get_MagicNumber()
         self.__numberImages = struct.unpack('>i', self.f.read(4))
@@ -94,6 +114,16 @@ class MnistDataReader:
 
     def get_ActualImageNumber(self):
         return self.__actualImg
+
+    def get_next(self, batch_size=10):
+        """
+        Same as `get_Arrays` except by using the yield keyword it can be used in loop
+
+        :param batch_size: the number of images that should be yielded per iteration
+        :return:
+        """
+        lbls = np.array([np.uint8(struct.unpack(self.__type, self.f_label.read(1))) for i in range(batch_size)])
+        yield lbls, self.get_Arrays(batch_size)
 
     def get_Arrays(self, number: int) -> np.ndarray:
         """

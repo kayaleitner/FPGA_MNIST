@@ -10,21 +10,21 @@ class Mnist2NumpyTestCase(unittest.TestCase):
 
         loader.download_mnist()
 
-
     def test_mnist2numpy(self):
-
         MNIST_TEST_FILE_NAME = "t10k-images-idx3-ubyte.gz"
+        MNIST_LBL_FILE_NAME = "t10k-labels-idx1-ubyte.gz"
+
         script_path = os.path.realpath(__file__)
         script_folder = os.path.dirname(script_path)
 
         file_path = os.path.join(script_folder, MNIST_TEST_FILE_NAME)
-        f = MnistDataReader(file_path)
+        lbl_path = os.path.join(script_folder, MNIST_LBL_FILE_NAME)
+        f = MnistDataReader(image_filename=file_path, label_filename=lbl_path)
 
-        img = f.get_Arrays(100)
-        self.assertEqual(img.shape, [100, 28, 28])
-
-        img = f.get_Arrays(200)
-        self.assertEqual(img.shape, [200, 28, 28])
+        for lbls, imgs in f.get_next(100):
+            self.assertEqual(imgs.shape, (100, 28, 28))
+            self.assertEqual(lbls.shape, (100, 1))
+            break
 
 
 if __name__ == '__main__':
