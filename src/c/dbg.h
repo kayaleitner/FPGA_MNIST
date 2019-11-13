@@ -15,14 +15,14 @@
 #endif
 
 #ifdef NDEBUG // If no debugging is enabled, remove all debugging statements
-#define DEBUG(msg, ...)
+#define debug(msg, ...)
 #else
 /**
  * \brief Prints a debug message. Suppress it by defining the NDEBUG preprocess
  * constant \param msg The message that should be printed, including optional
  * parameters
  */
-#define DEBUG(msg, ...)                                                        \
+#define debug(msg, ...)                                                        \
   fprintf(stderr, "DEBUG %s:%d: " msg "\n", __FILE__, __LINE__, ##__VA_ARGS__)
 #endif
 
@@ -106,7 +106,7 @@
  */
 #define CHECK_DEBUG(A, M, ...)                                                 \
   if (!(A)) {                                                                  \
-    DEBUG(M, ##__VA_ARGS__);                                                   \
+    debug(M, ##__VA_ARGS__);                                                   \
     errno = 0;                                                                 \
     goto error;                                                                \
   }

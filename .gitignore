@@ -8,10 +8,11 @@ cache/
 
 ## IDEs
 .vscode/
+.idea/
 
-
-# Ignore Ma
+# Ignore Mac Spotlight Indices
 **/.DS_Store
+
 
 
 # Byte-compiled / optimized / DLL files
@@ -19,8 +20,11 @@ __pycache__/
 *.py[cod]
 *$py.class
 
-# C extensions
+# C extensions & Build artifacts
 *.so
+**/cmake-build-debug
+**/cmake-build-release
+**/build
 
 # Distribution / packaging
 .Python
