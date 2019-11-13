@@ -47,8 +47,9 @@ class ConvLayer(Layer):
         assert (1 == fh % 2)
         assert (1 == fw % 2)
 
-        pad_h2 = int((fh - 1) / 2)
-        pad_w2 = int((fw - 1) / 2)
+        # Find the midpoint of the filter. This only works for odd filter sizes
+        fh2 = int((fh - 1) / 2) 
+        fw2 = int((fw - 1) / 2)
 
         out = np.zeros(shape=[batch, in_h, in_w, kout_ch])
 
@@ -63,11 +64,11 @@ class ConvLayer(Layer):
 
                         patch_sum = 0
 
-                        for di in range(-pad_h2, pad_h2):
-                            for dj in range(-pad_w2, pad_w2):
+                        for di in range(-fh2, fh2): # 
+                            for dj in range(-fw2, fw2):
                                 for q in range(kin_ch):
-                                    if 0 <= i + di < in_h and 0 <= j + dj < in_w:
-                                        patch_sum += data_in[b, i + di, j + dj, q] * self.kernel[di, dj, q, k]
+                                    if 0 <= i + di < in_h and 0 <= j + dj < in_w: # Bounds check (because padding is outside of array
+                                        patch_sum += data_in[b, i + di, j + dj, q] * self.kernel[fh2 + di, fw2 + dj, q, k]
 
         return out
 
