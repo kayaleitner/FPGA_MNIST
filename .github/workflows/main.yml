@@ -3,6 +3,16 @@ name: CI
 on: [push, pull_request]
 
 jobs:     
+  pip_install:
+    name: Python unit tests
+    runs-on: [ubuntu-latest]
+    steps:
+      - uses: actions/checkout@master
+      - name: Install depenencies
+        run:  |
+          pip install -r requirements.txt
+          python -m unittest discover -s src/python -p "*_test.py"
+     
   build:
     name: c build
     runs-on: ubuntu-latest
