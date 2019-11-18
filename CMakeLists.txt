@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.0)
-project(FPGA_MNIST)
+project(FPGA_MNIST C) # Project is C only
 
-# Add the main
+# Add Subfolder of C Subdir
 add_subdirectory(src/c)
