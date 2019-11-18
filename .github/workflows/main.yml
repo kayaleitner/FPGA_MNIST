@@ -25,11 +25,9 @@ jobs:
 
     steps:
       - uses: actions/checkout@master
-      - name: Run a multi-line script
+      - name: Build project with Cmake
         run: |
-          echo Add other actions to build,
-          echo test, and deploy your project.
           mkdir cmake-build
           cd cmake-build
-          cmake ../src/c
+          cmake ..
           make 
