@@ -1,1 +1,4 @@
-from .Mnist2Numpy import MnistDataReader
+"""
+
+"""
+from .Mnist2Numpy import *

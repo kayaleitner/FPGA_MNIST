@@ -1,11 +1,11 @@
 import numpy as np
-from numpy.core._multiarray_umath import ndarray
+from numpy.core.multiarray import ndarray
 
 from .Layer import Layer
 
 
 class FullyConnectedLayer(Layer):
-    W: ndarray  # Weights of the layer
+    W: ndarray  # Weights of the layer, dimensions: [OUT x IN]
     b: ndarray  # bias of the layer
 
     def __init__(self, input_size, output_size):
@@ -13,4 +13,13 @@ class FullyConnectedLayer(Layer):
         self.b = np.random.rand(output_size, 1)
 
     def __call__(self, *args, **kwargs):
-        return self.W * args[0] + self.b
+        # use the '@' sign to refer to a tensor dot
+        return self.W @ args[0] + self.b
+
+    def get_input_shape(self):
+        return self.W.shape[1], -1
+
+    def get_output_shape(self, input_data_shape: ndarray = None):
+        return self.W.shape[0], -1
+
+

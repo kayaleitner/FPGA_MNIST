@@ -4,11 +4,11 @@ import numpy as np
 def mean_squared_error(predictions: np.ndarray, labels: np.ndarray) -> np.ndarray:
     """
     Calculates the mean squared error
-    :param predictions:
-    :param labels:
+    :param predictions: Array of predictions with dimensions [batch out_size]
+    :param labels: Array of labels with dimensions [batch out_size]
     :return:
     """
-    return np.sum((predictions - labels) ** 2)
+    return np.sum(np.sum((predictions - labels) ** 2))
 
 
 def cross_entropy(predictions, labels):

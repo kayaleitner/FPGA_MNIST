@@ -1,5 +1,7 @@
 import numpy as np
 
+from .Layer import Layer
+
 
 def relu(x: np.ndarray) -> np.ndarray:
     """
@@ -29,3 +31,34 @@ def softmax(x: np.ndarray) -> np.ndarray:
     """
 
     return x / np.mean(x, axis=1)
+
+
+class ActivationLayer(Layer):
+
+    # act_func: (np.ndarray) : np.ndarray
+
+    def __init__(self, func):
+        self.act_func = func
+
+    def __call__(self, *args, **kwargs):
+        x = args[0]
+        return self.act_func(x)
+
+    def get_output_shape(self, input_data_shape: np.ndarray = None):
+        return input_data_shape.shape
+
+    def get_input_shape(self):
+        # accepts every shape
+        pass
+
+
+class ReluActivationLayer(ActivationLayer):
+
+    def __init__(self):
+        ActivationLayer.__init__(self, func=relu)
+
+
+class SoftmaxLayer(ActivationLayer):
+
+    def __init__(self):
+        ActivationLayer.__init__(self, func=softmax)

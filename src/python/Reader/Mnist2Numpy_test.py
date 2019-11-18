@@ -1,6 +1,6 @@
 import os
 import unittest
-from .Mnist2Numpy import MnistDataReader, MnistDataDownloader
+from .Mnist2Numpy import MnistDataReader, MnistDataDownloader, DataSetType
 
 
 class Mnist2NumpyTestCase(unittest.TestCase):
@@ -26,6 +26,22 @@ class Mnist2NumpyTestCase(unittest.TestCase):
             self.assertEqual(lbls.shape, (100, 1))
             break
 
+    def test_usingCache(self):
+
+        # Is relative to working directory
+        rel_path = "../../data/MNIST/"
+        data_path = os.path.abspath(rel_path)
+
+        # Should download to this folder
+        loader = MnistDataDownloader(folder_path=data_path)
+
+        lbl1, imgs1 = loader.get_path(DataSetType.TRAIN)
+        self.assertIsNotNone(lbl1)
+        self.assertIsNotNone(imgs1)
+
+        lbl2, imgs2 = loader.get_path(DataSetType.TEST)
+        self.assertIsNotNone(lbl2)
+        self.assertIsNotNone(imgs2)
 
 if __name__ == '__main__':
     unittest.main()
