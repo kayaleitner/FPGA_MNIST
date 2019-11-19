@@ -7,4 +7,4 @@ python:
   - "pypy3"
 install:
   - pip install -r requirements.txt
-script: ./script_to_run_here
+script: ./run_python_tests.sh
