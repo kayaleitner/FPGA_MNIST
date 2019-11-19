@@ -7,7 +7,7 @@ from src.python.NeuralNetwork.Layer import Layer
 class ReshapeLayer(Layer):
     newshape: ndarray
 
-    def __init__(self, newshape: ndarray):
+    def __init__(self, newshape):
         self.newshape = newshape
 
     def __call__(self, *args, **kwargs):

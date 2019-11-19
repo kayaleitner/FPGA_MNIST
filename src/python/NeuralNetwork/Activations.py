@@ -25,12 +25,12 @@ def softmax(x: np.ndarray) -> np.ndarray:
     """
     Calculates the softmax func
 
-    y = x / mean(x)
+    y = x / sum(x)
     
     :param x: Array with dimensions [batch out_dim]
     """
-
-    return x / np.mean(x, axis=1)
+    norm = np.sum(x, axis=1)
+    return x / norm[:, np.newaxis]
 
 
 class ActivationLayer(Layer):

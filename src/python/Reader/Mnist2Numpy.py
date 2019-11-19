@@ -155,10 +155,17 @@ class MnistDataReader:
         :param batch_size: the number of images that should be yielded per iteration
         :return:
         """
-        lbls = np.array([np.uint8(struct.unpack(self.__type, self.f_label.read(1))) for i in range(batch_size)])
-        yield lbls, self.get_Arrays(batch_size)
+        counter = 0
+        limit = 100
+        while counter < limit:
+            vals = self.get_Arrays(batch_size)
+            # if vals == None:
+            #   raise StopIteration()
+            lbls = np.array([np.uint8(struct.unpack(self.__type, self.f_label.read(1))) for _ in range(batch_size)])
+            counter += batch_size
+            yield lbls, vals
 
-    def get_Arrays(self, number: int) -> np.ndarray:
+    def get_Arrays(self, number: int):
         """
         Returns the images as numpy arrays
         :param number: the number of images that should be retrieved
@@ -175,4 +182,4 @@ class MnistDataReader:
             return np.reshape(arr, (number, self.__numberRows[0], self.__numberColumns[0]))
         else:
             print("Image number exceeds file size")
-            return 0
+            return None

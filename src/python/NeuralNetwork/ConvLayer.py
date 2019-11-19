@@ -1,4 +1,5 @@
 import numpy as np
+from numpy.core._multiarray_umath import ndarray
 from numpy.core.multiarray import ndarray
 
 from .Layer import Layer
@@ -30,10 +31,12 @@ def test_kernel_gauss(size=5, sigma=1.6) -> ndarray:
 
 
 class ConvLayer(Layer):
+    b: ndarray
     kernel: ndarray
 
     def __init__(self, in_channels, out_channels, kernel_size):
         self.kernel = init_kernel(in_channels, out_channels, kernel_size)
+        self.b = np.random.rand(out_channels)
 
     def __call__(self, *args, **kwargs):
         return self.conv_simple(args[0])
@@ -83,7 +86,10 @@ class ConvLayer(Layer):
                         # calculate the convolution for the kernel patch
                         # out[b, i, j, k] = sum_{di, dj, q} input[b, i + di, j + dj, q] * filter[di, dj, q, k]
 
-                        patch_sum = 0
+                        # patch_sum = 0
+
+                        # To include bias term start with sum
+                        patch_sum = self.b[k]
 
                         for di in range(-fh2, fh2):  #
                             for dj in range(-fw2, fw2):

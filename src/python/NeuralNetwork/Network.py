@@ -45,10 +45,10 @@ class Network:
         self.layers = list_of_layers
 
     def forward(self, x):
-        z, _ = self.__forward_intermediate(x)
+        z, _ = self.forward_intermediate(x)
         return z
 
-    def __forward_intermediate(self, x):
+    def forward_intermediate(self, x):
         z = x  # copy data
         zs = []
         for l in self.layers:
@@ -57,7 +57,7 @@ class Network:
         return z, zs
 
     def backprop(self, x, y_):
-        y, zs = self.__forward_intermediate(x)
+        y, zs = self.forward_intermediate(x)
         loss = mean_squared_error(y, y_)
         delta = y - y_
         deltas = []

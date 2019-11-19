@@ -1,5 +1,6 @@
 import unittest
 from .FullyConnected import FullyConnectedLayer
+import numpy as np
 
 
 class FullyConnectedLayerTestCase(unittest.TestCase):
@@ -8,7 +9,8 @@ class FullyConnectedLayerTestCase(unittest.TestCase):
         self.assertEqual(fc.W.shape, (10, 1))
         self.assertEqual(fc.b.shape, (10, 1))
 
-        y = fc(2)
+        x = np.random.rand(1, 1)
+        y = fc(x)
         self.assertEqual(y.shape, (10, 1))
 
 
