@@ -1,7 +1,7 @@
 from numpy import reshape
 from numpy.core.multiarray import ndarray
 
-from src.python.NeuralNetwork.Layer import Layer
+from .Layer import Layer
 
 
 class ReshapeLayer(Layer):

@@ -2,7 +2,7 @@ import unittest
 
 import numpy as np
 
-from src.python.NeuralNetwork.Util import ReshapeLayer
+from .Util import ReshapeLayer
 from .Activations import ReluActivationLayer
 from .FullyConnected import FullyConnectedLayer
 from .ConvLayer import ConvLayer, MaxPoolLayer
