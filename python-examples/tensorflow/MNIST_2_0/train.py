@@ -2,7 +2,7 @@ import os
 
 import tensorflow as tf
 from tensorflow import keras
-from tensorflow.keras.layers import Dense, Conv2D, Flatten, MaxPooling2D, Reshape
+from tensorflow.keras.layers import Dense, Conv2D, Flatten, MaxPooling2D, Reshape, Dropout
 
 """
 Tensorflow example for creating a MNIST image classification model with keras
@@ -30,15 +30,16 @@ model = tf.keras.models.Sequential([
     MaxPooling2D(),
     Conv2D(32, 3,  padding='same', activation='relu'),
     MaxPooling2D(),
-    Conv2D(64, 3,  padding='same', activation='relu'),
-    MaxPooling2D(),
+    # Conv2D(64, 3,  padding='same', activation='relu'),
+    # MaxPooling2D(),
     Flatten(),
-    Dense(128, activation='relu'),
+    Dense(64, activation='relu'),
+    Dropout(0.2),
     Dense(10, activation='softmax')
 ])
 
 # You must install pydot and graphviz for `pydotprint` to work.
-# keras.utils.plot_model(model, 'multi_input_and_output_model.png', show_shapes=True)
+keras.utils.plot_model(model, 'multi_input_and_output_model.png', show_shapes=True)
 
 model.compile(optimizer='adam',
               loss='sparse_categorical_crossentropy',
@@ -58,26 +59,13 @@ cp_callback = tf.keras.callbacks.ModelCheckpoint(filepath=checkpoint_path,
                                                  verbose=1)
 
 
-if os.path.exists(checkpoint_dir):
+model.fit(x_train, y_train, epochs=10, callbacks=[cp_callback])
 
-
-    # Reload the model from the 2 files we saved
-    with open('training_1/model_config.json') as json_file:
-        json_config = json_file.read()
-    new_model = keras.models.model_from_json(json_config)
-    new_model.load_weights('training_1/weights.h5')
-
-
-
-
-else:
-    model.fit(x_train, y_train, epochs=10, callbacks=[cp_callback])
-
-    # Save JSON config to disk
-    json_config = model.to_json()
-    with open('training_1/model_config.json', 'w') as json_file:
-        json_file.write(json_config)
-    # Save weights to disk
-    model.save_weights('training_1/weights.h5')
+# Save JSON config to disk
+json_config = model.to_json()
+with open('training_1/model_config.json', 'w') as json_file:
+    json_file.write(json_config)
+# Save weights to disk
+model.save_weights('training_1/weights.h5')
 
 model.evaluate(x_test, y_test, verbose=2)
