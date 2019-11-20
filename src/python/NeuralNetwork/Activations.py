@@ -9,7 +9,9 @@ def relu(x: np.ndarray) -> np.ndarray:
     :param x: values
     :return:
     """
-    return np.maximum(x, 0)
+    z = x
+    z[x < 0] = 0
+    return z
 
 
 def drelu(x: np.ndarray) -> np.ndarray:
@@ -29,8 +31,8 @@ def softmax(x: np.ndarray) -> np.ndarray:
     
     :param x: Array with dimensions [batch out_dim]
     """
-    norm = np.sum(x, axis=1)
-    return x / norm[:, np.newaxis]
+    norm = np.sum(x, axis=x.ndim-1)
+    return x / norm[..., np.newaxis]
 
 
 class ActivationLayer(Layer):

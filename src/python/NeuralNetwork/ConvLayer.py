@@ -1,9 +1,11 @@
+import math
+from typing import Optional
+
 import numpy as np
-from numpy.core._multiarray_umath import ndarray
 from numpy.core.multiarray import ndarray
 
 from .Layer import Layer
-import math
+from .Activations import relu
 
 
 def init_kernel(input_channels: int, out_channels: int = 3, kernel_size: int = 5) -> ndarray:
@@ -31,15 +33,24 @@ def test_kernel_gauss(size=5, sigma=1.6) -> ndarray:
 
 
 class ConvLayer(Layer):
+    activation: Optional[str]
     b: ndarray
     kernel: ndarray
 
-    def __init__(self, in_channels, out_channels, kernel_size):
+    def __init__(self, in_channels, out_channels, kernel_size, activation=None):
         self.kernel = init_kernel(in_channels, out_channels, kernel_size)
         self.b = np.random.rand(out_channels)
+        self.activation = activation
 
     def __call__(self, *args, **kwargs):
-        return self.conv_simple(args[0])
+        z = self.conv_simple(args[0]) + self.b
+
+        if self.activation is None:
+            return z
+        elif self.activation is "relu":
+            return relu(z)
+        else:
+            raise ValueError("Activation of {} is not valid".format(self.activation))
 
     def get_input_shape(self):
         # Input data:  [batch, in_height, in_width, in_channels]
@@ -49,7 +60,7 @@ class ConvLayer(Layer):
         # channels
         return -1, -1, -1, self.kernel.shape[2]
 
-    def get_output_shape(self):
+    def get_output_shape(self, input_data_shape: ndarray = None):
         # Input data:  [batch, in_height, in_width, in_channels]
         # Kernel size: [fh, fw, kin_ch, kout_ch]
         return -1, -1, -1, self.kernel.shape[3]
@@ -77,6 +88,10 @@ class ConvLayer(Layer):
 
         out = np.zeros(shape=[batch, in_h, in_w, kout_ch])
 
+        # output[b, i, j, k] =
+        #     sum_{di, dj, q} input[b, strides[1] * i + di, strides[2] * j + dj, q] *
+        #
+
         # ToDo: This can be cleaned up
         for b in range(batch):
             for i in range(in_h):
@@ -102,14 +117,101 @@ class ConvLayer(Layer):
                         out[b, i, j, k] = patch_sum
         return out
 
+    def conv_new(self, data_in, stride=1):
+        fh, fw, kin_ch, kout_ch = self.kernel.shape
+        batch, in_h, in_w, in_ch = data_in.shape
 
-def apply_pool(data_in: ndarray, pool_size: int, f):
+        if kin_ch != in_ch:
+            raise ValueError("Input channel mismatch")
+
+        # Check if the filter has an uneven width
+        assert (1 == fh % 2)
+        assert (1 == fw % 2)
+
+        # Find the midpoint of the filter. This only works for odd filter sizes
+        fh2 = int((fh - 1) / 2)
+        fw2 = int((fw - 1) / 2)
+
+        out = np.zeros(shape=[batch, in_h, in_w, kout_ch])
+
+        # Given an input tensor of shape [batch, in_height, in_width, in_channels] and a filter / kernel tensor of
+        # shape [filter_height, filter_width, in_channels, out_channels], this op performs the following:
+        #
+        # 1) Flattens the filter to a 2-D matrix with shape [filter_height * filter_width * in_channels,
+        # output_channels].
+        #
+        # 2) Extracts image patches from the input tensor to form a virtual tensor of shape [batch,
+        # out_height, out_width, filter_height * filter_width * in_channels].
+        #
+        # 3) For each patch, right-multiplies the
+        # filter matrix and the image patch vector
+
+        # pad input
+        in_padded = np.pad(data_in, ((0,0),(2,2),(2,2),(0,0)), 'constant', constant_values=(0, 0))
+
+        kernel = self.kernel
+        # kflat = np.reshape(kernel, newshape=(-1, kout_ch))
+        # vout = np.zeros(shape=(batch, in_h, in_w, fh * fw * in_ch))  # create virtual out
+        #
+        # for b in range(batch):
+        #     for i in range(in_h):
+        #         for j in range(in_w):
+        #             vout[b, i, j, :] = np.reshape(in_padded[b, i:i+fh, j:j+fw, :], newshape=(-1))
+        #
+        # out = np.dot(vout, kflat)
+
+
+        # output[b, i, j, k] =
+        #     sum_{di, dj, q} input[b, strides[1] * i + di, strides[2] * j + dj, q] *
+        #                     filter[di, dj, q, k]
+        for b in range(batch):
+            for q in range(in_ch):
+                for k in range(kout_ch):
+                    # k = kernel[:, :, q, k]  # 2d kernel
+
+                    # Perform valid conv
+                    i_out, j_out = 0, 0
+                    for i in range(0, in_h, stride):
+                        for j in range(0, in_w, stride):
+                            patch = in_padded[b, i:i + fh, j:j + fw, q]  # 2d image
+                            patch_sum = np.sum(patch * kernel[:, :, q, k], axis=(0, 1))  # sum along all axis
+                            out[b, i_out, j_out, k] = patch_sum
+                            j_out += 1
+                        j_out = 0
+                        i_out += 1
+
+        return out
+
+
+def pooling_max(data_in: ndarray, pool_size: int, stride=2):
+    batch, in_h, in_w, in_ch = data_in.shape
+
+    out_h = int(in_h / stride)
+    out_w = int(in_w / stride)
+
+    pool_out = np.zeros(shape=[batch, out_h, out_w, in_ch])
+    i_out, j_out = 0, 0
+
+    for i in range(0, in_h, stride):
+        for j in range(0, in_w, stride):
+            data_slice = data_in[:, i:i + pool_size, j:j + pool_size, :]
+            data_slice_max = np.amax(data_slice, axis=(1, 2))
+            pool_out[:, i_out, j_out, :] = data_slice_max
+            j_out += 1
+        i_out += 1
+        j_out = 0
+    return pool_out
+
+
+def apply_pool(data_in: ndarray, pool_size: int, f, stride=2):
     """
+
     :param data_in: The data that should be processed
     :param pool_size: The size of the patch which is used, for pooling values. It is applied as [pool_size x
     pool_size] along the image width and height axis
     :param f: A callable, which gets a list of values and returns a
     value (e.g. the maximum)
+    :param stride: The stride between to pool processes
     :type data_in: ndarray
     """
 
@@ -118,7 +220,7 @@ def apply_pool(data_in: ndarray, pool_size: int, f):
     out_h = int(in_h / pool_size)
     out_w = int(in_w / pool_size)
 
-    out = np.zeros(shape=[batch, out_h, out_w, in_ch])
+    pool_out = np.zeros(shape=[batch, out_h, out_w, in_ch])
 
     for b in range(batch):
         for i in range(out_h):
@@ -133,9 +235,9 @@ def apply_pool(data_in: ndarray, pool_size: int, f):
                     data_slice = data_in[b, i1:i2, j1:j2, c]
                     data_slice = np.reshape(data_slice, newshape=(-1, 1))
                     val = f(data_slice)
-                    out[b, i, j, c] = val
+                    pool_out[b, i, j, c] = val
 
-    return out
+    return pool_out
 
 
 class MaxPoolLayer(Layer):
@@ -146,7 +248,7 @@ class MaxPoolLayer(Layer):
 
     def __call__(self, *args, **kwargs):
         data_in = args[0]
-        return apply_pool(data_in, pool_size=self.PoolSize, f=np.max)
+        return pooling_max(data_in, pool_size=self.PoolSize, stride=self.PoolSize)
 
     def get_input_shape(self):
         # Input is completely arbitrary
@@ -181,4 +283,3 @@ class AveragePoolLayer(Layer):
         out_w = math.ceil(in_w / self.PoolSize)
         out_h = math.ceil(in_h / self.PoolSize)
         return -1, out_w, out_h, -1
-
