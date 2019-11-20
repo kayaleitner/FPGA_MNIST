@@ -32,6 +32,83 @@ def test_kernel_gauss(size=5, sigma=1.6) -> ndarray:
     return k
 
 
+def conv2d(data_in: ndarray, kernel: ndarray, stride: int = 1):
+    """
+    Perform a 2D convolution over a batch of tensors. This is equivalent to
+
+     output[b, i, j, k] =
+         sum_{di, dj, q} input[b, strides[1] * i + di, strides[2] * j + dj, q] *
+                         filter[di, dj, q, k]
+
+    :param data_in: Input data tensor with shape [batch, height, width, channels_in]
+    :param kernel: Convolution kernel tensor with shape [kernel_height, kernel_width, channels_in, channels_out]
+    :param stride: Integer for the step width
+    :return: Tensor with shape [batch, height/stride, width/stride, channels_out]
+    """
+
+    # Obtain shapes
+    fh, fw, kin_ch, kout_ch = kernel.shape
+    batch, in_h, in_w, in_ch = data_in.shape
+
+    if kin_ch != in_ch:
+        raise ValueError("Input channel mismatch")
+
+    # Check if the filter has an uneven width
+    assert (1 == fh % 2)
+    assert (1 == fw % 2)
+
+    # Find the midpoint of the filter. This only works for odd filter sizes
+    fh2 = int((fh - 1) / 2)
+    fw2 = int((fw - 1) / 2)
+
+    out = np.zeros(shape=[batch, in_h, in_w, kout_ch])
+
+    # Given an input tensor of shape [batch, in_height, in_width, in_channels] and a filter / kernel tensor of
+    # shape [filter_height, filter_width, in_channels, out_channels], this op performs the following:
+    #
+    # 1) Flattens the filter to a 2-D matrix with shape [filter_height * filter_width * in_channels,
+    # output_channels].
+    #
+    # 2) Extracts image patches from the input tensor to form a virtual tensor of shape [batch,
+    # out_height, out_width, filter_height * filter_width * in_channels].
+    #
+    # 3) For each patch, right-multiplies the
+    # filter matrix and the image patch vector
+
+    # pad input
+    in_padded = np.pad(data_in, ((0, 0), (2, 2), (2, 2), (0, 0)), 'constant', constant_values=(0, 0))
+
+    # kflat = np.reshape(kernel, newshape=(-1, kout_ch))
+    # vout = np.zeros(shape=(batch, in_h, in_w, fh * fw * in_ch))  # create virtual out
+    #
+    # for b in range(batch):
+    #     for i in range(in_h):
+    #         for j in range(in_w):
+    #             vout[b, i, j, :] = np.reshape(in_padded[b, i:i+fh, j:j+fw, :], newshape=(-1))
+    #
+    # out = np.dot(vout, kflat)
+
+    # output[b, i, j, k] =
+    #     sum_{di, dj, q} input[b, strides[1] * i + di, strides[2] * j + dj, q] *
+    #                     filter[di, dj, q, k]
+    for b in range(batch):
+        for k in range(kout_ch):
+            # k = kernel[:, :, q, k]  # 2d kernel
+
+            # Perform convolution
+            i_out, j_out = 0, 0
+            for i in range(0, in_h, stride):
+                for j in range(0, in_w, stride):
+                    patch = in_padded[b, i:i + fh, j:j + fw, :]  # 3d tensor
+                    patch_sum = np.sum(patch * kernel[:, :, :, k], axis=(0, 1, 2))  # sum along all axis
+                    out[b, i_out, j_out, k] = patch_sum
+                    j_out += 1
+                j_out = 0
+                i_out += 1
+
+    return out
+
+
 class ConvLayer(Layer):
     activation: Optional[str]
     b: ndarray
@@ -43,7 +120,7 @@ class ConvLayer(Layer):
         self.activation = activation
 
     def __call__(self, *args, **kwargs):
-        z = self.conv_simple(args[0]) + self.b
+        z = conv2d(args[0], self.kernel, stride=1) + self.b
 
         if self.activation is None:
             return z
@@ -64,123 +141,6 @@ class ConvLayer(Layer):
         # Input data:  [batch, in_height, in_width, in_channels]
         # Kernel size: [fh, fw, kin_ch, kout_ch]
         return -1, -1, -1, self.kernel.shape[3]
-
-    def conv_simple(self, data_in):
-        """
-        Calculates the 2D convolution with zero padding
-        :param data_in: tensor with [batch, in_height, in_width, in_channels] dimensions
-        :return:
-        """
-
-        fh, fw, kin_ch, kout_ch = self.kernel.shape
-        batch, in_h, in_w, in_ch = data_in.shape
-
-        if kin_ch != in_ch:
-            raise ValueError("Input channel mismatch")
-
-        # Check if the filter has an uneven width
-        assert (1 == fh % 2)
-        assert (1 == fw % 2)
-
-        # Find the midpoint of the filter. This only works for odd filter sizes
-        fh2 = int((fh - 1) / 2)
-        fw2 = int((fw - 1) / 2)
-
-        out = np.zeros(shape=[batch, in_h, in_w, kout_ch])
-
-        # output[b, i, j, k] =
-        #     sum_{di, dj, q} input[b, strides[1] * i + di, strides[2] * j + dj, q] *
-        #
-
-        # ToDo: This can be cleaned up
-        for b in range(batch):
-            for i in range(in_h):
-                for j in range(in_w):
-                    for k in range(kout_ch):
-
-                        # calculate the convolution for the kernel patch
-                        # out[b, i, j, k] = sum_{di, dj, q} input[b, i + di, j + dj, q] * filter[di, dj, q, k]
-
-                        # patch_sum = 0
-
-                        # To include bias term start with sum
-                        patch_sum = self.b[k]
-
-                        for di in range(-fh2, fh2):  #
-                            for dj in range(-fw2, fw2):
-                                for q in range(kin_ch):
-                                    # Bounds check (because padding is outside of array
-                                    if 0 <= i + di < in_h and 0 <= j + dj < in_w:
-                                        patch_sum += data_in[b, i + di, j + dj, q] * \
-                                                     self.kernel[fh2 + di, fw2 + dj, q, k]
-
-                        out[b, i, j, k] = patch_sum
-        return out
-
-    def conv_new(self, data_in, stride=1):
-        fh, fw, kin_ch, kout_ch = self.kernel.shape
-        batch, in_h, in_w, in_ch = data_in.shape
-
-        if kin_ch != in_ch:
-            raise ValueError("Input channel mismatch")
-
-        # Check if the filter has an uneven width
-        assert (1 == fh % 2)
-        assert (1 == fw % 2)
-
-        # Find the midpoint of the filter. This only works for odd filter sizes
-        fh2 = int((fh - 1) / 2)
-        fw2 = int((fw - 1) / 2)
-
-        out = np.zeros(shape=[batch, in_h, in_w, kout_ch])
-
-        # Given an input tensor of shape [batch, in_height, in_width, in_channels] and a filter / kernel tensor of
-        # shape [filter_height, filter_width, in_channels, out_channels], this op performs the following:
-        #
-        # 1) Flattens the filter to a 2-D matrix with shape [filter_height * filter_width * in_channels,
-        # output_channels].
-        #
-        # 2) Extracts image patches from the input tensor to form a virtual tensor of shape [batch,
-        # out_height, out_width, filter_height * filter_width * in_channels].
-        #
-        # 3) For each patch, right-multiplies the
-        # filter matrix and the image patch vector
-
-        # pad input
-        in_padded = np.pad(data_in, ((0,0),(2,2),(2,2),(0,0)), 'constant', constant_values=(0, 0))
-
-        kernel = self.kernel
-        # kflat = np.reshape(kernel, newshape=(-1, kout_ch))
-        # vout = np.zeros(shape=(batch, in_h, in_w, fh * fw * in_ch))  # create virtual out
-        #
-        # for b in range(batch):
-        #     for i in range(in_h):
-        #         for j in range(in_w):
-        #             vout[b, i, j, :] = np.reshape(in_padded[b, i:i+fh, j:j+fw, :], newshape=(-1))
-        #
-        # out = np.dot(vout, kflat)
-
-
-        # output[b, i, j, k] =
-        #     sum_{di, dj, q} input[b, strides[1] * i + di, strides[2] * j + dj, q] *
-        #                     filter[di, dj, q, k]
-        for b in range(batch):
-            for q in range(in_ch):
-                for k in range(kout_ch):
-                    # k = kernel[:, :, q, k]  # 2d kernel
-
-                    # Perform valid conv
-                    i_out, j_out = 0, 0
-                    for i in range(0, in_h, stride):
-                        for j in range(0, in_w, stride):
-                            patch = in_padded[b, i:i + fh, j:j + fw, q]  # 2d image
-                            patch_sum = np.sum(patch * kernel[:, :, q, k], axis=(0, 1))  # sum along all axis
-                            out[b, i_out, j_out, k] = patch_sum
-                            j_out += 1
-                        j_out = 0
-                        i_out += 1
-
-        return out
 
 
 def pooling_max(data_in: ndarray, pool_size: int, stride=2):
