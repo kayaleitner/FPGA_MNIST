@@ -1,0 +1,13 @@
+# Ignore build folders
+build/
+dist/
+*.egg-info/
+
+# Ignore SWIG Generated files
+NeuralNetworkExtension.py
+NNExtension_wrap.cpp
+NNExtension_wrap.cxx
+NNExtension_wrap.c
+
+# Do not include numpy.i (instead download it each time)
+numpy.i

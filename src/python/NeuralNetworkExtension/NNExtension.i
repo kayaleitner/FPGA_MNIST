@@ -52,10 +52,19 @@ import_array();
     (const float *kernel,  int fh, int fw, int kin_ch, int kout_ch)
 };
 
-
 %apply (float** ARGOUTVIEWM_ARRAY4, int *DIM1, int *DIM2, int *DIM3, int *DIM4) {
       (float **data_out, int *batch_out, int *out_h, int *out_w, int *out_ch)
 };
+
+
+%apply (float *INPLACE_ARRAY1, int DIM1) { 
+    (float *x, int d1) };
+%apply (float *INPLACE_ARRAY2, int DIM1, int DIM2) { 
+    (float *x, int d1, int d2) };
+%apply (float *INPLACE_ARRAY3, int DIM1, int DIM2, int DIM3) { 
+    (float *x, int d1, int d2, int d3) };
+%apply (float *INPLACE_ARRAY4, int DIM1, int DIM2, int DIM3, int DIM4) { 
+    (float *x, int d1, int d2, int d3, int d4) };
 
 
 
