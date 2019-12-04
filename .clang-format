@@ -30,8 +30,8 @@ Cpp11BracedListStyle: false
 DerivePointerBinding: false
 IndentCaseLabels: false
 IndentFunctionDeclarationAfterType: false
-IndentPPDirectives: AfterHash
-# IndentPPDirectives: None
+#IndentPPDirectives: AfterHash
+IndentPPDirectives: None
 IndentWidth: 4
 MaxEmptyLinesToKeep: 2
 NamespaceIndentation: None
