@@ -1,6 +1,6 @@
 import os
 import unittest
-from .Mnist2Numpy import MnistDataReader, MnistDataDownloader, DataSetType
+from NeuralNetwork.Reader.Mnist2Numpy import MnistDataReader, MnistDataDownloader, DataSetType
 
 
 class Mnist2NumpyTestCase(unittest.TestCase):

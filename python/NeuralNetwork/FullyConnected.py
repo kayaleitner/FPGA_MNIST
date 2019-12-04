@@ -3,8 +3,8 @@ from typing import Optional
 import numpy as np
 from numpy.core.multiarray import ndarray
 
-from .Layer import Layer
-from .Activations import relu, softmax
+from NeuralNetwork.Layer import Layer
+from NeuralNetwork.Activations import relu, softmax
 
 
 class FullyConnectedLayer(Layer):
@@ -28,7 +28,7 @@ class FullyConnectedLayer(Layer):
             # return np.apply_over_axis(relu, z, 1)
             return relu(z)
         elif self.activation is "softmax":
-            #return np.apply_over_axis(softmax, z, 1)
+            # return np.apply_over_axis(softmax, z, 1)
             return softmax(z)
         else:
             raise ValueError("Activation of {} is not valid".format(self.activation))

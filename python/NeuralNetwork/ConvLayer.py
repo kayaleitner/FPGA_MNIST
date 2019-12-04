@@ -4,8 +4,8 @@ from typing import Optional
 import numpy as np
 from numpy.core.multiarray import ndarray
 
-from .Layer import Layer
-from .Activations import relu
+from NeuralNetwork.Layer import Layer
+from NeuralNetwork.Activations import relu
 
 
 def init_kernel(input_channels: int, out_channels: int = 3, kernel_size: int = 5) -> ndarray:
@@ -99,7 +99,8 @@ def conv2d(data_in: ndarray, kernel: ndarray, stride: int = 1):
             i_out, j_out = 0, 0
             for i in range(0, in_h, stride):
                 for j in range(0, in_w, stride):
-                    patch = in_padded[b, i:i + fh, j:j + fw, :]  # 3d tensor
+
+                    patch = in_padded[b, i:i + fh, j:j + fw, :]  # 3d tensor 3x3x16
                     patch_sum = np.sum(patch * kernel[:, :, :, k], axis=(0, 1, 2))  # sum along all axis
                     out[b, i_out, j_out, k] = patch_sum
                     j_out += 1

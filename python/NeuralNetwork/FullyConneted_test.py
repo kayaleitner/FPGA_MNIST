@@ -1,7 +1,8 @@
 import unittest
-from .FullyConnected import FullyConnectedLayer
+from NeuralNetwork.FullyConnected import FullyConnectedLayer
 import numpy as np
 import tensorflow as tf
+
 
 class FullyConnectedLayerTestCase(unittest.TestCase):
 
@@ -23,9 +24,7 @@ class FullyConnectedLayerTestCase(unittest.TestCase):
         y = fc(x)
         self.assertEqual(y.shape, (1, 10))
 
-
     def test_tf_compare(self):
-
         x = np.random.rand(10, 1)  # create 4 test images
         fc = FullyConnectedLayer(input_size=1, output_size=10, activation='relu')
         y = fc(x)
@@ -41,7 +40,6 @@ class FullyConnectedLayerTestCase(unittest.TestCase):
 
         for v1, v2 in zip(y_tf.flatten(), y.flatten()):
             self.assertAlmostEqual(v1, v2, delta=0.1)
-
 
 
 if __name__ == '__main__':

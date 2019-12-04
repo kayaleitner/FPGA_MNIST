@@ -1,6 +1,6 @@
 import numpy as np
 
-from .Layer import Layer
+from NeuralNetwork.Layer import Layer
 
 
 def relu(x: np.ndarray) -> np.ndarray:
@@ -31,7 +31,7 @@ def softmax(x: np.ndarray) -> np.ndarray:
     
     :param x: Array with dimensions [batch out_dim]
     """
-    norm = np.sum(x, axis=x.ndim-1)
+    norm = np.sum(x, axis=x.ndim - 1)
     return x / norm[..., np.newaxis]
 
 

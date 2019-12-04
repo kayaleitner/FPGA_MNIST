@@ -1,7 +1,22 @@
+import numpy as np
 from numpy import reshape
 from numpy.core.multiarray import ndarray
+from NeuralNetwork.Layer import Layer
 
-from .Layer import Layer
+
+def indices(a, func):
+    return [i for (i, val) in enumerate(a) if func(val)]
+
+
+def ind2sub(ind, shape):
+    d = np.cumprod(list(reversed(shape)))
+
+    s = []
+    for (i, shape_i) in enumerate(shape):
+        d /= shape_i
+        s.append(ind % d)
+
+    return tuple(s)
 
 
 class ReshapeLayer(Layer):

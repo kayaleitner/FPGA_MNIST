@@ -4,25 +4,16 @@ setup.py file for SWIG Interface of NeuralNetworkExtension
 
 """
 
-import os
-import re
 import sys
-import setuptools
+from os.path import exists
+import numpy
+from setup_utils import download_numpy_interface
 from setuptools import setup, Extension
 
-# from distutils.core import setup, Extension
-from os import walk
-from os.path import exists
 
-# Third-party modules - we depend on numpy for everything
-import numpy
-# Import requests module, to download numpy.i in case
-import requests
 
-from setup_utils import download_numpy_interface
-
-# Obtain the numpy include directory.  This logic works across numpy versions.
 try:
+    # Obtain the numpy include directory.  This logic works across numpy versions.
     numpy_include = numpy.get_include()
 except AttributeError:
     numpy_include = numpy.get_numpy_include()
