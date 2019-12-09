@@ -22,7 +22,9 @@ if not exists('NeuralNetwork/Ext/numpy.i'):
     print("Downloading numpy.i")
     download_numpy_interface()
 
-source_files = ['./NeuralNetwork/Ext/NNExtension.i', './NeuralNetwork/Ext/conv.c']
+source_files = ['./NeuralNetwork/Ext/NNExtension.i', './NeuralNetwork/Ext/cconv.c',
+                './NeuralNetwork/Ext/cpool.c', './NeuralNetwork/Ext/crelu.c', 
+                './NeuralNetwork/Ext/cmatmul.c', './NeuralNetwork/Ext/chelper.c']
 include_dirs = ['./NeuralNetwork/Ext/', numpy_include]
 extra_args = ['--verbose']
 extra_link_args = []
