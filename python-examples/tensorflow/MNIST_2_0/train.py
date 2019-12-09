@@ -1,4 +1,5 @@
 import os
+import matplotlib.pyplot as plt
 
 USE_AMD_GPU = True
 
@@ -71,7 +72,26 @@ cp_callback = keras.callbacks.ModelCheckpoint(filepath=checkpoint_path,
                                               verbose=1)
 
 # For higher GPU Utilization it is useful to increase batch_size but this can slow down training
-model.fit(x_train, y_train, epochs=10, batch_size=200, validation_split=0.1, callbacks=[cp_callback])
+history = model.fit(x_train, y_train, epochs=10, batch_size=200, validation_split=0.1, callbacks=[cp_callback])
+
+
+# Plot training & validation accuracy values
+plt.plot(history.history['acc'])
+plt.plot(history.history['val_acc'])
+plt.title('Model accuracy')
+plt.ylabel('Accuracy')
+plt.xlabel('Epoch')
+plt.legend(['Train', 'Test'], loc='upper left')
+plt.show()
+
+# Plot training & validation loss values
+plt.plot(history.history['loss'])
+plt.plot(history.history['val_loss'])
+plt.title('Model loss')
+plt.ylabel('Loss')
+plt.xlabel('Epoch')
+plt.legend(['Train', 'Test'], loc='upper left')
+plt.show()
 
 
 # Save JSON config to disk

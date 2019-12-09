@@ -1,13 +1,21 @@
 import tensorflow as tf
 from tensorflow.examples.tutorials.mnist import input_data
+from tensorflow import keras
 
 import os
 import math
 import time
 
-# get data
-mnist = input_data.read_data_sets('MNIST_data', one_hot=True)
-# mnist is a CLASS and provides useful functions
+
+mnist = tf.keras.datasets.mnist
+
+IMG_HEIGHT = 28
+IMG_WIDTH = 28
+
+(x_train, y_train), (x_test, y_test) = mnist.load_data()
+x_train, x_test = x_train / 255.0, x_test / 255.0
+
+
 
 
 # PLACEHOLDERS
@@ -45,11 +53,12 @@ def bias_variable(shape):
 
 
 def conv2d(x, W):
-    return tf.nn.conv2d(x, W, strides=[1, 1, 1, 1], padding='SAME')
+    return tf.nn.conv2d(x, W, strides=1, padding='SAME')
 
 
 def max_pool_2x2(x):
-    return tf.nn.max_pool(x, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME')
+    return tf.nn.max_pool(x, ksize=2, strides=2, padding='SAME')
+
 
 
 # reshape the image from 1D to 2D
