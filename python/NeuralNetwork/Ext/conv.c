@@ -29,8 +29,6 @@
 // #endif
 
 
-
-
 #ifndef MIN
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 #endif
@@ -106,16 +104,16 @@ int conv2d(const float *__restrict data_in,
            const int in_w,
            const int in_ch,
            const float *__restrict kernel,
-           const int     fh,
-           const int     fw,
-           const int     kin_ch,
-           const int     kout_ch,
-           const int     stride,
-           float **pdata_out,
-           int *   pbatch_out,
-           int *   pout_h,
-           int *   pout_w,
-           int *   pout_ch)
+           const int fh,
+           const int fw,
+           const int kin_ch,
+           const int kout_ch,
+           const int stride,
+           float **  pdata_out,
+           int *     pbatch_out,
+           int *     pout_h,
+           int *     pout_w,
+           int *     pout_ch)
 {
     /*
     Perform a 2D convolution over a batch of tensors. This is equivalent to
@@ -424,8 +422,8 @@ int conv2d_3x3(const float *__restrict data_in,
             for (int i = 1; i < in_w - 1; i++)
             {
                 const int H = in_h - 1, W = in_w - 1;
-                
-                #pragma clang loop vectorize(enable) interleave(enable)
+
+#pragma clang loop vectorize(enable) interleave(enable)
                 for (int k = 0; k < in_ch; k++)
                 {
                     float a_l = 0, a_r = 0;
@@ -462,31 +460,66 @@ error:
 }
 
 
-static void matmul_(float * __restrict pA, float * __restrict pB, float * __restrict pC, const int M, const int N, const int K) {
+static void
+matmul_(const float *__restrict pA, const float *__restrict pB, float *__restrict pC, const int M, const int N, const int K)
+{
+    const float(*A)[K] = NULL;
+    const float(*B)[N] = NULL;
+    float(*C)[N] = NULL;
+    A = (const float(*)[K])pA;
+    B = (const float(*)[N])pB;
+    C = (float(*)[N])pC;
 
-    // float(*array_in)[in_h][in_w][in_ch] = NULL;
-    // float(*kernel_in)[fw][in_ch][out_ch] = NULL;
-    // float(*array_out)[out_h][out_w][out_ch] = NULL;
 
-    // array_in = (float(*)[in_h][in_w][in_ch])data_in;
-    // kernel_in = (float(*)[fw][in_ch][out_ch])kernel;
-    // array_out = (float(*)[out_h][out_w][out_ch])data_out;
-
-
-    float (*A)[M][K] = (float (*)[M][K]) pA;
-    float (*B)[K][N] = (float (*)[K][N]) pB;
-    float (*C)[M][N] = (float (*)[M][N]) pC;
-
-    #pragma clang loop id(i)
-    for (int i = 0; i < M; i+=1) 
-        #pragma clang loop id(j)
-        for (int j = 0; j < N; j+=1)
-            #pragma clang loop id(k)
-            for (int k = 0; k < K; k+=1) 
+    // TODO: Vectorize this
+    for (int i = 0; i < M; i += 1)
+    {
+        for (int j = 0; j < N; j += 1)
+        {
+            for (int k = 0; k < K; k += 1)
+            {
                 C[i][j] += A[i][k] * B[k][j];
+            }
+        }
+    }
+}
 
+static void
+matmul_plus_bias(const float *__restrict pA, const float *__restrict pB, const float *__restrict pBias,  float *__restrict pC, const int BATCH, const int N, const int K)
+{
+    const float(*A)[K] = NULL;
+    const float(*B)[N] = NULL;
+    const float(*bias) = NULL;
+    float(*C)[N] = NULL;
+    A = (const float(*)[K])pA;
+    B = (const float(*)[N])pB;
+    bias = (const float *) pBias;
+    C = (float(*)[N])pC;
+
+
+    // TODO: Vectorize this
+    for (int i = 0; i < BATCH; i += 1)
+    {
+        for (int j = 0; j < N; j += 1)
+        {
+            for (int k = 0; k < K; k += 1)
+            {
+                C[i][j] += A[i][k] * B[k][j];
+            }
+        }
+        
+    }
+
+    for (int i = 0; i < BATCH; i++)
+    {
+        for (int j = 0; j < N; j++)
+        {
+            C[i][j] += bias[j];
+        }
+    }
     
 }
+
 
 int MAXPool2D(const float *data_in,
               int          batch,
