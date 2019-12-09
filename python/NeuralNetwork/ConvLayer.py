@@ -6,6 +6,7 @@ from numpy.core.multiarray import ndarray
 
 from NeuralNetwork.Layer import Layer
 from NeuralNetwork.Activations import relu
+from NeuralNetwork.Ext.NeuralNetworkExtension import conv2d as conv2d_ext
 
 
 def init_kernel(input_channels: int, out_channels: int = 3, kernel_size: int = 5) -> ndarray:
@@ -61,8 +62,6 @@ def conv2d(data_in: ndarray, kernel: ndarray, stride: int = 1):
     fh2 = int((fh - 1) / 2)
     fw2 = int((fw - 1) / 2)
 
-    out = np.zeros(shape=[batch, in_h, in_w, kout_ch])
-
     # Given an input tensor of shape [batch, in_height, in_width, in_channels] and a filter / kernel tensor of
     # shape [filter_height, filter_width, in_channels, out_channels], this op performs the following:
     #
@@ -75,8 +74,15 @@ def conv2d(data_in: ndarray, kernel: ndarray, stride: int = 1):
     # 3) For each patch, right-multiplies the
     # filter matrix and the image patch vector
 
+    out = np.zeros(shape=[batch, in_h, in_w, kout_ch])
     # pad input
-    in_padded = np.pad(data_in, ((0, 0), (2, 2), (2, 2), (0, 0)), 'constant', constant_values=(0, 0))
+    in_padded = np.pad(data_in, ((0, 0), (fh2, fh2), (fw2, fw2), (0, 0)), 'constant', constant_values=(0, 0))
+    # in_padded = np.pad(data_in, ((0, 0), (30, 30), (30, 30), (0, 0)), 'constant', constant_values=(0, 0))
+    # img = np.squeeze(in_padded)
+    # fig, ax = plt.subplots()
+    # _im = ax.imshow(img, cmap='gray')
+    # fig.colorbar(_im)
+    # plt.show()
 
     # kflat = np.reshape(kernel, newshape=(-1, kout_ch))
     # vout = np.zeros(shape=(batch, in_h, in_w, fh * fw * in_ch))  # create virtual out
@@ -99,7 +105,6 @@ def conv2d(data_in: ndarray, kernel: ndarray, stride: int = 1):
             i_out, j_out = 0, 0
             for i in range(0, in_h, stride):
                 for j in range(0, in_w, stride):
-
                     patch = in_padded[b, i:i + fh, j:j + fw, :]  # 3d tensor 3x3x16
                     patch_sum = np.sum(patch * kernel[:, :, :, k], axis=(0, 1, 2))  # sum along all axis
                     out[b, i_out, j_out, k] = patch_sum
@@ -108,6 +113,10 @@ def conv2d(data_in: ndarray, kernel: ndarray, stride: int = 1):
                 i_out += 1
 
     return out
+
+
+def conv2d_fast(data_in, kernel, stride=1):
+    return conv2d_ext(data_in, kernel, stride)
 
 
 class ConvLayer(Layer):
@@ -122,6 +131,7 @@ class ConvLayer(Layer):
 
     def __call__(self, *args, **kwargs):
         z = conv2d(args[0], self.kernel, stride=1) + self.b
+        # z = conv2d_fast(args[0].astype(np.float32), self.kernel.astype(np.float32), stride=1) + self.b
 
         if self.activation is None:
             return z
@@ -231,7 +241,6 @@ class AveragePoolLayer(Layer):
 
     def __call__(self, *args, **kwargs):
         data_in = args[0]
-        np.max()
         return apply_pool(data_in, pool_size=self.PoolSize, f=np.mean)
 
     def get_input_shape(self):

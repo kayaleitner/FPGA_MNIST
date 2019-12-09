@@ -33,6 +33,22 @@ extern "C"
                int *        out_w,
                int *        out_ch);
 
+    int conv2d_3x3(const float * data_in,
+                   const int batch,
+                   const int in_h,
+                   const int in_w,
+                   const int in_ch,
+                   const float * kernel,
+                   const int fh,
+                   const int fw,
+                   const int kin_ch,
+                   const int kout_ch,
+                   float **  pdata_out,
+                   int *     pbatch_out,
+                   int *     pout_h,
+                   int *     pout_w,
+                   int *     pout_ch);
+
     int maxPool2D(const float *data_in,
                   int          batch,
                   int          in_h,

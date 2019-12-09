@@ -48,6 +48,11 @@ class MnistDataDownloader:
             tmp_path = tempfile.gettempdir()
         else:
             tmp_path = self.folder_path
+
+        # Check if folders exists
+        if not os.path.exists(tmp_path):
+            os.makedirs(tmp_path)
+
         data = [
             (self.TRAIN_IMG_TMP_FILENAME, self.TRAIN_IMAGES_URL),
             (self.TRAIN_LBL_TMP_FILENAME, self.TRAIN_LABELS_URL),

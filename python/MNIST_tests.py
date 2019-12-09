@@ -19,7 +19,7 @@ class MnistConvTestCase(unittest.TestCase):
     def test_blur(self):
         k = test_kernel_gauss()
         cl = ConvLayer(in_channels=1, out_channels=1, kernel_size=5)
-        loader = MnistDataDownloader("MNIST/")
+        loader = MnistDataDownloader("test/MNIST/")
         path_img, path_lbl = loader.get_path(DataSetType.TRAIN)
 
         reader = MnistDataReader(path_img, path_lbl)
@@ -28,24 +28,23 @@ class MnistConvTestCase(unittest.TestCase):
             img = np.reshape(img, newshape=[-1, 28, 28, 1])
             k = np.reshape(k, newshape=[k.shape[0], k.shape[1], 1, 1])
             cl.kernel = k
-            img_out = cl.conv_simple(data_in=img)
+            img_out = cl(img)
 
             # Check the dimensions
             self.assertEqual(img_out.shape, (4, 28, 28, 1))
 
             # Uncomment to see the image
-            # img_out = np.reshape(img_out, newshape=[1, 4 * 28, 28, 1])
-            # img_out = np.squeeze(img_out)
-            # plt.imshow(img_out, cmap='gray', vmin=0.0, vmax=1.0)
-            # plt.show()
-
+            img_out = np.reshape(img_out, newshape=[1, 4 * 28, 28, 1])
+            img_out = np.squeeze(img_out)
+            plt.imshow(img_out, cmap='gray', vmin=0.0, vmax=1.0)
+            plt.show()
             break
 
     def test_tensorflow_parameter_0(self):
         r1 = ReshapeLayer(newshape=[-1, 28, 28, 1])
         cn1 = ConvLayer(in_channels=1, out_channels=16, kernel_size=3, activation='relu')  # [? 28 28 16]
 
-        checkpoint_path = "python/training_1/cp.ckpt"
+        checkpoint_path = "test/training_1/cp.ckpt"
         checkpoint_dir = os.path.abspath(os.path.dirname(checkpoint_path))
         os.path.join(checkpoint_dir, "model_config.json")
         if not os.path.exists(checkpoint_dir):
@@ -60,10 +59,6 @@ class MnistConvTestCase(unittest.TestCase):
 
         # Print a summary
         Ws = model.get_weights()
-
-        new_model = keras.models.Sequential(
-            Conv2DLayer
-        )
 
         # See Keras Documentation
         # https://www.tensorflow.org/api_docs/python/tf/keras/layers/Conv2D
@@ -80,7 +75,7 @@ class MnistConvTestCase(unittest.TestCase):
         interesting_layers = [1]  # don't care about reshape layers
         n = Network(layers)
 
-        loader = MnistDataDownloader("MNIST/")
+        loader = MnistDataDownloader("test/MNIST/")
         path_img, path_lbl = loader.get_path(DataSetType.TRAIN)
         reader = MnistDataReader(path_img, path_lbl)
 
@@ -145,8 +140,7 @@ class MnistConvTestCase(unittest.TestCase):
         fc1 = FullyConnectedLayer(input_size=32 * 7 * 7, output_size=64, activation='relu')
         fc2 = FullyConnectedLayer(input_size=64, output_size=10, activation='softmax')
 
-
-        checkpoint_path = "python/training_1/cp.ckpt"
+        checkpoint_path = "test/training_1/cp.ckpt"
         checkpoint_dir = os.path.abspath(os.path.dirname(checkpoint_path))
         os.path.join(checkpoint_dir, "model_config.json")
         if not os.path.exists(checkpoint_dir):
@@ -191,15 +185,15 @@ class MnistConvTestCase(unittest.TestCase):
         fc2.b = Ws[7]
 
         layers = [r1, cn1, mp1, cn2, mp2, r2, fc1, fc2]
-        interesting_layers = [1,   2,   3,   4,       6, 7]  # don't care about reshape layers
+        interesting_layers = [1, 2, 3, 4, 6, 7]  # don't care about reshape layers
 
-        n = Network(layers)
+        net = Network(layers)
 
-        loader = MnistDataDownloader("MNIST/")
+        loader = MnistDataDownloader("test/MNIST/")
         path_img, path_lbl = loader.get_path(DataSetType.TRAIN)
         reader = MnistDataReader(path_img, path_lbl)
 
-        for lbls, imgs in reader.get_next(10):
+        for lbls, imgs in reader.get_next(20):
             imgs = imgs.astype(np.float) / 255.0
             imgs_r = np.reshape(imgs, newshape=[-1, 28, 28, 1])
 
@@ -215,32 +209,51 @@ class MnistConvTestCase(unittest.TestCase):
             # print(layer_outs)
 
             # Check the results of the own made NN
-            y, zs = n.forward_intermediate(imgs_r)
-            zs = [zs[i] for i in interesting_layers] # remove reshape layers
+            y, zs = net.forward_intermediate(imgs_r)
+            zs = [zs[i] for i in interesting_layers]  # remove reshape layers
             eps = 0.1
             index = 0
-            #for l_keras_out, l_out in zip(layer_outs, zs):
-                #l_keras_out = l_keras_out[0] # why ever
-                #err = np.abs((l_keras_out - l_out))
-                #err_subs = ind2sub(indices(err.flatten(), lambda x: x > 1), l_out.shape)
+            for l_keras_out, l_out in zip(layer_outs, zs):
+
+                l_keras_out = l_keras_out[0]  # why ever
+                err = np.abs((l_keras_out - l_out))
+                # err_subs = ind2sub(indices(err.flatten(), lambda x: x > 1), l_out.shape)
                 # self.assertTrue(np.allclose(l_out, l_keras_out))
 
-                # print(l_keras_out - l_out)
+                #print(l_keras_out - l_out)
 
+                # img_keras = np.squeeze()
                 # err_image = 1.0 * (np.abs(l_keras_out - l_out) > eps)
-                # # err_image = np.reshape(err_image[], newshape=(1, -1, 28, 1))
-                # err_image = np.squeeze(err_image[0, :, :, 0])
-                # plt.imshow(err_image, vmin=0.0, vmax=1.0, cmap='gray')
+
+                # Test: Shift l_out
+
+                # l_out[:, 0:-1, 0:-1, :] = l_out[:, 1:, 1:, :]
+
+                # err_image = l_keras_out - l_out
+                # # err_image = np.reshape(err_image, newshape=(1, 28, 28, 1))
+                # # err_image = np.squeeze(err_image[0, :, :, 0])
+                # err_image = np.concatenate([np.squeeze(err_image[0, :, :, i]) for i in range(4)], axis=1)
+                # img_keras = np.concatenate([np.squeeze(l_keras_out[0, :, :, i]) for i in range(4)], axis=1)
+                # img_nn = np.concatenate([np.squeeze(l_out[0, :, :, i]) for i in range(4)], axis=1)
+                # img = np.concatenate([img_nn, img_keras, err_image], axis=0)
+                #
+                # fig, ax = plt.subplots()
+                # _im = ax.imshow(img, cmap='gray')
+                # ax.set_title('Computation Layer {}'.format(index))
+                # ax.set_yticks([14, 14 + 28, 14 + 2 * 28])
+                # ax.set_yticklabels(['Our NN', 'Keras', 'Difference'])
+                # fig.colorbar(_im)
                 # plt.show()
 
                 #right_indices = indices(err < eps, lambda b: b)
                 #false_indices = indices(err > eps, lambda b: b)
                 #wrong_values = err[false_indices]
-                # print(wrong_values)
+                #print(wrong_values)
 
-                #if not np.all(right_indices):
-                #    print("error in layer ", index)
-                #index += 1
+                if not np.allclose(l_out, l_keras_out, atol=0.0001):
+                    print("error in layer ", index)
+                    breakpoint()
+                index += 1
 
             lbls_pred_keras = y_keras.argmax(axis=1)
             lbls_pred = y.argmax(axis=1)

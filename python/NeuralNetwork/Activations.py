@@ -31,8 +31,8 @@ def softmax(x: np.ndarray) -> np.ndarray:
     
     :param x: Array with dimensions [batch out_dim]
     """
-    norm = np.sum(x, axis=x.ndim - 1)
-    return x / norm[..., np.newaxis]
+    norm = np.sum(np.exp(x), axis=-1, keepdims=True)
+    return np.exp(x) / norm
 
 
 class ActivationLayer(Layer):
