@@ -7,10 +7,6 @@ extern "C"
 #endif
 
 
-#ifndef __restrict
-#define __restrict restrict
-#endif
-
 #include <stdlib.h>
 
 

@@ -1,4 +1,4 @@
-%module(package="pkg1.Ext") NeuralNetworkExtension
+%module NeuralNetworkExtension
 // Neural Network C Extension SWIG Wrapper File
 //
 // Written by: Benjamin Kulnik
