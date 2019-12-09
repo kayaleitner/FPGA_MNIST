@@ -1,14 +1,146 @@
 <html>
-    <head>
-        <title>MNIST CNN Control</title>
-    </head>
-    <body>
-        <h1>Test</h1>
-		<form method="post" enctype="multipart/form-data">
-			<label>Input coefficient file:
-			<input name="coeff_file" type="file" size="50" accept="text/*"> 
-			</label>
-			<button>Submit</button>
-		</form>
-    </body>
+
+<head>
+  <title>MNIST CNN Control</title>
+  <!-- Latest compiled and minified CSS -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.7.5/css/bulma.min.css" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+
+<body>
+  <nav id="navbar" class="navbar" role="navigation" aria-label="main navigation">
+    <div class="navbar-menu">
+      <div class="navbar-end">
+        <a class="navbar-item">
+          Home
+        </a>
+
+        <a class="navbar-item">
+          Documentation
+        </a>
+
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link">
+            More
+          </a>
+
+          <div class="navbar-dropdown is-right">
+            <a class="navbar-item">
+              About
+            </a>
+            <a class="navbar-item">
+              Jobs
+            </a>
+            <a class="navbar-item">
+              Contact
+            </a>
+            <hr class="navbar-divider" />
+            <a class="navbar-item">
+              Report an issue
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </nav>
+  <main>
+    <section class="section">
+      <div class="blog-post content container">
+        <div class="post-header">
+          <h1 id="blog-post-title" class="title">Title</h1>
+          <p id="blog-post-subtitle" class="subtitle">Subtitle</p>
+          <p class="blog-post-meta">
+            Written on Date by <a href="#">Author</a>
+          </p>
+        </div>
+        <div class="post-body">
+
+          <p>
+            Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam
+            nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam
+            erat, sed diam voluptua. At vero eos et accusam et justo duo dolores
+            et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est
+            Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur
+            sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore
+            et dolore magna aliquyam erat, sed diam voluptua. At vero eos et
+            accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren,
+            no sea takimata sanctus est Lorem ipsum dolor sit amet.
+          </p>
+          <h3>
+            This is a form to update parameteres
+          </h3>
+          <form method="post" enctype="multipart/form-data">
+            <label>Input coefficient file:
+              <input name="coeff_file" type="file" size="50" accept="text/*">
+            </label>
+            <button>Submit</button>
+          </form>
+          <h3>
+            Use Latex in HTML
+          </h3>
+          <p>
+            For the quadratic equation $$ ax^2 + bx + c = 0 $$ for $$ a \neq 0
+            $$ the equation can be solved by $$x_{1,2} = \frac{-b \pm \sqrt{b^2
+            - 4ac}}{2a} $$ A fundamental law of electrodynamics is "Faradys Law"
+            or the Law of induction $$ \frac{d}{dt} \Phi = -U $$ which can be
+            displayed in differential form: $$ \frac{d}{dt} B = - \nabla \times
+            E $$
+          </p>
+          <p>
+            <first style="font-size: 300%;line-height:1.0;float:left;padding-right: 0.4rem;">L</first>orem ipsum dolor
+            sit amet, consetetur sadipscing elitr, sed diam
+            nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam
+            erat, sed diam voluptua. At vero eos et accusam et justo duo dolores
+            et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est
+            Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur
+            sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore
+            et dolore magna aliquyam erat, sed diam voluptua. At vero eos et
+            accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren,
+            no sea takimata sanctus est Lorem ipsum dolor sit amet.
+          </p>
+          <p>First a quote:</p>
+          <blockquote class="quote" cite="Tim Berners-Lee">
+            "This is a quote"
+          </blockquote>
+          <p>Followed by code:</p>
+          <pre class="prettyprint">
+          <code class="prettyprint lang-c">
+  // Comment
+  int x = 0;
+  
+  int main(int argc, char **argv) {
+      printf("Hello World!\n");
+      return 0;
+  }
+          </code>
+      </pre>
+          <p>
+            Show an Equation in HTML
+          </p>
+          <p>
+            This is a simple equation: $$ \mathscr{F}(f) =
+            \int_{-\infty}^{\infty} f(t) e^{-j \omega t} dt $$
+          </p>
+          <p>
+            Also images are possible
+          </p>
+          <figure class="figure">
+            <img src="http://lorempixel.com/400/200" class="figure-img img-fluid rounded" alt="..." />
+            <figcaption class="figure-caption">
+              A caption for the above image.
+            </figcaption>
+          </figure>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <script defer src="https://use.fontawesome.com/releases/v5.3.1/js/all.js"></script>
+  <!-- Math Equations -->
+  <script type="text/javascript" async
+    src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-MML-AM_CHTML"></script>
+  <script src="https://cdn.jsdelivr.net/gh/google/code-prettify@master/loader/run_prettify.js" async defer></script>
+</body>
+
 </html>
