@@ -1,0 +1,52 @@
+\subsection{Memory Controller}
+The task of the memory controller is to provide valid data for the NN-layers. It communicates with the Block-Ram. The memory controller is responsible for ensuring that the next layer has valid data at all times. The second task of the memory controller is to save the data of the previous data in a free memory address in the Block-RAM. 
+\todo{Is it better to have the shiftregister, we discussed last time in the memory controller, because in this case the layer don't have to know anything about the data it gets}
+
+\subsubsection{Interfaces}
+\begin{itemize}
+	\item S\_LAYER: interface to previous layer
+\end{itemize}
+\begin{tabular}{|l|l|l|l|l|}
+	
+	signal & direction & type & width & description\\
+	
+\end{tabular}
+
+\begin{itemize}
+	\item M\_LAYER: interface to next layer
+\end{itemize}
+\begin{tabular}{|l|l|l|l|l|}
+	
+	signal & direction & type & width & description\\
+	
+\end{tabular}
+
+\begin{itemize}
+	\item BRAM\_PORTA: write interface to BRAM
+\end{itemize}
+\begin{tabular}{|l|l|l|l|l|}
+	
+	signal & direction & type & width & description\\
+	
+\end{tabular}
+
+\begin{itemize}
+	\item BRAM\_PORTB: read interface to BRAM
+\end{itemize}
+\begin{tabular}{|l|l|l|l|l|}
+	
+	signal & direction & type & width & description\\
+	
+\end{tabular}
+
+\subsubsection{Parameter}
+\begin{itemize}
+	\item PREVIOUS\_LAYER\_TYPE boolean: {TRUE: conv2d, FALSE: dense} % maybe some additional -> integer type
+	\item PREVIOUS\_LAYER\_WIDTH integer: {Row length of input matrix} \todo{use extra parameter for dense or simply use width or heigth, discuss!}
+	\item PREVIOUS\_LAYER\_HEIGTH integer: {Collum length of input matrix}
+	\item PREVIOUS\_LAYER\_CHANNEL integer: {Row length of input matrix}
+	\item NEXT\_LAYER\_TYPE boolean: {TRUE: conv2d, FALSE: dense} % maybe some additional -> integer type
+	\item NEXT\_LAYER\_WIDTH integer: {Row length of input matrix} \todo{use extra parameter for dense or simply use width or heigth, discuss!}
+	\item NEXT\_LAYER\_HEIGTH integer: {Collum length of input matrix}
+	\item NEXT\_LAYER\_CHANNEL integer: {Row length of input matrix}
+\end{itemize}
