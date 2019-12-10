@@ -1,7 +1,7 @@
 import numpy as np
 from numpy import reshape
 from numpy.core.multiarray import ndarray
-from NeuralNetwork.Layer import Layer
+from NeuralNetwork.NN.Layer import Layer
 
 
 def indices(a, func):

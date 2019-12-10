@@ -2,7 +2,7 @@ from typing import List
 import numpy as np
 
 from NeuralNetwork.Costs import mean_squared_error
-from NeuralNetwork.Layer import Layer
+from NeuralNetwork.NN.Layer import Layer
 
 
 def check_layers(list_of_layers: List[Layer]):

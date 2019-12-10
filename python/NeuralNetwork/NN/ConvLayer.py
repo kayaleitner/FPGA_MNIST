@@ -4,8 +4,8 @@ from typing import Optional
 import numpy as np
 from numpy.core.multiarray import ndarray
 
-from NeuralNetwork.Layer import Layer
-from NeuralNetwork.Activations import relu
+from NeuralNetwork.NN.Layer import Layer
+from NeuralNetwork.NN.Activations import relu
 from NeuralNetwork.Ext.NeuralNetworkExtension import conv2d as conv2d_ext
 
 

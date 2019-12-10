@@ -3,8 +3,8 @@ from typing import Optional
 import numpy as np
 from numpy.core.multiarray import ndarray
 
-from NeuralNetwork.Layer import Layer
-from NeuralNetwork.Activations import relu, softmax
+from NeuralNetwork.NN.Layer import Layer
+from NeuralNetwork.NN.Activations import relu, softmax
 
 
 class FullyConnectedLayer(Layer):

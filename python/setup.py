@@ -9,7 +9,7 @@ from os.path import exists
 import numpy
 from setuptools import setup, Extension, find_packages
 
-from setup_utils import download_numpy_interface, readme
+from setup_utils import download_numpy_interface, readme, SwigExtension
 
 try:
     # Obtain the numpy include directory.  This logic works across numpy versions.
@@ -29,10 +29,10 @@ include_dirs = ['./NeuralNetwork/Ext/', numpy_include]
 extra_args = ['--verbose']
 extra_link_args = []
 
-NN_ext_module = Extension('NeuralNetwork/Ext/' + '_NeuralNetworkExtension',
+NN_ext_module = SwigExtension('NeuralNetwork/Ext/' + '_NeuralNetworkExtension',
                           sources=source_files,
                           include_dirs=include_dirs,
-                          swig_opts=['-c++', '-py3'],
+                          swig_opts=['-py3'],
                           extra_compile_args=extra_args,
                           extra_link_args=extra_link_args)
 

@@ -6,11 +6,11 @@ import numpy as np
 from tensorflow import keras
 import tensorflow.keras.backend as K
 
-from NeuralNetwork.Activations import SoftmaxLayer, ReluActivationLayer
-from NeuralNetwork.ConvLayer import ConvLayer, test_kernel_gauss, MaxPoolLayer
-from NeuralNetwork.FullyConnected import FullyConnectedLayer
-from NeuralNetwork.Network import Network
-from NeuralNetwork.Util import ReshapeLayer, indices, ind2sub
+from NeuralNetwork.NN.Activations import SoftmaxLayer, ReluActivationLayer
+from NeuralNetwork.NN.ConvLayer import ConvLayer, test_kernel_gauss, MaxPoolLayer
+from NeuralNetwork.NN.FullyConnected import FullyConnectedLayer
+from NeuralNetwork.NN.Network import Network
+from NeuralNetwork.NN.Util import ReshapeLayer, indices, ind2sub
 from NeuralNetwork.Reader import MnistDataReader, MnistDataDownloader, DataSetType
 
 

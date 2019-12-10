@@ -193,7 +193,6 @@ class ConvLayerTest(unittest.TestCase):
         ix = np.array(indices(err_flat, lambda x: x > 0.5))
         subs = ind2sub(ix, err.shape)
 
-
         eq = np.allclose(y, y_keras, atol=0.1)
         self.assertTrue(eq)
 

@@ -1,7 +1,7 @@
 import unittest
 import numpy as np
 
-from NeuralNetwork import Activations
+from NeuralNetwork.NN import Activations
 
 
 class ActionFuncsCase(unittest.TestCase):

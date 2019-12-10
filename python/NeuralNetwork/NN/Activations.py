@@ -1,6 +1,6 @@
 import numpy as np
 
-from NeuralNetwork.Layer import Layer
+from NeuralNetwork.NN.Layer import Layer
 
 
 def relu(x: np.ndarray) -> np.ndarray:

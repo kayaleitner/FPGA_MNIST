@@ -3,6 +3,7 @@ import os
 from os import walk
 import numpy
 import wget
+from setuptools import Extension
 
 
 def readme():
@@ -54,3 +55,8 @@ def download_numpy_interface(path):
     wget.download(np_file_url, path)
 
     return
+
+
+class SwigExtension(Extension):
+    pass
+
