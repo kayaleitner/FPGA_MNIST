@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<GenRun Id="impl_1" LaunchTime="0">
+  <File Type="PLACE-UTIL-PB" Name="zedboard_wrapper_utilization_placed.pb"/>
+  <File Type="OPT-DRC" Name="zedboard_wrapper_drc_opted.rpt"/>
+  <File Type="PLACE-UTIL" Name="zedboard_wrapper_utilization_placed.rpt"/>
+  <File Type="PLACE-IO" Name="zedboard_wrapper_io_placed.rpt"/>
+  <File Type="PLACE-CTRL" Name="zedboard_wrapper_control_sets_placed.rpt"/>
+  <File Type="ROUTE-TIMINGSUMMARY" Name="zedboard_wrapper_timing_summary_routed.rpt"/>
+  <File Type="ROUTE-TIMING-RPX" Name="zedboard_wrapper_timing_summary_routed.rpx"/>
+  <File Type="ROUTE-STATUS" Name="zedboard_wrapper_route_status.rpt"/>
+  <File Type="ROUTE-STATUS-PB" Name="zedboard_wrapper_route_status.pb"/>
+  <File Type="ROUTE-PWR" Name="zedboard_wrapper_power_routed.rpt"/>
+  <File Type="ROUTE-PWR-RPX" Name="zedboard_wrapper_power_routed.rpx"/>
+  <File Type="ROUTE-PWR-SUM" Name="zedboard_wrapper_power_summary_routed.pb"/>
+  <File Type="ROUTE-DRC" Name="zedboard_wrapper_drc_routed.rpt"/>
+  <File Type="ROUTE-DRC-RPX" Name="zedboard_wrapper_drc_routed.rpx"/>
+  <File Type="ROUTE-DRC-PB" Name="zedboard_wrapper_drc_routed.pb"/>
+  <File Type="ROUTE-METHODOLOGY-DRC" Name="zedboard_wrapper_methodology_drc_routed.rpt"/>
+  <File Type="ROUTE-METHODOLOGY-DRC-RPX" Name="zedboard_wrapper_methodology_drc_routed.rpx"/>
+  <File Type="ROUTE-METHODOLOGY-DRC-PB" Name="zedboard_wrapper_methodology_drc_routed.pb"/>
+  <File Type="ROUTE-CLK" Name="zedboard_wrapper_clock_utilization_routed.rpt"/>
+</GenRun>
