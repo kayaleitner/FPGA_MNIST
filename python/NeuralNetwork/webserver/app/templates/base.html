@@ -1,10 +1,37 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
 
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/bulma.min.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+  {% block head %}{% endblock %}
+</head>
+
+<body>
+  <nav id="navbar" class="navbar" role="navigation" aria-label="main navigation">
+    <div class="navbar-menu">
+      <div class="navbar-end">
+        <a class="navbar-item">Home</a>
+        <a class="navbar-item" href="/setup">Setup</a>
+        <a class="navbar-item" href="/graphs">Graphs</a>
+        <a class="navbar-item" href="/performance">Performance Details</a>
+        <a class="navbar-item" href="/doc">Documentation</a>
+        <a class="navbar-item" href="/More">More</a>
+      </div>
+    </div>
+  </nav>
+  <main>
+    {% block body %}
+    {% endblock %}
+  </main>
+  <script defer src="https://use.fontawesome.com/releases/v5.3.1/js/all.js"></script>
+  <!-- Math Equations -->
+  <script type="text/javascript" async
+    src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-MML-AM_CHTML"></script>
+  <script src="https://cdn.jsdelivr.net/gh/google/code-prettify@master/loader/run_prettify.js" async defer></script>
 </body>
+
 </html>
