@@ -97,8 +97,9 @@ begin
         assert (output_data = test_vectors(i).exp_out)
         
         -- image is used for string-representation of integer etc.
-        report  "test_vector fail" severity error;
-            
+
+        report  "test_vector " & integer'image(i) & " failed "  severity error;
+
         wait for CLK_PERIOD/2;
     end loop;
     
