@@ -47,7 +47,7 @@ class NNExtensionTestCase(unittest.TestCase):
             (10, 100, 100, 10),
         ]
         for size in sizes_to_test:
-            x = np.random.rand(size).astype(np.float32)
+            x = 10.0*(np.random.rand(size).astype(np.float32)-0.5)
             x_relu1 = x.copy()
             ext.relu1D(x_relu1)
             x_relu2 = relu(x)
