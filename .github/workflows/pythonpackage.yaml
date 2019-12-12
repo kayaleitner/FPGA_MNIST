@@ -35,7 +35,7 @@ jobs:
         make
         # Append to path
         PATH=$PATH:$(pwd)
-        cd $(SRC_DIR)
+        cd ..
 
     - name: Lint with flake8
       run: |
