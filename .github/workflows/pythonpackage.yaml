@@ -7,7 +7,6 @@ jobs:
 
     runs-on: ubuntu-latest
     strategy:
-      max-parallel: 4
       matrix:
         python-version: [3.6, 3.7, 3.8]
 
@@ -49,7 +48,6 @@ jobs:
     
     - name: Test with pytest
       run: |
-        cd $(SRC_DIR)
         cd python
         pip install pytest
         pytest
@@ -57,7 +55,6 @@ jobs:
 
     - name: Test Install
       run: |
-        cd $(SRC_DIR)
         cd python
         python setup.py sdist bdist_wheel
         pip install .
