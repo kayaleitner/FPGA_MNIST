@@ -26,15 +26,7 @@ jobs:
         pip install -r requirements.txt
     
     - name: Install SWIG
-      run: |
-        wget http://prdownloads.sourceforge.net/swig/swig-4.0.1.tar.gz
-        tar -xf swig-4.0.1.tar.gz
-        cd swig-4.0.1
-        ./configure
-        make
-        # Append to path
-        PATH=$PATH:$(pwd)
-        cd ..
+      run: sudo apt-get install swig
 
     - name: Lint with flake8
       run: |
