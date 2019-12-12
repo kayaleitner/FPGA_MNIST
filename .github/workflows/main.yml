@@ -40,10 +40,13 @@ jobs:
         make
         # Append to path
         PATH=$PATH:$(pwd)
-        cd $(SRC_DIR)
+        
 
     - name: Try Build
-      run: python setup.py sdist bdist_wheel
+      run: |
+        cd $(SRC_DIR)
+        cd python
+        python setup.py sdist bdist_wheel
 
     - name: Test
       run: python setup.py test
