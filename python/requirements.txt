@@ -6,3 +6,4 @@ wget
 pyviz
 graphviz
 pydotplus
+flask
