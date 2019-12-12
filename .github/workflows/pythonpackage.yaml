@@ -4,10 +4,10 @@ on: [push]
 
 jobs:
   build:
-
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
+        os: [ubuntu-latest, windows-latest, macOS-latest]
         python-version: [3.6, 3.7]
 
     steps:
@@ -20,29 +20,34 @@ jobs:
     
     - name: Install dependencies
       run: |
-        SRC_DIR=$(pwd)
         cd python
         python -m pip install --upgrade pip
         pip install -r requirements.txt
     
-    - name: Install SWIG
+    - name: Install SWIG (Linux)
+      if: runner.os == 'Linux'
       run: sudo apt-get install swig
+    
+    - name: Install SWIG (Mac)
+      if: runner.os == 'macOS'
+      run: brew install swig
+    
+    - name: Install SWIG (Win)
+      if: runner.os == 'Windows'
+      run: choco install swig
+
 
     - name: Lint with flake8
       run: |
-        cd $(SRC_DIR)
-        cd python
         pip install flake8
         # stop the build if there are Python syntax errors or undefined names
-        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+        flake8 python/ --count --select=E9,F63,F7,F82 --show-source --statistics
         # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
-        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+        flake8 python/ --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
     
     - name: Test with pytest
       run: |
         cd python
-        pip install pytest
-        pytest
         python setup.py test
 
     - name: Test Install

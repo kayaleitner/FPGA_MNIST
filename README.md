@@ -1,5 +1,7 @@
 # MNIST on FPGA
 
+![](https://github.com/marbleton/FPGA_MNIST/workflows/CI/badge.svg)
+
 This is a university project at TU Vienna to create a neural network 
 hardware accelerator with an FPGA.
 
