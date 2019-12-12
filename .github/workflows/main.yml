@@ -44,7 +44,11 @@ jobs:
         
 
     - name: Try Build
-      run: python setup.py sdist bdist_wheel
+      run: |
+        cd python
+        python setup.py sdist bdist_wheel
 
     - name: Test
-      run: cd python; python setup.py test
+      run: |
+        cd python
+        python setup.py test
