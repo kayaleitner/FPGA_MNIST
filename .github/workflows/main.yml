@@ -21,27 +21,29 @@ jobs:
       uses: actions/setup-python@v1
       with:
         python-version: 3.7
-    
-    - name: Install SWIG
-      if: steps.cache.outputs.cache-hit != 'true'
-      run: |
-          wget http://prdownloads.sourceforge.net/swig/swig-4.0.1.tar.gz
-          tar -xf swig-4.0.1.tar.gz
-          cd swig-4.0.1
-          ./configure
-          make
-          # Append to path
-          PATH=$PATH:$(pwd)
-    
+      
     - name: Install dependencies
       if: steps.cache.outputs.cache-hit != 'true'
       run: |
+        SRC_DIR=$(pwd)
         python -m pip install --upgrade pip
         cd python
-        python setup.py test
+        pip install -r requirements.txt
+
+    - name: Install SWIG
+      if: steps.cache.outputs.cache-hit != 'true'
+      run: |
+        wget http://prdownloads.sourceforge.net/swig/swig-4.0.1.tar.gz
+        tar -xf swig-4.0.1.tar.gz
+        cd swig-4.0.1
+        ./configure
+        make
+        # Append to path
+        PATH=$PATH:$(pwd)
+        cd $(SRC_DIR)
 
     - name: Try Build
-      run: cd python; python setup.py sdist bdist_wheel
+      run: python setup.py sdist bdist_wheel
 
     - name: Test
-      run: cd python; python setup.py test
+      run: python setup.py test
