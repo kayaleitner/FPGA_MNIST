@@ -3,8 +3,7 @@
 setup.py file for SWIG Interface of Ext
 
 """
-
-from os.path import exists
+import os
 
 import numpy
 from setuptools import setup, Extension, find_packages
@@ -18,9 +17,11 @@ except AttributeError:
     numpy_include = numpy.get_numpy_include()
 
 # Download numpy.i if needed
-if not exists('NeuralNetwork/Ext/numpy.i'):
-    print("Downloading numpy.i")
-    download_numpy_interface()
+if not os.path.exists('NeuralNetwork/Ext/numpy.i'):
+    print('Downloading numpy.i')
+    project_dir = os.path.dirname(os.path.abspath(__file__))
+    i_numpy_path = os.path.join(project_dir, 'NeuralNetwork', 'Ext')
+    download_numpy_interface(path=i_numpy_path)
 
 source_files = ['./NeuralNetwork/Ext/NNExtension.i', './NeuralNetwork/Ext/cconv.c',
                 './NeuralNetwork/Ext/cpool.c', './NeuralNetwork/Ext/crelu.c', 
@@ -48,7 +49,7 @@ setup(name='NeuralNetwork',
       py_modules=["NeuralNetwork"],
       packages=find_packages(),
       ext_modules=[NN_ext_module],
-      requires=['numpy', 'wget'],
+      requires=['numpy', 'wget', 'flask'],
       install_requires=['numpy', 'wget'],
       )
 
