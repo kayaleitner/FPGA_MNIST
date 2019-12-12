@@ -24,7 +24,7 @@ jobs:
         SRC_DIR=$(pwd)
         cd python
         python -m pip install --upgrade pip
-        pip install -r python/requirements.txt
+        pip install -r requirements.txt
     
     - name: Install SWIG
       run: |
