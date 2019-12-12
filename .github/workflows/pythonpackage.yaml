@@ -13,13 +13,7 @@ jobs:
 
     steps:
     - uses: actions/checkout@v1
-    - uses: actions/cache@v1
-      # Use Cache, see: https://github.com/actions/cache
-      id: cache
-      with:
-        path: path/to/dependencies
-        key: ${{ runner.os }}-${{ hashFiles('**/lockfiles') }}
-        
+  
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v1
       with:
@@ -31,7 +25,6 @@ jobs:
         python -m pip install --upgrade pip
     
     - name: Install SWIG
-      if: steps.cache.outputs.cache-hit != 'true'
       run: |
         wget http://prdownloads.sourceforge.net/swig/swig-4.0.1.tar.gz
         tar -xf swig-4.0.1.tar.gz
@@ -56,5 +49,6 @@ jobs:
         python setup.py test
 
     - name: Test Install
-          python setup.py sdist bdist_wheel
-          pip install .
+      run: |
+        python setup.py sdist bdist_wheel
+        pip install .
