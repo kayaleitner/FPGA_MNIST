@@ -37,18 +37,19 @@ class NNExtensionTestCase(unittest.TestCase):
     def test_conv(self):
         from NeuralNetwork.NN.ConvLayer import conv2d
         from NeuralNetwork.Ext.NeuralNetworkExtension import conv2d as conv2d_ext
+        from NeuralNetwork.Ext.NeuralNetworkExtension import conv2d_3x3
 
         # Get images and kernel and keep workload small
         I, K = get_uniform_test_image_and_kernel((5, 14, 14, 3), (3, 3, 3, 6))
 
         Y = conv2d(I, K, stride=1)
         Y_ext = conv2d_ext(I, K, 1)
-
+        Y_ext2 = conv2d_3x3(I, K)
 
         self.assertEqual(Y.shape, Y_ext.shape)
         for (di_1, di_2) in zip(Y.shape, Y_ext.shape):
             self.assertEqual(di_1, di_2)
-        #self.assertTrue(np.allclose(Y, Y_ext))
+        # self.assertTrue(np.allclose(Y, Y_ext2))
 
     def test_relu_1(self):
         from NeuralNetwork.Ext.NeuralNetworkExtension import relu1D

@@ -34,7 +34,7 @@ extra_link_args = []
 NN_ext_module = SwigExtension('NeuralNetwork/Ext/' + '_NeuralNetworkExtension',
                           sources=source_files,
                           include_dirs=include_dirs,
-                          swig_opts=['-modern','-py3'],
+                          swig_opts=['-py3'],
                           extra_compile_args=extra_args,
                           extra_link_args=extra_link_args)
 

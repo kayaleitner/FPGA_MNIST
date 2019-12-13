@@ -223,7 +223,11 @@ int conv2d_3x3(const float *__restrict data_in,
     float(*kernel_in)[fw][in_ch][out_ch] = NULL;
     float(*array_out)[out_h][out_w][out_ch] = NULL;
 
-    // Assing Multi-Dim Array Pointers for easy access
+    // Assing Multi-Dim Array Pointers for easy access    
+    
+    // Allocate memory
+    CREATE_4D_ARRAY(float, data_out, batch_out, out_h, out_w, out_ch);
+
     array_in = (float(*)[in_h][in_w][in_ch])data_in;
     kernel_in = (float(*)[fw][in_ch][out_ch])kernel;
     array_out = (float(*)[out_h][out_w][out_ch])data_out;
@@ -245,8 +249,6 @@ int conv2d_3x3(const float *__restrict data_in,
     PTR_CHECK(pout_w);
     PTR_CHECK(pout_ch);
 
-    // Allocate memory
-    CREATE_4D_ARRAY(float, data_out, batch_out, out_h, out_w, out_ch);
 
     // Assign values
     *pdata_out = data_out;
@@ -285,7 +287,8 @@ int conv2d_3x3(const float *__restrict data_in,
             // Calculate Corners
             for (int k = 0; k < in_ch; k++)
             {
-                const int H = in_h - 1, W = in_w - 1;
+                const int H = in_h - 1;
+                const int W = in_w - 1;
 
                 // Corner Top Left
                 array_out[b][0][0][kout_ch] += kernel_in[1][1][k][kout_ch] * array_in[b][0][0][k];
@@ -315,7 +318,9 @@ int conv2d_3x3(const float *__restrict data_in,
             // Vertical Lines
             for (int i = 1; i < in_h - 1; i++)
             {
-                const int H = in_h - 1, W = in_w - 1;
+                const int H = in_h - 1;
+                const int W = in_w - 1;
+
                 for (int k = 0; k < in_ch; k++)
                 {
                     float a_l = 0, a_r = 0;
