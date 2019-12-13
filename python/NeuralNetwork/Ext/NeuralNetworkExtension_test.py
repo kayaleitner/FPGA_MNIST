@@ -42,9 +42,9 @@ class NNExtensionTestCase(unittest.TestCase):
         # Get images and kernel and keep workload small
         I, K = get_uniform_test_image_and_kernel((5, 14, 14, 3), (3, 3, 3, 6))
 
-        Y = conv2d(I, K, stride=1)
         Y_ext = conv2d_ext(I, K, 1)
         Y_ext2 = conv2d_3x3(I, K)
+        Y = conv2d(I, K, stride=1)
 
         self.assertEqual(Y.shape, Y_ext.shape)
         for (di_1, di_2) in zip(Y.shape, Y_ext.shape):

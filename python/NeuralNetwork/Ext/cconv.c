@@ -289,30 +289,35 @@ int conv2d_3x3(const float *__restrict data_in,
             {
                 const int H = in_h - 1;
                 const int W = in_w - 1;
+                float c_ul = 0.0, c_ur = 0.0, c_bl = 0.0, c_br = 0.0;
 
                 // Corner Top Left
-                array_out[b][0][0][kout_ch] += kernel_in[1][1][k][kout_ch] * array_in[b][0][0][k];
-                array_out[b][0][0][kout_ch] += kernel_in[1][2][k][kout_ch] * array_in[b][0][1][k];
-                array_out[b][0][0][kout_ch] += kernel_in[2][1][k][kout_ch] * array_in[b][1][0][k];
-                array_out[b][0][0][kout_ch] += kernel_in[2][2][k][kout_ch] * array_in[b][1][1][k];
+                c_ul += kernel_in[1][1][k][kout_ch] * array_in[b][0][0][k];
+                c_ul += kernel_in[1][2][k][kout_ch] * array_in[b][0][1][k];
+                c_ul += kernel_in[2][1][k][kout_ch] * array_in[b][1][0][k];
+                c_ul += kernel_in[2][2][k][kout_ch] * array_in[b][1][1][k];
+                array_out[b][0][0][kout_ch] = c_ul;
 
                 // Corner Top Right
-                array_out[b][0][W][kout_ch] += kernel_in[1][0][k][kout_ch] * array_in[b][0][W - 1][k];
-                array_out[b][0][W][kout_ch] += kernel_in[1][1][k][kout_ch] * array_in[b][0][W][k];
-                array_out[b][0][W][kout_ch] += kernel_in[2][0][k][kout_ch] * array_in[b][1][W - 1][k];
-                array_out[b][0][W][kout_ch] += kernel_in[2][1][k][kout_ch] * array_in[b][1][W][k];
+                c_ur += kernel_in[1][0][k][kout_ch] * array_in[b][0][W - 1][k];
+                c_ur += kernel_in[1][1][k][kout_ch] * array_in[b][0][W][k];
+                c_ur += kernel_in[2][0][k][kout_ch] * array_in[b][1][W - 1][k];
+                c_ur += kernel_in[2][1][k][kout_ch] * array_in[b][1][W][k];
+                array_out[b][0][W][kout_ch] = c_ur;
 
                 // Corner Bottom Left
-                array_out[b][H][0][kout_ch] += kernel_in[0][1][k][kout_ch] * array_in[b][H - 1][0][k];
-                array_out[b][H][0][kout_ch] += kernel_in[0][2][k][kout_ch] * array_in[b][H - 1][1][k];
-                array_out[b][H][0][kout_ch] += kernel_in[1][1][k][kout_ch] * array_in[b][H][0][k];
-                array_out[b][H][0][kout_ch] += kernel_in[1][2][k][kout_ch] * array_in[b][H][1][k];
+                c_bl += kernel_in[0][1][k][kout_ch] * array_in[b][H - 1][0][k];
+                c_bl += kernel_in[0][2][k][kout_ch] * array_in[b][H - 1][1][k];
+                c_bl += kernel_in[1][1][k][kout_ch] * array_in[b][H][0][k];
+                c_bl += kernel_in[1][2][k][kout_ch] * array_in[b][H][1][k];
+                array_out[b][H][0][kout_ch] = c_bl;
 
                 // Corner Bottom Right
-                array_out[b][H][W][kout_ch] += kernel_in[1][0][k][kout_ch] * array_in[b][H - 1][W - 1][k];
-                array_out[b][H][W][kout_ch] += kernel_in[1][1][k][kout_ch] * array_in[b][H - 1][W][k];
-                array_out[b][H][W][kout_ch] += kernel_in[2][0][k][kout_ch] * array_in[b][H][W - 1][k];
-                array_out[b][H][W][kout_ch] += kernel_in[2][1][k][kout_ch] * array_in[b][H][W][k];
+                c_br += kernel_in[0][0][k][kout_ch] * array_in[b][H - 1][W - 1][k];
+                c_br += kernel_in[0][1][k][kout_ch] * array_in[b][H - 1][W][k];
+                c_br += kernel_in[1][0][k][kout_ch] * array_in[b][H][W - 1][k];
+                c_br += kernel_in[1][1][k][kout_ch] * array_in[b][H][W][k];
+                array_out[b][H][W][kout_ch] = c_br;
             }
 
             // Vertical Lines
