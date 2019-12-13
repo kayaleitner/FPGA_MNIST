@@ -2,10 +2,10 @@ import unittest
 
 import numpy as np
 
-from NeuralNetwork.ConvLayer import ConvLayer, MaxPoolLayer
-from NeuralNetwork.FullyConnected import FullyConnectedLayer
-from NeuralNetwork.Network import Network, check_layers
-from NeuralNetwork.Util import ReshapeLayer
+from NeuralNetwork.NN.ConvLayer import ConvLayer, MaxPoolLayer
+from NeuralNetwork.NN.FullyConnected import FullyConnectedLayer
+from NeuralNetwork.NN.Network import Network, check_layers
+from NeuralNetwork.NN.Util import ReshapeLayer
 
 
 class NetworkTestCase(unittest.TestCase):

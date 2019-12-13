@@ -27,13 +27,14 @@ source_files = ['./NeuralNetwork/Ext/NNExtension.i', './NeuralNetwork/Ext/cconv.
                 './NeuralNetwork/Ext/cpool.c', './NeuralNetwork/Ext/crelu.c', 
                 './NeuralNetwork/Ext/cmatmul.c', './NeuralNetwork/Ext/chelper.c']
 include_dirs = ['./NeuralNetwork/Ext/', numpy_include]
-extra_args = ['--verbose']
+# extra_args = ['--verbose']
+extra_args = []
 extra_link_args = []
 
 NN_ext_module = SwigExtension('NeuralNetwork/Ext/' + '_NeuralNetworkExtension',
                           sources=source_files,
                           include_dirs=include_dirs,
-                          swig_opts=['-py3'],
+                          swig_opts=['-modern','-py3'],
                           extra_compile_args=extra_args,
                           extra_link_args=extra_link_args)
 
@@ -49,7 +50,7 @@ setup(name='NeuralNetwork',
       py_modules=["NeuralNetwork"],
       packages=find_packages(),
       ext_modules=[NN_ext_module],
-      requires=['numpy', 'wget', 'flask'],
+      requires=['numpy', 'wget', 'flask', 'tensorflow'],
       install_requires=['numpy', 'wget'],
       )
 

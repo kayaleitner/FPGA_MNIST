@@ -27,7 +27,7 @@
 
 
 
-int MAXPool2D(const float *data_in,
+int maxPool2D(const float *data_in,
               int          batch,
               int          in_h,
               int          in_w,

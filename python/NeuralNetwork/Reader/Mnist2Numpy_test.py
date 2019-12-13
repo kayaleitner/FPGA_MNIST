@@ -5,11 +5,6 @@ from NeuralNetwork.Reader.Mnist2Numpy import MnistDataReader, MnistDataDownloade
 
 class Mnist2NumpyTestCase(unittest.TestCase):
 
-    def test_mnist_download(self):
-        loader = MnistDataDownloader()
-
-        loader.download_mnist()
-
     def test_mnist2numpy(self):
         MNIST_TEST_FILE_NAME = "t10k-images-idx3-ubyte.gz"
         MNIST_LBL_FILE_NAME = "t10k-labels-idx1-ubyte.gz"
@@ -27,7 +22,6 @@ class Mnist2NumpyTestCase(unittest.TestCase):
             break
 
     def test_usingCache(self):
-
         # Is relative to working directory
         rel_path = "../../data/MNIST/"
         data_path = os.path.abspath(rel_path)
@@ -42,6 +36,7 @@ class Mnist2NumpyTestCase(unittest.TestCase):
         lbl2, imgs2 = loader.get_path(DataSetType.TEST)
         self.assertIsNotNone(lbl2)
         self.assertIsNotNone(imgs2)
+
 
 if __name__ == '__main__':
     unittest.main()

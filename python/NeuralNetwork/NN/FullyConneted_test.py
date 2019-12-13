@@ -1,5 +1,5 @@
 import unittest
-from NeuralNetwork.FullyConnected import FullyConnectedLayer
+from NeuralNetwork.NN.FullyConnected import FullyConnectedLayer
 import numpy as np
 import tensorflow as tf
 

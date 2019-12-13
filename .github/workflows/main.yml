@@ -34,6 +34,8 @@ jobs:
     - name: Try Build
       run: |
         cd python
+        python setup.py build
+        python setup.py build_ext --build-lib .
         python setup.py sdist bdist_wheel
 
     - name: Test
