@@ -74,7 +74,7 @@ def conv2d(data_in: ndarray, kernel: ndarray, stride: int = 1):
     # 3) For each patch, right-multiplies the
     # filter matrix and the image patch vector
 
-    out = np.zeros(shape=[batch, in_h, in_w, kout_ch])
+    out = np.zeros(shape=[batch, in_h, in_w, kout_ch], dtype=data_in.dtype)
     # pad input
     in_padded = np.pad(data_in, ((0, 0), (fh2, fh2), (fw2, fw2), (0, 0)), 'constant', constant_values=(0, 0))
     # in_padded = np.pad(data_in, ((0, 0), (30, 30), (30, 30), (0, 0)), 'constant', constant_values=(0, 0))
@@ -160,7 +160,7 @@ def pooling_max(data_in: ndarray, pool_size: int, stride=2):
     out_h = int(in_h / stride)
     out_w = int(in_w / stride)
 
-    pool_out = np.zeros(shape=[batch, out_h, out_w, in_ch])
+    pool_out = np.zeros(shape=[batch, out_h, out_w, in_ch], dtype=data_in.dtype)
     i_out, j_out = 0, 0
 
     for i in range(0, in_h, stride):

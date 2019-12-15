@@ -25,8 +25,9 @@ if not exists('NeuralNetwork/Ext/numpy.i'):
 source_files = ['./NeuralNetwork/Ext/NNExtension.i', './NeuralNetwork/Ext/cconv.c',
                 './NeuralNetwork/Ext/cpool.c', './NeuralNetwork/Ext/crelu.c', 
                 './NeuralNetwork/Ext/cmatmul.c', './NeuralNetwork/Ext/chelper.c']
+source_files = [os.path.abspath(sfile) for sfile in source_files]
 include_dirs = ['./NeuralNetwork/Ext/', numpy_include]
-extra_args = ['--verbose']
+extra_args = ['--verbose','-Rpass=loop-vectorize','-Rpass-analysis=loop-vectorize','-ffast-math']
 extra_link_args = []
 
 NN_ext_module = SwigExtension('NeuralNetwork/Ext/' + '_NeuralNetworkExtension',
