@@ -7,34 +7,38 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v1
+    
     - name: Set up Python 3.7
       uses: actions/setup-python@v1
       with:
         python-version: 3.7
-    - name: Compile SWIG Extension
-        run: |
-          apt-get install swig
+
+    - uses: actions/cache@v1
+      # Use Cache, see: https://github.com/actions/cache
+      if: startsWith(runner.os, 'Linux')
+      id: cache
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        cd python
-        python setup.py test
+        pip install -r python/requirements.txt
 
+    - name: Install SWIG
+      run: sudo apt-get install swig
         
+    - name: Try Build
+      run: |
+        cd python
+        python setup.py build
+        python setup.py build_ext --build-lib .
+        python setup.py sdist bdist_wheel
+
     - name: Test
       run: |
         cd python
-        python -m unittest discover -p "*_test.py"
-
-  build:
-    name: c build
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@master
-      - name: Build project with Cmake
-        run: |
-          mkdir cmake-build
-          cd cmake-build
-          cmake ..
-          make
+        python setup.py test

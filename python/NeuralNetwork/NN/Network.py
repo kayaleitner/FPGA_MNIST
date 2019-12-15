@@ -1,7 +1,7 @@
 from typing import List
 import numpy as np
 
-from NeuralNetwork.Costs import mean_squared_error
+from NeuralNetwork.NN.Costs import mean_squared_error
 from NeuralNetwork.NN.Layer import Layer
 
 

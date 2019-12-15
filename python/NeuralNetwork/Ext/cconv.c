@@ -237,8 +237,6 @@ int conv2d_3x3(const float *__restrict data_in,
     PTR_CHECK(pout_w);
     PTR_CHECK(pout_ch);
 
-    // Allocate memory
-    CREATE_4D_ARRAY(float, data_out, batch_out, out_h, out_w, out_ch);
 
     // Assign values
     *pdata_out = data_out;

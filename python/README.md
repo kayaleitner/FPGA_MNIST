@@ -2,7 +2,8 @@
 
 ## Requirements
 
-For build and install Python3 and SWIG is required.
+- Python3
+- SWIG
 
 ## Build
 

@@ -18,7 +18,7 @@ if [ ! -d "venv" ]; then
     virtualenv venv 
     echo "Install Pip dependencies"
     ./venv/activate
-    pip install -r requirements.txt
+    pip install -r python/requirements.txt
 fi
 
 
