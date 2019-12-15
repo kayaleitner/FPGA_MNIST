@@ -120,6 +120,7 @@ int conv2d(const float *__restrict data_in,
             {
                 for (int j = 0; j < in_w; j += stride)
                 {
+                    float accum = 0.0;
                     // Sum up over the patch and convolve it
                     for (int di = 0; di < fh; di++)
                     {
@@ -139,28 +140,15 @@ int conv2d(const float *__restrict data_in,
                                 // skip computation, zero padding
                                 continue;
                             }
-                            // int ix = CLAMP(i + di - fh2, 0, in_h-1);
-                            // int jx = CLAMP(j + dj - fw2, 0, in_w-1);
-
-                            // CHECK(ix >= 0 && ix < in_h, "Invalid ix = %d", ix);
-                            // CHECK(jx >= 0 && jx < in_w, "Invalid jx = %d", jx);
-
-                            // log_info("ix = %d", ix);
-                            // log_info("jx = %d", jx);
-
-                            // ToDo: Further optimize by reducing array indexing inside loops
-                            // const float *tmp_data_in = DATA_IN_PTR(b, ix, jx, 0);
-
-                            float accum = 0.0;
                             for (int q = 0; q < kin_ch; q++)
                             {
                                 accum += array_in[b][ix][jx][q] * kernel_in[di][dj][q][k];
-                                // accum += DATA_IN(b, ix, jx, q) * KERNEL(di, dj, q, k);
                             }
-                            // DATA_OUT(b, i, j, k) = accum;
-                            array_out[b][i][j][k] = accum;
+                            
+                            
                         }
                     }
+                    array_out[b][i][j][k] = accum;
                 }
             }
         }
@@ -224,6 +212,10 @@ int conv2d_3x3(const float *__restrict data_in,
     float(*array_out)[out_h][out_w][out_ch] = NULL;
 
     // Assing Multi-Dim Array Pointers for easy access
+
+    // Allocate memory
+    CREATE_4D_ARRAY(float, data_out, batch_out, out_h, out_w, out_ch);
+
     array_in = (float(*)[in_h][in_w][in_ch])data_in;
     kernel_in = (float(*)[fw][in_ch][out_ch])kernel;
     array_out = (float(*)[out_h][out_w][out_ch])data_out;
@@ -265,9 +257,10 @@ int conv2d_3x3(const float *__restrict data_in,
             {
                 for (int j = 1; j < in_w - 1; j++)
                 {
+                    float a = 0.0;
                     for (int k = 0; k < in_ch; k++)
                     {
-                        float a = 0.0;
+                        
                         a += kernel_in[0][0][k][kout_ch] * array_in[b][i - 1][j - 1][k];
                         a += kernel_in[0][1][k][kout_ch] * array_in[b][i - 1][j][k];
                         a += kernel_in[0][2][k][kout_ch] * array_in[b][i - 1][j + 1][k];
@@ -277,77 +270,85 @@ int conv2d_3x3(const float *__restrict data_in,
                         a += kernel_in[2][0][k][kout_ch] * array_in[b][i + 1][j - 1][k];
                         a += kernel_in[2][1][k][kout_ch] * array_in[b][i + 1][j][k];
                         a += kernel_in[2][2][k][kout_ch] * array_in[b][i + 1][j + 1][k];
-                        array_out[b][i][j][kout_ch] = a;
                     }
+                    array_out[b][i][j][kout_ch] = a;
                 }
             }
 
             // Calculate Corners
+            const int H = in_h - 1;
+            const int W = in_w - 1;
+            float c_ul = 0.0, c_ur = 0.0, c_bl = 0.0, c_br = 0.0;
             for (int k = 0; k < in_ch; k++)
             {
-                const int H = in_h - 1, W = in_w - 1;
-
                 // Corner Top Left
-                array_out[b][0][0][kout_ch] += kernel_in[1][1][k][kout_ch] * array_in[b][0][0][k];
-                array_out[b][0][0][kout_ch] += kernel_in[1][2][k][kout_ch] * array_in[b][0][1][k];
-                array_out[b][0][0][kout_ch] += kernel_in[2][1][k][kout_ch] * array_in[b][1][0][k];
-                array_out[b][0][0][kout_ch] += kernel_in[2][2][k][kout_ch] * array_in[b][1][1][k];
-
+                c_ul += kernel_in[1][1][k][kout_ch] * array_in[b][0][0][k];
+                c_ul += kernel_in[1][2][k][kout_ch] * array_in[b][0][1][k];
+                c_ul += kernel_in[2][1][k][kout_ch] * array_in[b][1][0][k];
+                c_ul += kernel_in[2][2][k][kout_ch] * array_in[b][1][1][k];
+                
                 // Corner Top Right
-                array_out[b][0][W][kout_ch] += kernel_in[1][0][k][kout_ch] * array_in[b][0][W - 1][k];
-                array_out[b][0][W][kout_ch] += kernel_in[1][1][k][kout_ch] * array_in[b][0][W][k];
-                array_out[b][0][W][kout_ch] += kernel_in[2][0][k][kout_ch] * array_in[b][1][W - 1][k];
-                array_out[b][0][W][kout_ch] += kernel_in[2][1][k][kout_ch] * array_in[b][1][W][k];
-
+                c_ur += kernel_in[1][0][k][kout_ch] * array_in[b][0][W - 1][k];
+                c_ur += kernel_in[1][1][k][kout_ch] * array_in[b][0][W][k];
+                c_ur += kernel_in[2][0][k][kout_ch] * array_in[b][1][W - 1][k];
+                c_ur += kernel_in[2][1][k][kout_ch] * array_in[b][1][W][k];
+                
                 // Corner Bottom Left
-                array_out[b][H][0][kout_ch] += kernel_in[0][1][k][kout_ch] * array_in[b][H - 1][0][k];
-                array_out[b][H][0][kout_ch] += kernel_in[0][2][k][kout_ch] * array_in[b][H - 1][1][k];
-                array_out[b][H][0][kout_ch] += kernel_in[1][1][k][kout_ch] * array_in[b][H][0][k];
-                array_out[b][H][0][kout_ch] += kernel_in[1][2][k][kout_ch] * array_in[b][H][1][k];
-
+                c_bl += kernel_in[0][1][k][kout_ch] * array_in[b][H - 1][0][k];
+                c_bl += kernel_in[0][2][k][kout_ch] * array_in[b][H - 1][1][k];
+                c_bl += kernel_in[1][1][k][kout_ch] * array_in[b][H][0][k];
+                c_bl += kernel_in[1][2][k][kout_ch] * array_in[b][H][1][k];
+                
                 // Corner Bottom Right
-                array_out[b][H][W][kout_ch] += kernel_in[1][0][k][kout_ch] * array_in[b][H - 1][W - 1][k];
-                array_out[b][H][W][kout_ch] += kernel_in[1][1][k][kout_ch] * array_in[b][H - 1][W][k];
-                array_out[b][H][W][kout_ch] += kernel_in[2][0][k][kout_ch] * array_in[b][H][W - 1][k];
-                array_out[b][H][W][kout_ch] += kernel_in[2][1][k][kout_ch] * array_in[b][H][W][k];
+                c_br += kernel_in[0][0][k][kout_ch] * array_in[b][H - 1][W - 1][k];
+                c_br += kernel_in[0][1][k][kout_ch] * array_in[b][H - 1][W][k];
+                c_br += kernel_in[1][0][k][kout_ch] * array_in[b][H][W - 1][k];
+                c_br += kernel_in[1][1][k][kout_ch] * array_in[b][H][W][k];
+                
             }
+            array_out[b][0][0][kout_ch] = c_ul;
+            array_out[b][0][W][kout_ch] = c_ur;
+            array_out[b][H][0][kout_ch] = c_bl;
+            array_out[b][H][W][kout_ch] = c_br;
+            
+            
 
             // Vertical Lines
             for (int i = 1; i < in_h - 1; i++)
             {
-                const int H = in_h - 1, W = in_w - 1;
+                // Left Side
+                float a_l = 0;
                 for (int k = 0; k < in_ch; k++)
                 {
-                    float a_l = 0, a_r = 0;
-
-                    // Left Side
                     a_l += kernel_in[0][1][k][kout_ch] * array_in[b][i - 1][0][k];
                     a_l += kernel_in[0][2][k][kout_ch] * array_in[b][i - 1][1][k];
                     a_l += kernel_in[1][1][k][kout_ch] * array_in[b][i][0][k];
                     a_l += kernel_in[1][2][k][kout_ch] * array_in[b][i][1][k];
                     a_l += kernel_in[2][1][k][kout_ch] * array_in[b][i + 1][0][k];
-                    a_l += kernel_in[2][2][k][kout_ch] * array_in[b][i + 1][1][k];
-                    array_out[b][i][0][kout_ch] = a_l;
+                    a_l += kernel_in[2][2][k][kout_ch] * array_in[b][i + 1][1][k];   
+                }
+                array_out[b][i][0][kout_ch] = a_l;
 
-                    // Right Side
+                // Right Side
+                float a_r = 0;
+                for (int k = 0; k < in_ch; k++)
+                {
                     a_r += kernel_in[0][0][k][kout_ch] * array_in[b][i - 1][W - 1][k];
                     a_r += kernel_in[0][1][k][kout_ch] * array_in[b][i - 1][W][k];
                     a_r += kernel_in[1][0][k][kout_ch] * array_in[b][i][W - 1][k];
                     a_r += kernel_in[1][1][k][kout_ch] * array_in[b][i][W][k];
                     a_r += kernel_in[2][0][k][kout_ch] * array_in[b][i + 1][W - 1][k];
-                    a_r += kernel_in[2][1][k][kout_ch] * array_in[b][i + 1][W][k];
-                    array_out[b][i][W][kout_ch] = a_r;
+                    a_r += kernel_in[2][1][k][kout_ch] * array_in[b][i + 1][W][k];   
                 }
+                array_out[b][i][W][kout_ch] = a_r;
             }
 
             // Horizontal Lines
             for (int i = 1; i < in_w - 1; i++)
             {
-                const int H = in_h - 1, W = in_w - 1;
+                float a_l = 0, a_r = 0;
                 for (int k = 0; k < in_ch; k++)
                 {
-                    float a_l = 0, a_r = 0;
-
                     // Top Side
                     a_l += kernel_in[1][0][k][kout_ch] * array_in[b][0][i - 1][k];
                     a_l += kernel_in[1][1][k][kout_ch] * array_in[b][0][i][k];
@@ -355,8 +356,7 @@ int conv2d_3x3(const float *__restrict data_in,
                     a_l += kernel_in[2][0][k][kout_ch] * array_in[b][1][i - 1][k];
                     a_l += kernel_in[2][1][k][kout_ch] * array_in[b][1][i][k];
                     a_l += kernel_in[2][2][k][kout_ch] * array_in[b][1][i + 1][k];
-                    array_out[b][0][i][kout_ch] = a_l;
-
+                    
                     // Bottom Side
                     a_r += kernel_in[0][0][k][kout_ch] * array_in[b][H - 1][i - 1][k];
                     a_r += kernel_in[0][1][k][kout_ch] * array_in[b][H - 1][i][k];
@@ -364,8 +364,9 @@ int conv2d_3x3(const float *__restrict data_in,
                     a_r += kernel_in[1][0][k][kout_ch] * array_in[b][H][i - 1][k];
                     a_r += kernel_in[1][1][k][kout_ch] * array_in[b][H][i][k];
                     a_r += kernel_in[1][2][k][kout_ch] * array_in[b][H][i + 1][k];
-                    array_out[b][H][i][kout_ch] = a_r;
                 }
+                array_out[b][0][i][kout_ch] = a_l;
+                array_out[b][H][i][kout_ch] = a_r;
             }
         }
     }
