@@ -28,8 +28,8 @@ entity EggNet_v1_0_M00_AXIS is
 		M_AXIS_TVALID	: out std_logic;
 		-- TDATA is the primary payload that is used to provide the data that is passing across the interface from the master.
 		M_AXIS_TDATA	: out std_logic_vector(C_M_AXIS_TDATA_WIDTH-1 downto 0);
-		-- TSTRB is the byte qualifier that indicates whether the content of the associated byte of TDATA is processed as a data byte or a position byte.
-		M_AXIS_TSTRB	: out std_logic_vector((C_M_AXIS_TDATA_WIDTH/8)-1 downto 0);
+		-- TKEEP is the byte qualifier that indicates whether the content of the associated byte of TDATA is processed as a data byte or a position byte.
+		M_AXIS_TKEEP	: out std_logic_vector((C_M_AXIS_TDATA_WIDTH/8)-1 downto 0);
 		-- TLAST indicates the boundary of a packet.
 		M_AXIS_TLAST	: out std_logic;
 		-- TREADY indicates that the slave can accept a transfer in the current cycle.
@@ -110,7 +110,7 @@ begin
 	M_AXIS_TVALID	<= axis_tvalid_delay;
 	M_AXIS_TDATA	<= stream_data_out;
 	M_AXIS_TLAST	<= axis_tlast_delay;
-	M_AXIS_TSTRB	<= (others => '1');
+	M_AXIS_TKEEP	<= (others => '1');
 
 
 	-- Control state machine implementation                                               
@@ -227,7 +227,7 @@ begin
 	    if (rising_edge (M_AXIS_ACLK)) then                                         
 	      if(M_AXIS_ARESETN = '0') then                                             
 	    	stream_data_out <= std_logic_vector(to_unsigned(sig_one,C_M_AXIS_TDATA_WIDTH));  
-	      elsif (tx_en = '1') then -- && M_AXIS_TSTRB(byte_index)                   
+	      elsif (tx_en = '1') then -- && M_AXIS_TKEEP(byte_index)                   
 	        stream_data_out <= std_logic_vector( to_unsigned(read_pointer,C_M_AXIS_TDATA_WIDTH) + to_unsigned(sig_one,C_M_AXIS_TDATA_WIDTH));
 	      end if;                                                                   
 	     end if;                                                                    

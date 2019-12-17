@@ -5,7 +5,9 @@ use ieee.numeric_std.all;
 entity EggNet_v1_0_S00_AXIS is
 	generic (
 		-- Users to add parameters here
-
+    BRAM_ADDR_WIDTH		        : integer := 10;
+    BRAM_DATA_WIDTH		        : integer := 8;
+    BRAM_ADDR_BLOCK_WIDTH     : integer := 784;
 		-- User parameters ends
 		-- Do not modify the parameters beyond this line
 
@@ -14,7 +16,13 @@ entity EggNet_v1_0_S00_AXIS is
 	);
 	port (
 		-- Users to add ports here
-
+    -- BRAM write
+    BRAM_PA_addr_o         : out std_logic_vector(BRAM_ADDR_WIDTH-1 downto 0);
+    BRAM_PA_clk_o          : out std_logic;
+    BRAM_PA_dout_o         : out std_logic_vector(BRAM_DATA_WIDTH-1 downto 0);
+    BRAM_PA_wea_o          : out std_logic_vector((BRAM_DATA_WIDTH/8)-1  downto 0);
+    -- Status
+    Invalid_block_o        : out std_logic;
 		-- User ports ends
 		-- Do not modify the ports beyond this line
 
@@ -27,7 +35,7 @@ entity EggNet_v1_0_S00_AXIS is
 		-- Data in
 		S_AXIS_TDATA	: in std_logic_vector(C_S_AXIS_TDATA_WIDTH-1 downto 0);
 		-- Byte qualifier
-		S_AXIS_TSTRB	: in std_logic_vector((C_S_AXIS_TDATA_WIDTH/8)-1 downto 0);
+		S_AXIS_TKEEP	: in std_logic_vector((C_S_AXIS_TDATA_WIDTH/8)-1 downto 0);
 		-- Indicates boundary of last packet
 		S_AXIS_TLAST	: in std_logic;
 		-- Data is in valid
@@ -79,6 +87,15 @@ architecture arch_imp of EggNet_v1_0_S00_AXIS is
 	signal writes_done : std_logic;
 
 	type BYTE_FIFO_TYPE is array (0 to (NUMBER_OF_INPUT_WORDS-1)) of std_logic_vector(((C_S_AXIS_TDATA_WIDTH/4)-1)downto 0);
+  
+  -- user defined constants  
+  constant BLOCK_0_START_ADDR : std_logic_vector(BRAM_ADDR_WIDTH-1 downto 0) := (others => '0'); 
+  constant BLOCK_1_START_ADDR : std_logic_vector(BRAM_ADDR_WIDTH-1 downto 0) := std_logic_vector(
+                                    to_unsigned(BRAM_ADDR_BLOCK_WIDTH,BRAM_ADDR_WIDTH);
+  -- user defined signals
+  signal block_select : std_logic; -- 0 = block 0, 1 = block 1
+  signal block_active : std_logic; -- indicates if a block is active 
+  signal bram_byte_counter : std_logic;
 begin
 	-- I/O Connections assignments
 
@@ -171,7 +188,12 @@ begin
 	end generate FIFO_GEN;
 
 	-- Add user logic here
-
-	-- User logic ends
+  BRAM_PA_clk_o <= S_AXIS_ACLK;
+  
+  BRAM_PA_addr_o  
+  BRAM_PA_dout_o
+	BRAM_PA_wea_o 
+  
+  -- User logic ends
 
 end arch_imp;

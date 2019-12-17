@@ -16,7 +16,7 @@ entity EggNet_v1_0_S00_AXI is
 	);
 	port (
 		-- Users to add ports here
-
+    Status_i : in std_logic_vector(C_S_AXI_DATA_WIDTH-1 downto 0);
 		-- User ports ends
 		-- Do not modify the ports beyond this line
 
@@ -352,7 +352,7 @@ begin
 	    loc_addr := axi_araddr(ADDR_LSB + OPT_MEM_ADDR_BITS downto ADDR_LSB);
 	    case loc_addr is
 	      when b"00" =>
-	        reg_data_out <= slv_reg0;
+	        reg_data_out <= Status_i; -- 32 bit status register
 	      when b"01" =>
 	        reg_data_out <= slv_reg1;
 	      when b"10" =>
