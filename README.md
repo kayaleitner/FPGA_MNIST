@@ -13,3 +13,17 @@ hardware accelerator with an FPGA.
 - Create VHDL files for the various operations
 - Handle on board communication
 
+## Build
+
+For a quickstart run the script `bootstrap.sh`.
+
+### Requirements
+
+- Vivado, at least 2017.4, for creating the FPGA implemenation
+- Python, >3.6 + packages in `python/requirements.txt`
+- C11 compiler for the Python Swig Extension
+- GHDL: For VHDL testbench simulation checking
+
+### Python with SWIG Extension
+
+To accelerate certain neural network functions (conv2d, pool, etc.) those are reprogrammed in C and wrapped via SWIG. See `python/README.md` for more details on this topic.

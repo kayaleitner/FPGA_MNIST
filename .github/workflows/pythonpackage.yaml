@@ -38,6 +38,7 @@ jobs:
       run: choco install swig
 
     - name: Test with pytest
+      if: runner.os != 'Windows'
       run: |
         cd python
         python setup.py build_ext --build-lib .
@@ -46,6 +47,7 @@ jobs:
         python setup.py test
     
     - name: Test with pytest (Windoof)
+      if: runner.os == 'Windows'
       run: |
         cd python
         # Use the minigw32 compiler because Microsoft is not able to implement the C standard
