@@ -22,7 +22,8 @@ entity EggNet_v1_0_S00_AXIS is
     BRAM_PA_dout_o         : out std_logic_vector(BRAM_DATA_WIDTH-1 downto 0);
     BRAM_PA_wea_o          : out std_logic_vector((BRAM_DATA_WIDTH/8)-1  downto 0);
     -- Status
-    Invalid_block_o        : out std_logic;
+    Invalid_block_o        : out std_logic; -- '1' if no tlast signal or if block size not correct 
+    Block_done_o           : out std_logic; -- indicates if block received successfully 
 		-- User ports ends
 		-- Do not modify the ports beyond this line
 
@@ -93,13 +94,15 @@ architecture arch_imp of EggNet_v1_0_S00_AXIS is
   constant BLOCK_1_START_ADDR : std_logic_vector(BRAM_ADDR_WIDTH-1 downto 0) := std_logic_vector(
                                     to_unsigned(BRAM_ADDR_BLOCK_WIDTH,BRAM_ADDR_WIDTH);
   -- user defined signals
-  signal block_select : std_logic; -- 0 = block 0, 1 = block 1
-  signal block_active : std_logic; -- indicates if a block is active 
-  signal bram_ready : std_logic; -- indicates if a block is active 
-  signal bram_byte_counter : std_logic_vector(1 downto 0); -- used to tranfrom 8 bit to 32 bit  
-  signal bram_byte_counter : std_logic_vector(1 downto 0); -- used to tranfrom 8 bit to 32 bit  
-  signal bram_buffer  : std_logic_vector(C_S_AXIS_TDATA_WIDTH-1 downto 0);
-  signal bram_addr    : std_logic_vector(BRAM_ADDR_WIDTH-1 downto 0);
+  signal block_select       : std_logic; -- 0 = block 0, 1 = block 1
+  signal block_active       : std_logic; -- indicates if a block is active 
+  signal block_active_R     : std_logic; -- indicates if a block is active 
+  signal addr_counter       : std_logic_vector(C_S_AXIS_TDATA_WIDTH-1 downto 0);
+  signal bram_byte_counter  : std_logic_vector(1 downto 0); -- used to tranfrom 8 bit to 32 bit  
+  signal bram_byte_counter  : std_logic_vector(1 downto 0); -- used to tranfrom 8 bit to 32 bit  
+  signal bram_buffer        : std_logic_vector(C_S_AXIS_TDATA_WIDTH-1 downto 0); -- buffers data
+  signal bram_addr          : std_logic_vector(BRAM_ADDR_WIDTH-1 downto 0);
+  signal tlast_buf          : std_logic; -- buffers tlast 
 begin
 	-- I/O Connections assignments
 
@@ -155,16 +158,16 @@ begin
 	      writes_done <= '0';
 	    else
 	      if (write_pointer <= NUMBER_OF_INPUT_WORDS-1) then
-	        if (fifo_wren = '1' and bram_ready = '1' and bram_byte_counter = "11" ) then
+	        if (fifo_wren = '1' and bram_byte_counter = "11" ) then
 	          -- write pointer is incremented after every write to the FIFO
 	          -- when FIFO write signal is enabled.
 	          writes_done <= '0';
-          elsif (fifo_wren = '1' and bram_ready ='1' and bram_byte_counter /= "11" ) then
+          elsif (fifo_wren = '1'and bram_byte_counter /= "11" ) then
 	          -- write pointer is incremented after every write to the FIFO
 	          -- when FIFO write signal is enabled.
 	          write_pointer <= write_pointer + 1;
 	          writes_done <= '0';  
-          elsif fifo_wren = '0' and bram_ready = '1' and bram_byte_counter = "11"  then 
+          elsif fifo_wren = '0' and bram_byte_counter = "11"  then 
             write_pointer <= write_pointer - 1; 
 	        end if;
 	        if ((write_pointer = NUMBER_OF_INPUT_WORDS-1) or S_AXIS_TLAST = '1') then
@@ -204,49 +207,78 @@ begin
 	  if S_AXIS_ARESETN = '0' then
       bram_buffer <= (others => '0');
       bram_addr <= (others => '0');
-      block_select <= '0';
+      block_select <= '1';
       block_active <= '0';
       bram_byte_counter (others => '11');
+      addr_counter <= (others => '0');
+      bram_addr <= (others => '0');
+      block_active_R <= '0';      
+      tlast_buf <= '0';
+      Invalid_block_o <= '0';
+      Block_done_o <= '0';
     elsif (rising_edge (S_AXIS_ACLK)) then
       if bram_byte_counter = "11" then 
-        if bram_ready = '1' and write_pointer > 0 then 
+        -- check if data is available in FIFO 
+        if write_pointer > 0 then 
           bram_buffer <= stream_data_fifo(write_pointer-1);
           bram_byte_counter <= (others => '0');
+          BRAM_PA_wea_o <= (others => '1')
+          Block_done_o <= '0';  
+          -- Set initial address of RAM block 
+          if block_active = '0' then 
+            block_active <= '1';
+            block_select <= not block_select; 
+            if block_select = '1' then 
+              bram_addr <= BLOCK_0_START_ADDR;
+            else 
+              bram_addr <= BLOCK_1_START_ADDR;
+            end if;  
+          end if;  
+        else -- if FIFO is empty transaction ends and it is checked if block size is valid 
+          block_active <= '0';
+          BRAM_PA_wea_o <= (others => '0');
+          Block_done_o <= '1';  
+          tlast_buf <= '0';
+          if block_select = '0' then 
+            if bram_addr = std_logic_vector(unsigned(BLOCK_0_START_ADDR)+
+                                          to_unsigned(BRAM_ADDR_BLOCK_WIDTH,BRAM_ADDR_WIDTH)-1) then
+              
+              Invalid_block_o <= not tlast_buf; -- block is invalid if no tlast signal is detected
+            else 
+              Invalid_block_o <= '1';
+            end if;
+          else 
+            if bram_addr = std_logic_vector(unsigned(BLOCK_0_START_ADDR)+
+                                          to_unsigned(BRAM_ADDR_BLOCK_WIDTH,BRAM_ADDR_WIDTH)-1) then
+                
+              Invalid_block_o <= not tlast_buf; -- block is invalid if no tlast signal is detected
+            else 
+              Invalid_block_o <= '1';
+            end if;
+          end if;    
         end if;  
-      else 
+      else byte counter to save each byte successively 
         bram_byte_counter <= std_logic_vector(unsigned(bram_byte_counter)+1);
+      end if;   
+      -- if block active increment block ram address at each clock 
+      if block_active = '1' then
+        bram_addr <= std_logic_vector(unsigned(bram_addr)+1);
       end if;
-       
-	  end  if;
-	end process 
-
- 	Conv32_to_8: process(S_AXIS_ARESETN,S_AXIS_ACLK)
-	begin
-	  if S_AXIS_ARESETN = '0' then
-      bram_buffer <= (others => '0');
-      bram_addr <= (others => '0');
-      block_select <= '0';
-      block_active <= '0';
-      bram_byte_counter (others => '11');
-    elsif (rising_edge (S_AXIS_ACLK)) then
-      if bram_byte_counter = "11" and bram_ready then 
-        bram_buffer <= stream_data_fifo(write_pointer);
-        bram_byte_counter <= (others => '0');
-      else 
-        bram_byte_counter <= std_logic_vector(unsigned(bram_byte_counter)+1);
-      end if;
-       
+      -- buffer tlast signal till FIFO is empty 
+      if S_AXIS_TLAST = '1' then 
+        tlast_buf <= '1';
+      end if;  
 	  end  if;
 	end process 
   
-  with bram_byte_counter select BRAM_PA_dout_o <=
-	bram_buffer((BRAM_DATA_WIDTH*1)-1 downto 0) when "00",
-	bram_buffer((BRAM_DATA_WIDTH*2)-1 downto (BRAM_DATA_WIDTH*1) when "01",
-	bram_buffer((BRAM_DATA_WIDTH*3)-1 downto (BRAM_DATA_WIDTH*2) when "10",
-	bram_buffer((BRAM_DATA_WIDTH*4)-1 downto (BRAM_DATA_WIDTH*3) when "11";
+  with bram_byte_counter select 
+  BRAM_PA_dout_o <=
+    bram_buffer((BRAM_DATA_WIDTH*1)-1 downto 0)                   when "00",
+    bram_buffer((BRAM_DATA_WIDTH*2)-1 downto (BRAM_DATA_WIDTH*1)  when "01",
+    bram_buffer((BRAM_DATA_WIDTH*3)-1 downto (BRAM_DATA_WIDTH*2)  when "10",
+    bram_buffer((BRAM_DATA_WIDTH*4)-1 downto (BRAM_DATA_WIDTH*3)  when "11";
   
   BRAM_PA_clk_o <= S_AXIS_ACLK;  
-	BRAM_PA_wea_o <= (others => '1');
   
   -- User logic ends
 

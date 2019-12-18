@@ -89,31 +89,31 @@ signal bram_pb_rst  :std_logic_vector((BRAM_DATA_WIDTH/8)-1  downto 0); -- ACTIV
 begin
 
 AXI4_stream : if AXI4_STRAM_INPUT generate 
--- Instantiation of Axi Bus Interface S00_AXIS
-EggNet_v1_0_S00_AXIS_inst : EggNet_v1_0_S00_AXIS
-	generic map (
-    BRAM_ADDR_WIDTH		    => BRAM_ADDR_WIDTH,		   
-    BRAM_DATA_WIDTH		    => BRAM_DATA_WIDTH,		   
-    BRAM_ADDR_BLOCK_WIDTH => BRAM_ADDR_BLOCK_WIDTH,
-		C_S_AXIS_TDATA_WIDTH	=> C_S00_AXIS_TDATA_WIDTH
-	)
-	port map (
-    -- BRAM Port A 
-    BRAM_addr_o  => bram_pa_addr,
-    BRAM_clk_o   => bram_clk,
-    BRAM_dout_o  => bram_pa_data_wr,
-    BRAM_wea_o   => bram_pa_wea, 
-    -- Stauts
-    Invalid_block_o => S_layer_invalid_block_o,
-    -- AXI4 stream slave interface 
-		S_AXIS_ACLK	=> s_layer_clk_i,
-		S_AXIS_ARESETN	=> s_layer_aresetn_i,
-		S_AXIS_TREADY	=> s_layer_tready_o,
-		S_AXIS_TDATA	=> s_layer_tdata_i,
-		S_AXIS_TKEEP	=> s_layer_tkeep_i,
-		S_AXIS_TLAST	=> s_layer_tlast_i,
-		S_AXIS_TVALID	=> s_layer_tvalid_i
-	);
+  -- Instantiation of Axi Bus Interface S00_AXIS if previous layer is input layer 
+  EggNet_v1_0_S00_AXIS_inst : EggNet_v1_0_S00_AXIS
+    generic map (
+      BRAM_ADDR_WIDTH		    => BRAM_ADDR_WIDTH,		   
+      BRAM_DATA_WIDTH		    => BRAM_DATA_WIDTH,		   
+      BRAM_ADDR_BLOCK_WIDTH => BRAM_ADDR_BLOCK_WIDTH,
+      C_S_AXIS_TDATA_WIDTH	=> C_S00_AXIS_TDATA_WIDTH
+    )
+    port map (
+      -- BRAM Port A 
+      BRAM_addr_o  => bram_pa_addr,
+      BRAM_clk_o   => bram_clk,
+      BRAM_dout_o  => bram_pa_data_wr,
+      BRAM_wea_o   => bram_pa_wea, 
+      -- Stauts
+      Invalid_block_o => S_layer_invalid_block_o,
+      -- AXI4 stream slave interface 
+      S_AXIS_ACLK	=> s_layer_clk_i,
+      S_AXIS_ARESETN	=> s_layer_aresetn_i,
+      S_AXIS_TREADY	=> s_layer_tready_o,
+      S_AXIS_TDATA	=> s_layer_tdata_i,
+      S_AXIS_TKEEP	=> s_layer_tkeep_i,
+      S_AXIS_TLAST	=> s_layer_tlast_i,
+      S_AXIS_TVALID	=> s_layer_tvalid_i
+    );
 end generate;
   
 Bram_inst : blk_mem_gen_0
