@@ -46,11 +46,11 @@ component EggNet_v1_0_S00_AXIS is
   BRAM_ADDR_BLOCK_WIDTH     : integer := 784;  
 	);
 	port (
-  BRAM_PA_addr_o         : out std_logic_vector(BRAM_ADDR_WIDTH-1 downto 0);
-  BRAM_PA_clk_o          : out std_logic;
-  BRAM_PA_dout_o         : out std_logic_vector(BRAM_DATA_WIDTH-1 downto 0);
-  BRAM_PA_wea_o          : out std_logic_vector((BRAM_DATA_WIDTH/8)-1  downto 0);
-  Invalid_block_o        : out std_logic;
+  BRAM_addr_o         : out std_logic_vector(BRAM_ADDR_WIDTH-1 downto 0);
+  BRAM_clk_o          : out std_logic;
+  BRAM_dout_o         : out std_logic_vector(BRAM_DATA_WIDTH-1 downto 0);
+  BRAM_wea_o          : out std_logic_vector((BRAM_DATA_WIDTH/8)-1  downto 0);
+  Invalid_block_o     : out std_logic;
 	S_AXIS_ACLK	: in std_logic;
 	S_AXIS_ARESETN	: in std_logic;
 	S_AXIS_TREADY	: out std_logic;
@@ -99,10 +99,10 @@ EggNet_v1_0_S00_AXIS_inst : EggNet_v1_0_S00_AXIS
 	)
 	port map (
     -- BRAM Port A 
-    BRAM_PA_addr_o  => bram_pa_addr,
-    BRAM_PA_clk_o   => bram_clk,
-    BRAM_PA_dout_o  => bram_pa_data_wr,
-    BRAM_PA_wea_o   => bram_pa_wea, 
+    BRAM_addr_o  => bram_pa_addr,
+    BRAM_clk_o   => bram_clk,
+    BRAM_dout_o  => bram_pa_data_wr,
+    BRAM_wea_o   => bram_pa_wea, 
     -- Stauts
     Invalid_block_o => S_layer_invalid_block_o,
     -- AXI4 stream slave interface 
@@ -124,7 +124,9 @@ port map (clka  => bram_clk,
           clkb  => bram_clk,
           rstb  => bram_pb_rst,
           addrb => bram_pb_addr,
-          doutb => bram_pb_data_rd
+          doutb => bram_pb_data_rd,
+          rsta_busy => open,
+          rstb_busy => open
 );
 
 

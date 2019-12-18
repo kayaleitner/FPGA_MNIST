@@ -95,7 +95,11 @@ architecture arch_imp of EggNet_v1_0_S00_AXIS is
   -- user defined signals
   signal block_select : std_logic; -- 0 = block 0, 1 = block 1
   signal block_active : std_logic; -- indicates if a block is active 
-  signal bram_byte_counter : std_logic;
+  signal bram_ready : std_logic; -- indicates if a block is active 
+  signal bram_byte_counter : std_logic_vector(1 downto 0); -- used to tranfrom 8 bit to 32 bit  
+  signal bram_byte_counter : std_logic_vector(1 downto 0); -- used to tranfrom 8 bit to 32 bit  
+  signal bram_buffer  : std_logic_vector(C_S_AXIS_TDATA_WIDTH-1 downto 0);
+  signal bram_addr    : std_logic_vector(BRAM_ADDR_WIDTH-1 downto 0);
 begin
 	-- I/O Connections assignments
 
@@ -151,11 +155,17 @@ begin
 	      writes_done <= '0';
 	    else
 	      if (write_pointer <= NUMBER_OF_INPUT_WORDS-1) then
-	        if (fifo_wren = '1') then
+	        if (fifo_wren = '1' and bram_ready = '1' and bram_byte_counter = "11" ) then
+	          -- write pointer is incremented after every write to the FIFO
+	          -- when FIFO write signal is enabled.
+	          writes_done <= '0';
+          elsif (fifo_wren = '1' and bram_ready ='1' and bram_byte_counter /= "11" ) then
 	          -- write pointer is incremented after every write to the FIFO
 	          -- when FIFO write signal is enabled.
 	          write_pointer <= write_pointer + 1;
-	          writes_done <= '0';
+	          writes_done <= '0';  
+          elsif fifo_wren = '0' and bram_ready = '1' and bram_byte_counter = "11"  then 
+            write_pointer <= write_pointer - 1; 
 	        end if;
 	        if ((write_pointer = NUMBER_OF_INPUT_WORDS-1) or S_AXIS_TLAST = '1') then
 	          -- reads_done is asserted when NUMBER_OF_INPUT_WORDS numbers of streaming data 
@@ -188,11 +198,55 @@ begin
 	end generate FIFO_GEN;
 
 	-- Add user logic here
-  BRAM_PA_clk_o <= S_AXIS_ACLK;
   
-  BRAM_PA_addr_o  
-  BRAM_PA_dout_o
-	BRAM_PA_wea_o 
+ 	Conv32_to_8: process(S_AXIS_ARESETN,S_AXIS_ACLK)
+	begin
+	  if S_AXIS_ARESETN = '0' then
+      bram_buffer <= (others => '0');
+      bram_addr <= (others => '0');
+      block_select <= '0';
+      block_active <= '0';
+      bram_byte_counter (others => '11');
+    elsif (rising_edge (S_AXIS_ACLK)) then
+      if bram_byte_counter = "11" then 
+        if bram_ready = '1' and write_pointer > 0 then 
+          bram_buffer <= stream_data_fifo(write_pointer-1);
+          bram_byte_counter <= (others => '0');
+        end if;  
+      else 
+        bram_byte_counter <= std_logic_vector(unsigned(bram_byte_counter)+1);
+      end if;
+       
+	  end  if;
+	end process 
+
+ 	Conv32_to_8: process(S_AXIS_ARESETN,S_AXIS_ACLK)
+	begin
+	  if S_AXIS_ARESETN = '0' then
+      bram_buffer <= (others => '0');
+      bram_addr <= (others => '0');
+      block_select <= '0';
+      block_active <= '0';
+      bram_byte_counter (others => '11');
+    elsif (rising_edge (S_AXIS_ACLK)) then
+      if bram_byte_counter = "11" and bram_ready then 
+        bram_buffer <= stream_data_fifo(write_pointer);
+        bram_byte_counter <= (others => '0');
+      else 
+        bram_byte_counter <= std_logic_vector(unsigned(bram_byte_counter)+1);
+      end if;
+       
+	  end  if;
+	end process 
+  
+  with bram_byte_counter select BRAM_PA_dout_o <=
+	bram_buffer((BRAM_DATA_WIDTH*1)-1 downto 0) when "00",
+	bram_buffer((BRAM_DATA_WIDTH*2)-1 downto (BRAM_DATA_WIDTH*1) when "01",
+	bram_buffer((BRAM_DATA_WIDTH*3)-1 downto (BRAM_DATA_WIDTH*2) when "10",
+	bram_buffer((BRAM_DATA_WIDTH*4)-1 downto (BRAM_DATA_WIDTH*3) when "11";
+  
+  BRAM_PA_clk_o <= S_AXIS_ACLK;  
+	BRAM_PA_wea_o <= (others => '1');
   
   -- User logic ends
 
