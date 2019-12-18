@@ -7,7 +7,8 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest, macOS-latest]
+        # os: [ubuntu-latest, windows-latest, macOS-latest]
+        os: [ubuntu-latest, macOS-latest]
         python-version: [3.6, 3.7]
 
     steps:
@@ -37,10 +38,21 @@ jobs:
       run: choco install swig
 
     - name: Test with pytest
+      if: runner.os != 'Windows'
       run: |
         cd python
-        python setup.py build
         python setup.py build_ext --build-lib .
+        python setup.py build
+        python setup.py sdist bdist_wheel
+        python setup.py test
+    
+    - name: Test with pytest (Windoof)
+      if: runner.os == 'Windows'
+      run: |
+        cd python
+        # Use the minigw32 compiler because Microsoft is not able to implement the C standard
+        python setup.py build_ext  --global-option --compiler=mingw32 --build-lib .
+        python setup.py build
         python setup.py sdist bdist_wheel
         python setup.py test
 

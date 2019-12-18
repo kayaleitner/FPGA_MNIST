@@ -25,6 +25,8 @@ def get_uniform_test_image_and_kernel(shape_image, shape_kernel):
 
 class NNExtensionTestCase(unittest.TestCase):
 
+    NUMERIC_EPS = 1e-4
+
     def test_generic(self):
         from NeuralNetwork.Ext.NeuralNetworkExtension import conv2d, maxPool2D, relu4D
         I, K = get_uniform_test_image_and_kernel((10, 28, 28, 10), (3, 3, 10, 20))
@@ -49,7 +51,7 @@ class NNExtensionTestCase(unittest.TestCase):
         self.assertEqual(Y.shape, Y_ext.shape)
         for (di_1, di_2) in zip(Y.shape, Y_ext.shape):
             self.assertEqual(di_1, di_2)
-        self.assertTrue(np.allclose(Y, Y_ext2))
+        self.assertTrue(np.allclose(Y, Y_ext2, atol=self.NUMERIC_EPS))
 
     def test_conv_speed(self):
         import time
@@ -174,4 +176,4 @@ class NNExtensionTestCase(unittest.TestCase):
             else:
                 raise ValueError()
 
-            self.assertTrue(np.allclose(x_relu1, x_relu2))
+            self.assertTrue(np.allclose(x_relu1, x_relu2, atol=self.NUMERIC_EPS))

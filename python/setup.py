@@ -4,7 +4,7 @@ setup.py file for SWIG Interface of Ext
 
 """
 import os
-
+import platform
 import numpy
 from setuptools import setup, Extension, find_packages
 
@@ -24,19 +24,29 @@ if not os.path.exists('NeuralNetwork/Ext/numpy.i'):
     download_numpy_interface(path=i_numpy_path)
 
 source_files = ['./NeuralNetwork/Ext/NNExtension.i', './NeuralNetwork/Ext/cconv.c',
-                './NeuralNetwork/Ext/cpool.c', './NeuralNetwork/Ext/crelu.c', 
+                './NeuralNetwork/Ext/cpool.c', './NeuralNetwork/Ext/crelu.c',
                 './NeuralNetwork/Ext/cmatmul.c', './NeuralNetwork/Ext/chelper.c']
 source_files = [os.path.abspath(sfile) for sfile in source_files]
 include_dirs = ['./NeuralNetwork/Ext/', numpy_include]
-extra_args = ['--verbose','-Rpass=loop-vectorize','-Rpass-analysis=loop-vectorize','-ffast-math']
+
+# Simple Platform Check (not entirely accurate because here should the compiler be checked)
+# ToDo: Should be done better for example via CMake -> https://www.benjack.io/2017/06/12/python-cpp-tests.html
+if platform.system() == 'Linux':
+    extra_args = []
+elif platform.system() == 'Darwin':
+    extra_args = ['--verbose', '-Rpass=loop-vectorize', '-Rpass-analysis=loop-vectorize', '-ffast-math']
+elif platform.system() == 'Windows':
+    extra_args = []
+else:
+    raise RuntimeError('Operating System not supported?')
 extra_link_args = []
 
 NN_ext_module = SwigExtension('NeuralNetwork/Ext/' + '_NeuralNetworkExtension',
-                          sources=source_files,
-                          include_dirs=include_dirs,
-                          swig_opts=['-py3'],
-                          extra_compile_args=extra_args,
-                          extra_link_args=extra_link_args)
+                              sources=source_files,
+                              include_dirs=include_dirs,
+                              swig_opts=['-py3'],
+                              extra_compile_args=extra_args,
+                              extra_link_args=extra_link_args)
 
 setup(name='NeuralNetwork',
       version='1.0',
