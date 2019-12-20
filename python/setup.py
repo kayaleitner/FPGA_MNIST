@@ -60,7 +60,7 @@ setup(name='NeuralNetwork',
       py_modules=["NeuralNetwork"],
       packages=find_packages(),
       ext_modules=[NN_ext_module],
-      requires=['numpy', 'wget', 'flask', 'tensorflow'],
+      requires=['numpy', 'wget', 'flask', 'tensorflow', 'keras', 'torch', 'torchvision', 'scipy'],
       install_requires=['numpy', 'wget'],
       )
 

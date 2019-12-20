@@ -7,3 +7,6 @@ pyviz
 graphviz
 pydotplus
 flask
+torch
+torchvision
+keras
