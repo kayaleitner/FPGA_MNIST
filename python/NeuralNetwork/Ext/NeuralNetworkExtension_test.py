@@ -24,7 +24,6 @@ def get_uniform_test_image_and_kernel(shape_image, shape_kernel):
 
 
 class NNExtensionTestCase(unittest.TestCase):
-
     NUMERIC_EPS = 1e-4
 
     def test_generic(self):
@@ -177,3 +176,12 @@ class NNExtensionTestCase(unittest.TestCase):
                 raise ValueError()
 
             self.assertTrue(np.allclose(x_relu1, x_relu2, atol=self.NUMERIC_EPS))
+
+    def test_int(self):
+        from NeuralNetwork.NN.Activations import relu
+        import NeuralNetwork.Ext.NeuralNetworkExtension as NNExt
+        x1 = np.random.rand(100).astype(dtype=np.int16) * 10 - 5
+        x2 = x1.copy()
+        NNExt.relu_int16_t(x=x1)
+        x2 = relu(x2)
+        np.allclose(x1, x2, atol=self.NUMERIC_EPS)
