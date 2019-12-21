@@ -15,12 +15,12 @@ if __name__ == '__main__':
     transforms = transforms.Compose([
         transforms.ToTensor()
     ])
-
+    BATCH_SIZE = 32
     # data sets & data loaders
-    trainset = torchvision.datasets.FashionMNIST('./data', download=True, train=True, transform=transforms)
-    testset = torchvision.datasets.FashionMNIST('./data', download=True, train=False, transform=transforms)
-    trainloader = torch.utils.data.DataLoader(trainset, batch_size=4, shuffle=True)
-    testloader = torch.utils.data.DataLoader(testset, batch_size=4, shuffle=False)
+    trainset = torchvision.datasets.MNIST('./data', download=True, train=True, transform=transforms)
+    testset = torchvision.datasets.MNIST('./data', download=True, train=False, transform=transforms)
+    trainloader = torch.utils.data.DataLoader(trainset, batch_size=BATCH_SIZE, shuffle=True)
+    testloader = torch.utils.data.DataLoader(testset, batch_size=BATCH_SIZE, shuffle=False)
 
     # constant for classes
     classes = MNIST_CLASSES
@@ -68,7 +68,7 @@ if __name__ == '__main__':
             # forward + backward + optimize
             outputs = net(inputs)
             pred = outputs.argmax(dim=1)  # get the index of the max log-probability
-            accurracy = (pred == labels).sum() / len(labels)
+            accurracy = (pred == labels).sum() / float(len(labels))
             loss = criterion(outputs, labels)
 
             loss.backward()
@@ -79,7 +79,7 @@ if __name__ == '__main__':
             if (i + 1) % 500 == 0:  # every 1000 mini-batches...
                 step = epoch * len(trainloader) + i
 
-                print("Epoch: ", epoch, "  #MB: ", i)
+                print("Epoch: ", epoch, "  #MB: ", i, "     Acc [%]  ", float(accurracy)*100 , "%")
                 # ...log the running loss
                 writer.add_scalar('Loss', running_loss / 1000, step)
                 writer.add_scalar('Accuracy', scalar_value=accurracy * 100, global_step=step)
