@@ -1,58 +1,14 @@
+import pathlib
+
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 import torch.optim as optim
 import torchvision
 import torchvision.transforms as transforms
 from torch.utils.tensorboard import SummaryWriter
 
+from NeuralNetwork.Torch.models import LeNet
 from NeuralNetwork.Util.torch import matplotlib_imshow, plot_classes_preds, select_n_random, MNIST_CLASSES
-
-
-class SqueezeNet(nn.Module):
-    def __init__(self):
-        super(SqueezeNet, self).__init__()
-        self.conv1_1 = nn.Conv2d(in_channels=1, out_channels=6, kernel_size=3, stride=1, padding=1)  # [B, 28, 28, 6]
-        self.conv1_2 = nn.Conv2d(in_channels=1, out_channels=6, kernel_size=1, stride=1, padding=0)  # [B, 28, 28, 6]
-        self.pool = nn.MaxPool2d(kernel_size=2, stride=2)  # [B, 28, 28, 6], but pool function is reused
-        self.conv2_1 = nn.Conv2d(in_channels=12, out_channels=16, kernel_size=3, stride=1, padding=1)  # [B, 14, 14, 16]
-        self.conv2_2 = nn.Conv2d(in_channels=12, out_channels=16, kernel_size=1, stride=1, padding=0)  # [B, 14, 14, 16]
-        self.conv3 = nn.Conv2d(in_channels=32, out_channels=8, kernel_size=1, stride=1, padding=0)
-        self.fc1 = nn.Linear(in_features=8 * 7 * 7, out_features=64)
-        self.fc2 = nn.Linear(in_features=64, out_features=10)
-
-    def forward(self, x: torch.Tensor):
-        x1 = self.pool(F.relu(self.conv1_1(x)))
-        x2 = self.pool(F.relu(self.conv1_2(x)))
-        x = torch.cat((x1, x2), dim=1)  # append along last dim
-        x1 = self.pool(F.relu(self.conv2_1(x)))
-        x2 = self.pool(F.relu(self.conv2_2(x)))
-        x = torch.cat((x1, x2), dim=1)  # append along last dim
-        x = self.conv3(input=x)
-        x = x.view(-1, 8 * 7 * 7)
-        x = F.relu(self.fc1(x))
-        x = F.softmax(self.fc2(x), dim=-1)
-        return x
-
-
-class LeNet(nn.Module):
-
-    def __init__(self):
-        super(LeNet, self).__init__()
-        self.conv1_1 = nn.Conv2d(in_channels=1, out_channels=6, kernel_size=3, stride=1, padding=1)  # [B, 28, 28, 6]
-        self.pool = nn.MaxPool2d(kernel_size=2, stride=2)  # [B, 28, 28, 6], but pool function is reused
-        self.conv2_1 = nn.Conv2d(in_channels=12, out_channels=16, kernel_size=3, stride=1, padding=1)  # [B, 14, 14, 16]
-        self.fc1 = nn.Linear(in_features=8 * 7 * 7, out_features=64)
-        self.fc2 = nn.Linear(in_features=64, out_features=10)
-
-    def forward(self, x: torch.Tensor):
-        x = self.pool(F.relu(self.conv1_1(x)))
-        x = self.pool(F.relu(self.conv2_1(x)))
-        x = x.view(-1, 8 * 7 * 7)
-        x = F.relu(self.fc1(x))
-        x = F.softmax(self.fc2(x), dim=-1)
-        return x
-
 
 if __name__ == '__main__':
     # See: https://pytorch.org/tutorials/intermediate/tensorboard_tutorial.html
@@ -68,7 +24,6 @@ if __name__ == '__main__':
 
     # constant for classes
     classes = MNIST_CLASSES
-
 
     net = LeNet()
     criterion = nn.CrossEntropyLoss()
@@ -100,7 +55,7 @@ if __name__ == '__main__':
     writer.close()
 
     running_loss = 0.0
-    for epoch in range(3):  # loop over the dataset multiple times
+    for epoch in range(5):  # loop over the dataset multiple times
 
         for i, data in enumerate(trainloader, 0):
 
@@ -119,8 +74,9 @@ if __name__ == '__main__':
             loss.backward()
             optimizer.step()
 
+
             running_loss += loss.item()
-            if (i+1) % 500 == 0:  # every 1000 mini-batches...
+            if (i + 1) % 500 == 0:  # every 1000 mini-batches...
                 step = epoch * len(trainloader) + i
 
                 print("Epoch: ", epoch, "  #MB: ", i)
@@ -137,7 +93,10 @@ if __name__ == '__main__':
                 # ...log a Matplotlib Figure showing the model's predictions on a
                 # random mini-batch
                 writer.add_figure(tag='predictions vs. actuals',
-                                  figure=plot_classes_preds(net, inputs, labels),
+                                  figure=plot_classes_preds(net, inputs, labels, MNIST_CLASSES),
                                   global_step=epoch * len(trainloader) + i)
                 running_loss = 0.0
     print('Finished Training')
+    save_path = pathlib.Path('.') / 'models'
+    save_path.mkdir(parents=True, exist_ok=True)
+    torch.save(net.state_dict(), save_path / 'LeNet.torch')
