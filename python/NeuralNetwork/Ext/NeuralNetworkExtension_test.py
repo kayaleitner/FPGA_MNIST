@@ -182,6 +182,6 @@ class NNExtensionTestCase(unittest.TestCase):
         import NeuralNetwork.Ext.NeuralNetworkExtension as NNExt
         x1 = np.random.rand(100).astype(dtype=np.int16) * 10 - 5
         x2 = x1.copy()
-        NNExt.relu_int16_t(x=x1)
+        NNExt.relu_int16_t(x1)
         x2 = relu(x2)
         np.allclose(x1, x2, atol=self.NUMERIC_EPS)

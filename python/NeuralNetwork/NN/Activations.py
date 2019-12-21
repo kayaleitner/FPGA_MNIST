@@ -9,9 +9,7 @@ def relu(x: np.ndarray) -> np.ndarray:
     :param x: values
     :return:
     """
-    z = x
-    z[x < 0] = 0
-    return z
+    return x.clip(min=0)
 
 
 def drelu(x: np.ndarray) -> np.ndarray:
