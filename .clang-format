@@ -1,7 +1,7 @@
 # CLANG FORMAT FILE
 ---
 # We'll use defaults from the LLVM style, but with 4 columns indentation.
-BasedOnStyle: LLVM
+BasedOnStyle: Google
 ---
 Language: Cpp
 AccessModifierOffset: 0
@@ -11,6 +11,7 @@ AlignOperands: true
 AlignTrailingComments: true
 AlignConsecutiveDeclarations: true
 AllowAllParametersOfDeclarationOnNextLine: false
+AllowShortBlocksOnASingleLine: true
 AllowShortFunctionsOnASingleLine: true
 AllowShortIfStatementsOnASingleLine: true
 AllowShortLoopsOnASingleLine: true
@@ -19,7 +20,7 @@ AlwaysBreakBeforeMultilineStrings: false
 AlwaysBreakTemplateDeclarations: false
 BinPackParameters: false
 BreakBeforeBinaryOperators: false
-BreakBeforeBraces: Allman
+BreakBeforeBraces: Stroustrup
 BreakBeforeTernaryOperators: false
 BreakConstructorInitializersBeforeComma: false
 ColumnLimit: 100

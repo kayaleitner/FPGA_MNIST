@@ -115,12 +115,12 @@ const char* NNE_print_error(int code);
 // ---- Macro Definitions
 
 
-#define new_relu_proto_decleration(dtype) int relu_##dtype(dtype * arr, const int DIM1)
+#define new_relu_proto_decleration(dtype) int relu_##dtype(dtype* arr, const int DIM1)
 
 #define new_conv_protofunc_decleration(dtype)                                                      \
-    int conv2d_##dtype(const dtype* data_in, int batch, int in_h, int in_w, int in_ch,           \
-                         const dtype* kernel, int fh, int fw, int kin_ch, int kout_ch, int stride, \
-                         dtype** data_out, int* batch_out, int* out_h, int* out_w, int* out_ch)
+    int conv2d_##dtype(const dtype* data_in, int batch, int in_h, int in_w, int in_ch,             \
+                       const dtype* kernel, int fh, int fw, int kin_ch, int kout_ch, int stride,   \
+                       dtype** data_out, int* batch_out, int* out_h, int* out_w, int* out_ch)
 
 
 #ifdef __cplusplus

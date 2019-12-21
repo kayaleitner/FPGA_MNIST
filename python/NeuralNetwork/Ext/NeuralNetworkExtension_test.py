@@ -13,7 +13,8 @@ if __name__ == '__main__':
     print("o2.shape = ", o2.shape)
 
     # Try to trigger exception by prividing bad kernel
-    K = np.random.rand(4, 4, 4, 8).astype(np.float32)  # only odd numbers are allowed
+    K = np.random.rand(4, 4, 4, 8).astype(
+        np.float32)  # only odd numbers are allowed
     o = nn.conv2d(img, K, 1)
 
 
@@ -28,7 +29,8 @@ class NNExtensionTestCase(unittest.TestCase):
 
     def test_generic(self):
         from NeuralNetwork.Ext.NeuralNetworkExtension import conv2d, maxPool2D, relu4D
-        I, K = get_uniform_test_image_and_kernel((10, 28, 28, 10), (3, 3, 10, 20))
+        I, K = get_uniform_test_image_and_kernel(
+            (10, 28, 28, 10), (3, 3, 10, 20))
         o = conv2d(I, K, 1)
         print("o.shape = ", o.shape)
         o2 = maxPool2D(o)
@@ -60,7 +62,8 @@ class NNExtensionTestCase(unittest.TestCase):
 
         n_runs = 10
         # Get large image data set
-        I, K = get_uniform_test_image_and_kernel((10, 28, 28, 6), (3, 3, 6, 12))
+        I, K = get_uniform_test_image_and_kernel(
+            (10, 28, 28, 6), (3, 3, 6, 12))
 
         print("Code         Time")
 
@@ -95,7 +98,8 @@ class NNExtensionTestCase(unittest.TestCase):
 
         n_runs = 100
         # Get large image data set
-        I, _ = get_uniform_test_image_and_kernel((10, 28, 28, 6), (3, 3, 6, 12))
+        I, _ = get_uniform_test_image_and_kernel(
+            (10, 28, 28, 6), (3, 3, 6, 12))
 
         print("Code         Time")
 
@@ -123,7 +127,8 @@ class NNExtensionTestCase(unittest.TestCase):
 
         n_runs = 100
         # Get large image data set
-        I, _ = get_uniform_test_image_and_kernel((10, 28, 28, 6), (3, 3, 6, 12))
+        I, _ = get_uniform_test_image_and_kernel(
+            (10, 28, 28, 6), (3, 3, 6, 12))
 
         print("Code         Time")
 
@@ -175,7 +180,8 @@ class NNExtensionTestCase(unittest.TestCase):
             else:
                 raise ValueError()
 
-            self.assertTrue(np.allclose(x_relu1, x_relu2, atol=self.NUMERIC_EPS))
+            self.assertTrue(np.allclose(
+                x_relu1, x_relu2, atol=self.NUMERIC_EPS))
 
     def test_int(self):
         from NeuralNetwork.NN.Activations import relu

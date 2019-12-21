@@ -38,15 +38,14 @@ inline float f_fast_relu(float x)
     return co.value;
 }
 
-int relu1D(float *x, const int DIM1)
+int relu1D(float* x, const int DIM1)
 {
     union bitfloat {
         uint32_t bits;
         float    value;
     };
 
-    for (int i = 0; i < DIM1; i++)
-    {
+    for (int i = 0; i < DIM1; i++) {
         union bitfloat bf;
         bf.value = x[i];   // copy value
 
@@ -60,16 +59,15 @@ int relu1D(float *x, const int DIM1)
 }
 
 
-int relu_1d_out(float *__restrict x, const int DIM1, float **__restrict yptr, int *DIM_OUT)
+int relu_1d_out(float* __restrict x, const int DIM1, float** __restrict yptr, int* DIM_OUT)
 {
     int return_value = 0;
-    float *__restrict y = NULL;
+    float* __restrict y = NULL;
     CREATE_ARRAY(float, y, DIM1);
     *yptr = y;
     *DIM_OUT = DIM1;
 
-    for (int i = 0; i < DIM1; i++)
-    {
+    for (int i = 0; i < DIM1; i++) {
         union bitfloat bf;
         bf.value = x[i];                       // copy value
         bf.bits = bf.bits & (bf.bits >> 31);   // twiggle bits
@@ -83,43 +81,31 @@ error:
     return return_value;
 }
 
-int relu2D(float *x, const int DIM1, const int DIM2)
+int relu2D(float* x, const int DIM1, const int DIM2)
 {
-    for (int i = 0; i < DIM1 * DIM2; i++)
-    {
-        x[i] = F_RELU(x[i]);
-    }
+    for (int i = 0; i < DIM1 * DIM2; i++) { x[i] = F_RELU(x[i]); }
     return 0;
 }
 
-int relu3D(float *x, const int DIM1, const int DIM2, const int DIM3)
+int relu3D(float* x, const int DIM1, const int DIM2, const int DIM3)
 {
-    for (int i = 0; i < DIM1 * DIM2 * DIM3; i++)
-    {
-        x[i] = F_RELU(x[i]);
-    }
+    for (int i = 0; i < DIM1 * DIM2 * DIM3; i++) { x[i] = F_RELU(x[i]); }
     return 0;
 }
 
-int relu4D(float *x, const int DIM1, const int DIM2, const int DIM3, const int DIM4)
+int relu4D(float* x, const int DIM1, const int DIM2, const int DIM3, const int DIM4)
 {
     const size_t N = DIM1 * DIM2 * DIM3 * DIM4;
-    for (size_t i = 0; i < N; i++)
-    {
-        x[i] = F_RELU(x[i]);
-    }
+    for (size_t i = 0; i < N; i++) { x[i] = F_RELU(x[i]); }
     return 0;
 }
 
 
 #define new_relu_protofunc_definition(dtype)                                                       \
-    int relu_##dtype(dtype * x, const int DIM1)                                                  \
+    int relu_##dtype(dtype* x, const int DIM1)                                                     \
     {                                                                                              \
         const size_t N = DIM1;                                                                     \
-        for (size_t i = 0; i < N; i++)                                                             \
-        {                                                                                          \
-            x[i] = F_RELU(x[i]);                                                                   \
-        }                                                                                          \
+        for (size_t i = 0; i < N; i++) { x[i] = F_RELU(x[i]); }                                    \
         return 0;                                                                                  \
     }
 
