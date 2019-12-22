@@ -72,7 +72,9 @@ entity EggNet_v1_0 is
 end EggNet_v1_0;
 
 architecture arch_imp of EggNet_v1_0 is
-
+  --constant S_LAYER_DIM_FEATURES : integer := 1; 
+--constant M_LAYER_DIM_FEATURES : integer := 1; 
+  
 	-- component declaration
 	component EggNet_v1_0_S00_AXI is
 		generic (
@@ -105,20 +107,42 @@ architecture arch_imp of EggNet_v1_0 is
 		);
 	end component EggNet_v1_0_S00_AXI;
 
-	component EggNet_v1_0_S00_AXIS is
-		generic (
-		C_S_AXIS_TDATA_WIDTH	: integer	:= 32
-		);
-		port (
-		S_AXIS_ACLK	: in std_logic;
-		S_AXIS_ARESETN	: in std_logic;
-		S_AXIS_TREADY	: out std_logic;
-		S_AXIS_TDATA	: in std_logic_vector(C_S_AXIS_TDATA_WIDTH-1 downto 0);
-		S_AXIS_TKEEP	: in std_logic_vector((C_S_AXIS_TDATA_WIDTH/8)-1 downto 0);
-		S_AXIS_TLAST	: in std_logic;
-		S_AXIS_TVALID	: in std_logic
-		);
-	end component EggNet_v1_0_S00_AXIS;
+  component MemCtrl is
+      generic(
+        BRAM_ADDR_WIDTH		        : integer := 10;
+        BRAM_DATA_WIDTH		        : integer := 8;
+        BRAM_ADDR_BLOCK_WIDTH     : integer := 784;
+        S_LAYER_DIM_FEATURES      : integer := 1; -- different to M_LAYER if input layer 
+        M_LAYER_DIM_FEATURES      : integer := 1;
+        
+        AXI4_STREAM_INPUT         : boolean := true;
+        C_S_AXIS_TDATA_WIDTH	: integer	:= 32
+      );
+      Port (
+        -- Previous layer interface 
+        S_layer_clk_i		    : in std_logic;
+        S_layer_aresetn_i   : in std_logic;
+        S_layer_tvalid_i	: in std_logic;
+        S_layer_tdata_i   : in std_logic_vector(S_LAYER_DIM_FEATURES*BRAM_DATA_WIDTH-1 downto 0);
+        S_layer_tkeep_i   : in std_logic_vector((S_LAYER_DIM_FEATURES*BRAM_DATA_WIDTH/8)-1 downto 0);
+        S_layer_tlast_i   : in std_logic;
+        S_layer_tready_o  : out std_logic;
+        
+        -- Next layer interface 
+        M_layer_clk_i		    : in std_logic;
+        M_layer_aresetn_i   : in std_logic;
+        M_layer_tvalid_o	: out std_logic;
+        M_layer_tdata_o   : out std_logic_vector(M_LAYER_DIM_FEATURES*BRAM_DATA_WIDTH-1 downto 0);
+        M_layer_tkeep_o   : out std_logic_vector((M_LAYER_DIM_FEATURES*BRAM_DATA_WIDTH/8)-1 downto 0);
+        M_layer_tlast_o   : out std_logic;
+        M_layer_tready_i  : in std_logic;
+        
+        -- Status
+        S_layer_invalid_block_o : out std_logic;
+        S_layer_block_done_o : out std_logic
+
+      );
+  end component MemCtrl;
 
 	component EggNet_v1_0_M00_AXIS is
 		generic (
@@ -170,21 +194,40 @@ EggNet_v1_0_S00_AXI_inst : EggNet_v1_0_S00_AXI
 		S_AXI_RVALID	=> s00_axi_rvalid,
 		S_AXI_RREADY	=> s00_axi_rready
 	);
-
--- -- Instantiation of Axi Bus Interface S00_AXIS
--- EggNet_v1_0_S00_AXIS_inst : EggNet_v1_0_S00_AXIS
-	-- generic map (
-		-- C_S_AXIS_TDATA_WIDTH	=> C_S00_AXIS_TDATA_WIDTH
-	-- )
-	-- port map (
-		-- S_AXIS_ACLK	=> s00_axis_aclk,
-		-- S_AXIS_ARESETN	=> s00_axis_aresetn,
-		-- S_AXIS_TREADY	=> s00_axis_tready,
-		-- S_AXIS_TDATA	=> s00_axis_tdata,
-		-- S_AXIS_TKEEP	=> s00_axis_tkeep,
-		-- S_AXIS_TLAST	=> s00_axis_tlast,
-		-- S_AXIS_TVALID	=> s00_axis_tvalid
-	-- );
+  
+Memory_Controller_0: MemCtrl
+  generic map(
+    BRAM_ADDR_WIDTH       => 11,
+    BRAM_DATA_WIDTH       => 8,
+    BRAM_ADDR_BLOCK_WIDTH => 784,
+    S_LAYER_DIM_FEATURES  => 4, -- different to M_LAYER if input layer 
+    M_LAYER_DIM_FEATURES  => 4,
+    
+    AXI4_STREAM_INPUT      => true,
+    C_S_AXIS_TDATA_WIDTH	=> C_S00_AXIS_TDATA_WIDTH
+  )
+  port map(
+    -- Previous layer interface 
+    S_layer_clk_i		  => s00_axis_aclk,
+    S_layer_aresetn_i => s00_axis_aresetn,
+    S_layer_tvalid_i	=> s00_axis_tvalid,
+    S_layer_tdata_i   => s00_axis_tdata,
+    S_layer_tkeep_i   => s00_axis_tkeep,
+    S_layer_tlast_i   => s00_axis_tlast,
+    S_layer_tready_o  => s00_axis_tready,
+    
+    -- Next layer interface 
+    M_layer_clk_i		  => m00_axis_aclk,
+    M_layer_aresetn_i => m00_axis_aresetn,
+    M_layer_tvalid_o	=> m00_axis_tvalid,
+    M_layer_tdata_o   => m00_axis_tdata,
+    M_layer_tkeep_o   => m00_axis_tkeep,
+    M_layer_tlast_o   => m00_axis_tlast,
+    M_layer_tready_i  => m00_axis_tready,
+    
+    -- Status
+    S_layer_invalid_block_o => open,
+    S_layer_block_done_o    => open);
 
 -- -- Instantiation of Axi Bus Interface M00_AXIS
 -- EggNet_v1_0_M00_AXIS_inst : EggNet_v1_0_M00_AXIS
@@ -203,11 +246,11 @@ EggNet_v1_0_S00_AXI_inst : EggNet_v1_0_S00_AXI
 	-- );
 
 	-- Add user logic here
-m00_axis_tvalid <= s00_axis_tvalid;
-m00_axis_tdata	<= s00_axis_tdata;
-m00_axis_tkeep	<= s00_axis_tkeep;
-m00_axis_tlast	<= s00_axis_tlast;
-s00_axis_tready <= m00_axis_tready;
+-- m00_axis_tvalid <= s00_axis_tvalid;
+-- m00_axis_tdata	<= s00_axis_tdata;
+-- m00_axis_tkeep	<= s00_axis_tkeep;
+-- m00_axis_tlast	<= s00_axis_tlast;
+-- s00_axis_tready <= m00_axis_tready;
 
   P_Status: process(s00_axi_aclk,s00_axi_aresetn) is 
   begin 

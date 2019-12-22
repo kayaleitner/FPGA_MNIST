@@ -2,21 +2,23 @@ library ieee;
 use ieee.std_logic_1164.all;
 
 entity MemCtrl is
-    generic(
+    Generic(
       BRAM_ADDR_WIDTH		        : integer := 10;
       BRAM_DATA_WIDTH		        : integer := 8;
       BRAM_ADDR_BLOCK_WIDTH     : integer := 784;
+      S_LAYER_DIM_FEATURES      : integer := 1; -- different to M_LAYER if input layer 
+      M_LAYER_DIM_FEATURES      : integer := 1;
       
-      AXI4_STRAM_INPUT          : boolean := false;
-      
+      AXI4_STREAM_INPUT          : boolean := true;
+      C_S_AXIS_TDATA_WIDTH	: integer	:= 32
     );
     Port (
       -- Previous layer interface 
       S_layer_clk_i		    : in std_logic;
       S_layer_aresetn_i   : in std_logic;
       S_layer_tvalid_i	: in std_logic;
-      S_layer_tdata_i   : in std_logic_vector(LAYER_DIM_FEATURES*BRAM_DATA_WIDTH-1 downto 0);
-      S_layer_tkeep_i   : in std_logic_vector((LAYER_DIM_FEATURES*BRAM_DATA_WIDTH/8)-1 downto 0);
+      S_layer_tdata_i   : in std_logic_vector(S_LAYER_DIM_FEATURES*BRAM_DATA_WIDTH-1 downto 0);
+      S_layer_tkeep_i   : in std_logic_vector((S_LAYER_DIM_FEATURES*BRAM_DATA_WIDTH/8)-1 downto 0);
       S_layer_tlast_i   : in std_logic;
       S_layer_tready_o  : out std_logic;
       
@@ -24,14 +26,14 @@ entity MemCtrl is
       M_layer_clk_i		    : in std_logic;
       M_layer_aresetn_i   : in std_logic;
       M_layer_tvalid_o	: out std_logic;
-      M_layer_tdata_o   : out std_logic_vector(LAYER_DIM_FEATURES*BRAM_DATA_WIDTH-1 downto 0);
-      M_layer_tkeep_o   : out std_logic_vector((LAYER_DIM_FEATURES*BRAM_DATA_WIDTH/8)-1 downto 0);
+      M_layer_tdata_o   : out std_logic_vector(M_LAYER_DIM_FEATURES*BRAM_DATA_WIDTH-1 downto 0);
+      M_layer_tkeep_o   : out std_logic_vector((M_LAYER_DIM_FEATURES*BRAM_DATA_WIDTH/8)-1 downto 0);
       M_layer_tlast_o   : out std_logic;
       M_layer_tready_i  : in std_logic;
       
       -- Status
       S_layer_invalid_block_o : out std_logic;
-    
+      S_layer_block_done_o : out std_logic
 
     );
 end MemCtrl;
@@ -40,10 +42,10 @@ architecture Behavioral of MemCtrl is
 
 component EggNet_v1_0_S00_AXIS is
 	generic (
-	C_S_AXIS_TDATA_WIDTH	: integer	:= 32
+	C_S_AXIS_TDATA_WIDTH	: integer	:= 32;
   BRAM_ADDR_WIDTH		        : integer := 10;
   BRAM_DATA_WIDTH		        : integer := 8;
-  BRAM_ADDR_BLOCK_WIDTH     : integer := 784;  
+  BRAM_ADDR_BLOCK_WIDTH     : integer := 784  
 	);
 	port (
   BRAM_addr_o         : out std_logic_vector(BRAM_ADDR_WIDTH-1 downto 0);
@@ -51,13 +53,14 @@ component EggNet_v1_0_S00_AXIS is
   BRAM_dout_o         : out std_logic_vector(BRAM_DATA_WIDTH-1 downto 0);
   BRAM_wea_o          : out std_logic_vector((BRAM_DATA_WIDTH/8)-1  downto 0);
   Invalid_block_o     : out std_logic;
-	S_AXIS_ACLK	: in std_logic;
-	S_AXIS_ARESETN	: in std_logic;
-	S_AXIS_TREADY	: out std_logic;
-	S_AXIS_TDATA	: in std_logic_vector(C_S_AXIS_TDATA_WIDTH-1 downto 0);
-	S_AXIS_TKEEP	: in std_logic_vector((C_S_AXIS_TDATA_WIDTH/8)-1 downto 0);
-	S_AXIS_TLAST	: in std_logic;
-	S_AXIS_TVALID	: in std_logic
+  Block_done_o        : out std_logic; 
+	S_AXIS_ACLK	        : in std_logic;
+	S_AXIS_ARESETN	    : in std_logic;
+	S_AXIS_TREADY	      : out std_logic;
+	S_AXIS_TDATA	      : in std_logic_vector(C_S_AXIS_TDATA_WIDTH-1 downto 0);
+	S_AXIS_TKEEP	      : in std_logic_vector((C_S_AXIS_TDATA_WIDTH/8)-1 downto 0);
+	S_AXIS_TLAST	      : in std_logic;
+	S_AXIS_TVALID	      : in std_logic
 	);
 end component EggNet_v1_0_S00_AXIS;
 
@@ -82,20 +85,20 @@ signal bram_pa_data_wr :std_logic_vector(BRAM_DATA_WIDTH-1 downto 0);
 signal bram_pa_wea  :std_logic_vector((BRAM_DATA_WIDTH/8)-1  downto 0);
 signal bram_pb_addr :std_logic_vector(BRAM_ADDR_WIDTH-1 downto 0);
 signal bram_pb_data_rd :std_logic_vector(BRAM_DATA_WIDTH-1 downto 0);
-signal bram_pb_rst  :std_logic_vector((BRAM_DATA_WIDTH/8)-1  downto 0); -- ACTIVE HIGH!
+signal bram_pb_rst  :std_logic; -- ACTIVE HIGH!
 
 
 
 begin
 
-AXI4_stream : if AXI4_STRAM_INPUT generate 
+AXI4_stream : if AXI4_STREAM_INPUT generate 
   -- Instantiation of Axi Bus Interface S00_AXIS if previous layer is input layer 
   EggNet_v1_0_S00_AXIS_inst : EggNet_v1_0_S00_AXIS
     generic map (
       BRAM_ADDR_WIDTH		    => BRAM_ADDR_WIDTH,		   
       BRAM_DATA_WIDTH		    => BRAM_DATA_WIDTH,		   
       BRAM_ADDR_BLOCK_WIDTH => BRAM_ADDR_BLOCK_WIDTH,
-      C_S_AXIS_TDATA_WIDTH	=> C_S00_AXIS_TDATA_WIDTH
+      C_S_AXIS_TDATA_WIDTH	=> C_S_AXIS_TDATA_WIDTH
     )
     port map (
       -- BRAM Port A 
@@ -105,6 +108,7 @@ AXI4_stream : if AXI4_STRAM_INPUT generate
       BRAM_wea_o   => bram_pa_wea, 
       -- Stauts
       Invalid_block_o => S_layer_invalid_block_o,
+      Block_done_o => S_layer_block_done_o,
       -- AXI4 stream slave interface 
       S_AXIS_ACLK	=> s_layer_clk_i,
       S_AXIS_ARESETN	=> s_layer_aresetn_i,
@@ -115,6 +119,8 @@ AXI4_stream : if AXI4_STRAM_INPUT generate
       S_AXIS_TVALID	=> s_layer_tvalid_i
     );
 end generate;
+
+
   
 Bram_inst : blk_mem_gen_0
 port map (clka  => bram_clk,
