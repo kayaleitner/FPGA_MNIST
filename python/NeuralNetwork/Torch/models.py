@@ -1,6 +1,8 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import brevitas.nn as qnn
+from brevitas.core.quant import QuantType
 
 
 class SqueezeNet(nn.Module):
@@ -34,6 +36,7 @@ class LeNet(nn.Module):
     """
     Simple implementation of the classic LeNet
     """
+
     def __init__(self):
         super(LeNet, self).__init__()
         self.conv1_1 = nn.Conv2d(in_channels=1, out_channels=6, kernel_size=3, stride=1, padding=1)  # [B, 28, 28, 6]
@@ -49,3 +52,42 @@ class LeNet(nn.Module):
         x = F.relu(self.fc1(x))
         x = F.softmax(self.fc2(x), dim=-1)
         return x
+
+
+class QuantLeNet(nn.Module):
+    """
+    From: https://github.com/Xilinx/brevitas
+    """
+
+    def __init__(self):
+        super(QuantLeNet, self).__init__()
+        self.conv1 = qnn.QuantConv2d(1, 6, 5,
+                                     weight_quant_type=QuantType.INT,
+                                     weight_bit_width=8, padding=2)
+        self.relu1 = qnn.QuantReLU(quant_type=QuantType.INT, bit_width=8, max_val=6)
+        self.conv2 = qnn.QuantConv2d(6, 16, 5,
+                                     weight_quant_type=QuantType.INT,
+                                     weight_bit_width=8, padding=2)
+        self.relu2 = qnn.QuantReLU(quant_type=QuantType.INT, bit_width=8, max_val=6)
+        self.fc1 = qnn.QuantLinear(16 * 7 * 7, 120, bias=True,
+                                   weight_quant_type=QuantType.INT,
+                                   weight_bit_width=8)
+        self.relu3 = qnn.QuantReLU(quant_type=QuantType.INT, bit_width=8, max_val=6)
+        self.fc2 = qnn.QuantLinear(120, 84, bias=True,
+                                   weight_quant_type=QuantType.INT,
+                                   weight_bit_width=8)
+        self.relu4 = qnn.QuantReLU(quant_type=QuantType.INT, bit_width=8, max_val=6)
+        self.fc3 = qnn.QuantLinear(84, 10, bias=False,
+                                   weight_quant_type=QuantType.INT,
+                                   weight_bit_width=8)
+
+    def forward(self, x):
+        out = self.relu1(self.conv1(x))
+        out = F.max_pool2d(out, 2)
+        out = self.relu2(self.conv2(out))
+        out = F.max_pool2d(out, 2)
+        out = out.view(out.size(0), -1)
+        out = self.relu3(self.fc1(out))
+        out = self.relu4(self.fc2(out))
+        out = self.fc3(out)
+        return out

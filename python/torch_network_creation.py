@@ -7,7 +7,7 @@ import torchvision
 import torchvision.transforms as transforms
 from torch.utils.tensorboard import SummaryWriter
 
-from NeuralNetwork.Torch.models import LeNet
+from NeuralNetwork.Torch.models import LeNet, QuantLeNet
 from NeuralNetwork.Util.torch import matplotlib_imshow, plot_classes_preds, select_n_random, MNIST_CLASSES
 
 if __name__ == '__main__':
@@ -25,7 +25,7 @@ if __name__ == '__main__':
     # constant for classes
     classes = MNIST_CLASSES
 
-    net = LeNet()
+    net = QuantLeNet()
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(net.parameters(), lr=0.001)
 
@@ -39,9 +39,9 @@ if __name__ == '__main__':
 
     # write to tensorboard
     # default `log_dir` is "runs" - we'll be more specific here
-    writer = SummaryWriter('runs/fashion_mnist_experiment_3_LeNet')
+    writer = SummaryWriter('runs/fashion_mnist_experiment_4_QLeNet')
     writer.add_image('four_fashion_mnist_images', img_grid)
-    writer.add_graph(net, images)
+    # writer.add_graph(net, images)
 
     # select random images and their target indices
     images, labels = select_n_random(trainset.data, trainset.targets)
@@ -99,4 +99,4 @@ if __name__ == '__main__':
     print('Finished Training')
     save_path = pathlib.Path('.') / 'models'
     save_path.mkdir(parents=True, exist_ok=True)
-    torch.save(net.state_dict(), save_path / 'LeNet.torch')
+    torch.save(net.state_dict(), save_path / 'QuantLeNet.torch')
