@@ -2,6 +2,7 @@
 
 ![General CI Badge](https://github.com/marbleton/FPGA_MNIST/workflows/CI/badge.svg)
 ![Python-Package CI Badge](https://github.com/marbleton/FPGA_MNIST/workflows/Python%20package/badge.svg)
+![GitHub](https://img.shields.io/github/license/marbleton/FPGA_MNIST)
 
 This is a university project at TU Vienna to create a neural network 
 hardware accelerator with an FPGA.
