@@ -1,8 +1,11 @@
+from typing import Any
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import brevitas.nn as qnn
 from brevitas.core.quant import QuantType
+
 
 
 class SqueezeNet(nn.Module):
@@ -53,41 +56,50 @@ class LeNet(nn.Module):
         x = F.softmax(self.fc2(x), dim=-1)
         return x
 
+    def quantize(self):
+        net = LeNet()
+        net.conv1_1.weight = self.conv1_1.weight
+        net.conv2_1.weight = self.conv2_1.weight
+        net.fc1.weight = self.fc1.weight
+        net.fc2.weight = self.fc2.weight
+
 
 class QuantLeNet(nn.Module):
     """
     From: https://github.com/Xilinx/brevitas
     """
 
-    def __init__(self):
+    def __init__(self, bit_width=8, weight_bit_width=8):
         super(QuantLeNet, self).__init__()
         self.conv1 = qnn.QuantConv2d(1, 6, 5,
                                      weight_quant_type=QuantType.INT,
-                                     weight_bit_width=8, padding=2)
-        self.relu1 = qnn.QuantReLU(quant_type=QuantType.INT, bit_width=8, max_val=6)
+                                     weight_bit_width=weight_bit_width, padding=2)
+        self.relu1 = qnn.QuantReLU(quant_type=QuantType.INT, bit_width=bit_width, max_val=6)
         self.conv2 = qnn.QuantConv2d(6, 16, 5,
                                      weight_quant_type=QuantType.INT,
-                                     weight_bit_width=8, padding=2)
-        self.relu2 = qnn.QuantReLU(quant_type=QuantType.INT, bit_width=8, max_val=6)
+                                     weight_bit_width=weight_bit_width, padding=2)
+        self.relu2 = qnn.QuantReLU(quant_type=QuantType.INT, bit_width=bit_width, max_val=6)
         self.fc1 = qnn.QuantLinear(16 * 7 * 7, 120, bias=True,
                                    weight_quant_type=QuantType.INT,
-                                   weight_bit_width=8)
-        self.relu3 = qnn.QuantReLU(quant_type=QuantType.INT, bit_width=8, max_val=6)
+                                   weight_bit_width=weight_bit_width)
+        self.relu3 = qnn.QuantReLU(quant_type=QuantType.INT, bit_width=bit_width, max_val=6)
         self.fc2 = qnn.QuantLinear(120, 84, bias=True,
                                    weight_quant_type=QuantType.INT,
-                                   weight_bit_width=8)
-        self.relu4 = qnn.QuantReLU(quant_type=QuantType.INT, bit_width=8, max_val=6)
+                                   weight_bit_width=weight_bit_width)
+        self.relu4 = qnn.QuantReLU(quant_type=QuantType.INT, bit_width=bit_width, max_val=6)
         self.fc3 = qnn.QuantLinear(84, 10, bias=False,
                                    weight_quant_type=QuantType.INT,
-                                   weight_bit_width=8)
+                                   weight_bit_width=weight_bit_width)
+
+
 
     def forward(self, x):
-        out = self.relu1(self.conv1(x))
+        out = F.dropout(self.relu1(self.conv1(x)), p=0.2)
         out = F.max_pool2d(out, 2)
-        out = self.relu2(self.conv2(out))
+        out = F.dropout(self.relu2(self.conv2(out)), p=0.2)
         out = F.max_pool2d(out, 2)
         out = out.view(out.size(0), -1)
-        out = self.relu3(self.fc1(out))
-        out = self.relu4(self.fc2(out))
+        out = F.dropout(self.relu3(self.fc1(out)), p=0.2)
+        out = F.dropout(self.relu4(self.fc2(out)), p=0.2)
         out = self.fc3(out)
         return out
