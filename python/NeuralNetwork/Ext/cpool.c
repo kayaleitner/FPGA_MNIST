@@ -27,7 +27,7 @@
 
 
 
-int MAXPool2D(const float *data_in,
+int maxPool2D(const float * restrict data_in,
               int          batch,
               int          in_h,
               int          in_w,
@@ -84,7 +84,6 @@ int MAXPool2D(const float *data_in,
         {
             for (int j = 0; j < in_w; j += 2)
             {
-#pragma clang loop unroll(enable)
                 for (int k = 0; k < in_ch; k++)
                 {
                     float a0 = DATA_IN(b, i, j, k);

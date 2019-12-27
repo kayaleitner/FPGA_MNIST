@@ -5,8 +5,17 @@
 #include "dbg.h"
 #include "chelper.h"
 
-static void
-matmul_(const float *__restrict pA, const float *__restrict pB, float *__restrict pC, const int M, const int N, const int K)
+void vector_add(const float * restrict A, const float * restrict B, float * restrict C, const int DIM) {
+
+    
+    for (size_t i = 0; i < DIM; i++)
+    {
+        C[i] = A[i] + B[i];
+    }
+}
+
+void
+matmul_(const float * restrict pA, const float *restrict pB, float *restrict pC, const int M, const int N, const int K)
 {
     const float(*A)[K] = NULL;
     const float(*B)[N] = NULL;

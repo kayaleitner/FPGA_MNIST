@@ -6,6 +6,9 @@ extern "C"
 {
 #endif
 
+#include <stdlib.h>
+#include <assert.h>
+#include <stdint.h>
 
 // Uncomment Block Below to make use of SIMD Processor extensions for various architectures
 #if defined(_MSC_VER)
@@ -28,10 +31,15 @@ extern "C"
 #include <spe.h>
 #endif
 
-
+#if _WIN32
+// Do not use __restrict with windows, because of super annoying build
+#define __restrict 
+#else
 #ifndef __restrict
 #define __restrict restrict
 #endif
+#endif
+
 
 
 #ifndef MIN
@@ -88,7 +96,7 @@ extern "C"
  */
 #define CREATE_ARRAY(dtype, ptr, dim)                                                                  \
     {                                                                                                  \
-        const size_t data_out_size = dim;                                                              \
+        const size_t data_out_size = (dim);                                                              \
         debug("Output array elements:  %lu", data_out_size);                                           \
         debug("Output array in GB:     %g", ((double)data_out_size * sizeof(dtype)) / GIGABYTE_BYTES); \
         CHECK_AND_SET(data_out_size < MAX_MEMORY_ARRAY_SIZE, return_value, NNE_ERROR_MAX_MEMORY_LIMIT, \
@@ -103,7 +111,7 @@ extern "C"
 
 #define CREATE_2D_ARRAY(dtype, ptr, d1, d2) CREATE_ARRAY(dtype, ptr, d1 *d2)
 #define CREATE_3D_ARRAY(dtype, ptr, d1, d2, d3) CREATE_ARRAY(dtype, ptr, d1 *d2 *d3)
-#define CREATE_4D_ARRAY(dtype, ptr, d1, d2, d3, d4) CREATE_ARRAY(dtype, ptr, d1 *d2 *d3 *d4)
+#define CREATE_4D_ARRAY(dtype, ptr, d1, d2, d3, d4) CREATE_ARRAY(dtype, ptr, d1 * d2 * d3 * d4)
 
 
 #ifdef __cplusplus

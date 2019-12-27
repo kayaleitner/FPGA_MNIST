@@ -1,5 +1,4 @@
 #include <stdlib.h>
-#include <assert.h>
 
 #include "NNExtension.h"
 #include "dbg.h"
@@ -46,7 +45,6 @@ int relu1D(float *x, const int DIM1)
         float    value;
     };
 
-#pragma clang loop vectorize(enable) interleave(enable)
     for (int i = 0; i < DIM1; i++)
     {
         union bitfloat bf;
@@ -61,9 +59,32 @@ int relu1D(float *x, const int DIM1)
     return 0;
 }
 
+
+int relu_1d_out(float * __restrict x, const int DIM1, float ** __restrict yptr, int *DIM_OUT)
+{
+    int return_value = 0;
+    float * __restrict y = NULL;
+    CREATE_ARRAY(float, y, DIM1);
+    *yptr = y;
+    *DIM_OUT = DIM1;
+
+    for (int i = 0; i < DIM1; i++)
+    {
+        union bitfloat bf;
+        bf.value = x[i];                        // copy value
+        bf.bits = bf.bits & (bf.bits >> 31);    // twiggle bits
+        y[i] = bf.value;                        // Assign float value
+    }
+    return return_value;
+
+error:
+    free(y);
+    *yptr = NULL;
+    return return_value;
+}
+
 int relu2D(float *x, const int DIM1, const int DIM2)
 {
-#pragma clang loop vectorize(enable)
     for (int i = 0; i < DIM1 * DIM2; i++)
     {
         x[i] = F_RELU(x[i]);
@@ -73,7 +94,6 @@ int relu2D(float *x, const int DIM1, const int DIM2)
 
 int relu3D(float *x, const int DIM1, const int DIM2, const int DIM3)
 {
-#pragma clang loop vectorize(enable) interleave(enable)
     for (int i = 0; i < DIM1 * DIM2 * DIM3; i++)
     {
         x[i] = F_RELU(x[i]);
@@ -84,7 +104,6 @@ int relu3D(float *x, const int DIM1, const int DIM2, const int DIM3)
 int relu4D(float *x, const int DIM1, const int DIM2, const int DIM3, const int DIM4)
 {
     const size_t N = DIM1 * DIM2 * DIM3 * DIM4;
-#pragma clang loop vectorize(enable) interleave(enable)
     for (size_t i = 0; i < N; i++)
     {
         x[i] = F_RELU(x[i]);

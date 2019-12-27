@@ -1,0 +1,63 @@
+name: Python package
+
+on: [push]
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        # os: [ubuntu-latest, windows-latest, macOS-latest]
+        os: [ubuntu-latest, macOS-latest]
+        python-version: [3.6, 3.7]
+
+    steps:
+    - uses: actions/checkout@v1
+  
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v1
+      with:
+        python-version: ${{ matrix.python-version }}
+    
+    - name: Install dependencies
+      run: |
+        cd python
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+    
+    - name: Install SWIG (Linux)
+      if: runner.os == 'Linux'
+      run: sudo apt-get install swig
+    
+    - name: Install SWIG (Mac)
+      if: runner.os == 'macOS'
+      run: brew install swig
+    
+    - name: Install SWIG (Win)
+      if: runner.os == 'Windows'
+      run: choco install swig
+
+    - name: Test with pytest
+      if: runner.os != 'Windows'
+      run: |
+        cd python
+        python setup.py build_ext --build-lib .
+        python setup.py build
+        python setup.py sdist bdist_wheel
+        python setup.py test
+    
+    - name: Test with pytest (Windoof)
+      if: runner.os == 'Windows'
+      run: |
+        cd python
+        # Use the minigw32 compiler because Microsoft is not able to implement the C standard
+        python setup.py build_ext  --global-option --compiler=mingw32 --build-lib .
+        python setup.py build
+        python setup.py sdist bdist_wheel
+        python setup.py test
+
+    - name: Test Install
+      run: |
+        cd python
+        python setup.py sdist bdist_wheel
+        pip install .
