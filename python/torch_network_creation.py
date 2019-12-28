@@ -39,8 +39,8 @@ if __name__ == '__main__':
 
     # write to tensorboard
     # default `log_dir` is "runs" - we'll be more specific here
-    writer = SummaryWriter('runs/fashion_mnist_experiment_4_QLeNet')
-    writer.add_image('four_fashion_mnist_images', img_grid)
+    writer = SummaryWriter('runs/mnist_experiment_4_QLeNet')
+    writer.add_image('four_mnist_images', img_grid)
     # writer.add_graph(net, images)
 
     # select random images and their target indices

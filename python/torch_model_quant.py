@@ -12,7 +12,7 @@ import torch.nn.functional as F
 from torch.quantization import convert
 from NeuralNetwork.Torch.models import LeNet
 from NeuralNetwork.Util.torch import MNIST_CLASSES
-
+import NeuralNetwork.Util.plot as util_plots
 
 def train_model(model, criterion, optimizer, scheduler, num_epochs=25, device='cpu'):
     """
@@ -245,6 +245,9 @@ if __name__ == '__main__':
 
     test(model=net, device=device, test_loader=dataloaders['val'])
 
+    net.paramete
+    util_plots.plot_network_parameter_histogram(weights=list(net.parameters()))
+
     qnet = convert(net, inplace=False)
     # qnet = torch.quantization.quantize(model=net, run_fn=train, run_args=())
     visualize_model(qnet, dataloaders=dataloaders, class_names=class_names)
@@ -252,3 +255,4 @@ if __name__ == '__main__':
     plt.tight_layout()
     plt.show()
     print('Finished')
+

@@ -61,7 +61,7 @@ setup(name='NeuralNetwork',
       packages=find_packages(),
       ext_modules=[NN_ext_module],
       requires=['numpy', 'wget', 'flask', 'tensorflow', 'keras', 'torch', 'torchvision', 'scipy',
-                'git+https://github.com/Xilinx/brevitas.git'],
+                ],#'git+https://github.com/Xilinx/brevitas.git'],
       install_requires=['numpy', 'wget'],
       )
 
