@@ -4,8 +4,7 @@
 ![Python-Package CI Badge](https://github.com/marbleton/FPGA_MNIST/workflows/Python%20package/badge.svg)
 ![GitHub](https://img.shields.io/github/license/marbleton/FPGA_MNIST)
 
-This is a university project at TU Vienna to create a neural network 
-hardware accelerator with an FPGA.
+This is a university project at TU Vienna to create a neural network hardware accelerator with an FPGA.
 
 ## Goals
 
@@ -13,6 +12,13 @@ hardware accelerator with an FPGA.
 - Implement Forward & Backward Propagation in Python to ensure functionality
 - Create VHDL files for the various operations
 - Handle on board communication
+- Make all calculations efficient by using pipelined calculations
+
+## Top Level Overview
+
+![System Overview](tex/specification/svg-extract/1-NN-concept_svg-tex.png "Top Level Overview")
+
+For more details see the [Specification Document](tex/specification/specification.pdf)
 
 ## Build
 
