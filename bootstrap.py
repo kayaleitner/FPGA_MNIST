@@ -48,7 +48,7 @@ class PackageManager:
         super().__init__()
         if platform.system() == "Windows":
             self.package_command = 'choco'
-        elif platform.system/() == "Darwin":
+        elif platform.system() == "Darwin":
             self.package_command = 'brew'
         else:
             self.package_command = 'sudo apt-get'
@@ -68,7 +68,7 @@ if __name__ == "__main__":
     os.chdir(PROJECT_DIRECTORY)
 
     # Setup consts
-    LIB_VFLOAT_PATH = join(PROJECT_DIRECTORY, 'lib', 'float')
+    LIB_VFLOAT_PATH = join(PROJECT_DIRECTORY, 'lib', 'vfloat')
     LIB_VFLOAT_URL = 'http://www.coe.neu.edu/Research/rcl/projects/floatingpoint/VFLOAT_May_2015.tar'
     VENV_PIP_PATH = path_convert('./venv/bin/pip')
     # Setup Virtualenv
@@ -91,9 +91,8 @@ if __name__ == "__main__":
     if not os.path.exists(LIB_VFLOAT_PATH):
         os.makedirs(LIB_VFLOAT_PATH, exist_ok=True)
         (file_path, http_response) = urllib.request.urlretrieve(LIB_VFLOAT_URL,
-                                                                join(PROJECT_DIRECTORY, 'lib', 'vfloat', 'VFLOAT_May_2015.tar'))
-        shutil.unpack_archive(filename=file_path, extract_dir=join(
-            PROJECT_DIRECTORY, "lib", "vfloat"))
+                                                                join(LIB_VFLOAT_PATH, 'VFLOAT_May_2015.tar'))
+        shutil.unpack_archive(filename=file_path, extract_dir=LIB_VFLOAT_PATH)
         # Alternative would be WGET but it is not default on most systems
         # system('wget -P lib/vfloat http://www.coe.neu.edu/Research/rcl/projects/floatingpoint/VFLOAT_May_2015.tar')
 
