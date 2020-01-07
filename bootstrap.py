@@ -81,12 +81,17 @@ if __name__ == "__main__":
         system('virtualenv venv')
 
         # # Not sure if this works
-        # if platform.system == 'Windows':
-        #     system(r'.\venv\bin\activate.bat')
-        # else:
-        #     system('source ./venv/bin/activate')
-        system('./venv/bin/pip install -r python/requirements.txt',
-               convert_slashes=True)
+        if platform.system == 'Windows':
+             pip_command = """
+             \\venv\\Scripts\\activate.bat;
+             pip install -r python\\requirements.txt
+             """
+        else:
+             pip_command = """
+             source ./venv/bin/activate;
+             pip install -r python/requirements.txt
+             """
+        system(pip_command)
 
     if not os.path.exists(LIB_VFLOAT_PATH):
         os.makedirs(LIB_VFLOAT_PATH, exist_ok=True)
@@ -99,3 +104,6 @@ if __name__ == "__main__":
     # Install packages
     manager = PackageManager()
     manager.install('swig')
+
+
+    print('Finished workspace setup. You can now simply activate your ')
