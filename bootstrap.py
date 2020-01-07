@@ -9,10 +9,17 @@ import tarfile
 import urllib.request
 import shutil
 
-def system(command):
+def system(command : str, convert_slashes=False):
+    if convert_slashes and platform.system() == "Windows":
+        command = command.replace('/', os.path.sep)
+        
     code = os.system(command=command)
     if code != 0:
         raise Exception("'{}' returned with exit code {}".format(command, code))
+
+def path_convert(path : str):
+    # this makes sure the path is always in the correct format
+    return path.convert('/', os.path.sep)
 
 
 def check_if_package_manager_is_available():
@@ -52,7 +59,11 @@ if __name__ == "__main__":
     # Make sure everything is done in the right directory
     PROJECT_DIRECTORY = os.path.dirname(os.path.abspath(__file__))
     os.chdir(PROJECT_DIRECTORY)
-
+    
+    # Setup consts
+    LIB_VFLOAT_PATH = join(PROJECT_DIRECTORY, 'lib', 'float')
+    LIB_VFLOAT_URL = 'http://www.coe.neu.edu/Research/rcl/projects/floatingpoint/VFLOAT_May_2015.tar'
+    VENV_PIP_PATH = path_convert('./venv/bin/pip')
     # Setup Virtualenv
     # https://stackoverflow.com/questions/1871549/determine-if-python-is-running-inside-virtualenv?noredirect=1
     if not hasattr(sys, 'real_prefix') and not os.path.exists(join(PROJECT_DIRECTORY, 'venv')):
@@ -67,13 +78,12 @@ if __name__ == "__main__":
         #     system(r'.\venv\bin\activate.bat')
         # else:
         #     system('source ./venv/bin/activate')
-        
-        system('venv/bin/pip install -r python/requirements.txt')
+        system('./venv/bin/pip install -r python/requirements.txt', convert_slashes=True)
+
     
-    if not os.path.exists(join(PROJECT_DIRECTORY, 'lib', 'float')):
-        os.makedirs('lib/vfloat', exist_ok=True) 
-        URL_V_FLOAT = 'http://www.coe.neu.edu/Research/rcl/projects/floatingpoint/VFLOAT_May_2015.tar'
-        (file_path, http_response) = urllib.request.urlretrieve(URL_V_FLOAT, join(PROJECT_DIRECTORY, 'lib', 'vfloat', 'VFLOAT_May_2015.tar'))
+    if not os.path.exists(LIB_VFLOAT_PATH):
+        os.makedirs(LIB_VFLOAT_PATH, exist_ok=True) 
+        (file_path, http_response) = urllib.request.urlretrieve(LIB_VFLOAT_URL, join(PROJECT_DIRECTORY, 'lib', 'vfloat', 'VFLOAT_May_2015.tar'))
         shutil.unpack_archive(filename=file_path, extract_dir=join(PROJECT_DIRECTORY, "lib", "vfloat"))
         # Alternative would be WGET but it is not default on most systems
         # system('wget -P lib/vfloat http://www.coe.neu.edu/Research/rcl/projects/floatingpoint/VFLOAT_May_2015.tar')
