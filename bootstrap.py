@@ -6,7 +6,6 @@ import sys, os
 from os.path import join
 import platform
 import tarfile
-import venv
 import urllib.request
 import shutil
 
@@ -57,7 +56,12 @@ if __name__ == "__main__":
     # Setup Virtualenv
     # https://stackoverflow.com/questions/1871549/determine-if-python-is-running-inside-virtualenv?noredirect=1
     if not hasattr(sys, 'real_prefix') and not os.path.exists(join(PROJECT_DIRECTORY, 'venv')):
-        venv.create('venv')
+        
+        # update pip, install virtualenv and create a new one
+        system('python -m pip install --upgrade pip')
+        system('pip install virtualenv')
+        system('virtualenv venv')
+
         # Not sure if this works
         if platform.system == 'Windows':
             system(r'.\venv\bin\activate.bat')
