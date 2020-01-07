@@ -9,11 +9,9 @@ controller and test the module using ghdl
 """
 
 # %% public imports
-import random
 import os 
 import shutil
-import numpy as np 
-import subprocess
+
 # %% import custom modules
 import vhdl_testbench as tb 
 
@@ -27,32 +25,15 @@ if os.path.isdir('tmp'):
     shutil.rmtree('tmp')
     
 try : os.mkdir('tmp')
-except : pass
+except : print("Error creating tmp folder!")
 
 # %% create test data file
 
 random_data = tb.gen_testdata(BLOCK_SIZE,NUMBER_OF_TEST_BLOCKS)
-#random_data = np.zeros((3,784),dtype=np.uint8)
-#with open("tmp/testdata.txt","a+") as f:
-#    for i in range(NUMBER_OF_TEST_BLOCKS):
-#        for j in range(BLOCK_SIZE):
-#            random_data[i,j] = random.randrange(255)
-#            f.write("{}\n".format(random_data[i,j]))
-#            if j == BLOCK_SIZE-20 and i ==2:
-#                break
              
 # %% run ghdl 
 # Saving console ouput in log file is not working on windows            
 tb.run_ghdl_win(("..\..\hdl\EggNet_v1_0_S00_AXIS.vhd","tb_AXI_stream_slave.vhd"),"tb_EggNet_v1_0_S00_AXIS")
-#with open("tmp/ghdl.log","a+") as f:           
-#    out = subprocess.run("ghdl -s --workdir=tmp ..\..\hdl\EggNet_v1_0_S00_AXIS.vhd tb_AXI_stream_slave.vhd",
-#                             shell=True, stdout=f, text=True, check=True)
-#    out = subprocess.run("ghdl -a --workdir=tmp ..\..\hdl\EggNet_v1_0_S00_AXIS.vhd tb_AXI_stream_slave.vhd",
-#                             shell=True, stdout=f, text=True, check=True)
-#    out = subprocess.run("ghdl -e --workdir=tmp tb_EggNet_v1_0_S00_AXIS",
-#                             shell=True, stdout=f, text=True, check=True)   
-#    out = subprocess.run("ghdl -r --workdir=tmp tb_EggNet_v1_0_S00_AXIS --vcd=tmp\output.vcd",
-#                             shell=True, stdout=f, text=True, check=True)
 
 
 # %% check results 

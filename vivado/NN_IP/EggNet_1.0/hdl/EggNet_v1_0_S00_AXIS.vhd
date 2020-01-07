@@ -17,13 +17,14 @@ entity EggNet_v1_0_S00_AXIS is
 	port (
 		-- Users to add ports here
     -- BRAM write
-    BRAM_PA_addr_o         : out std_logic_vector(BRAM_ADDR_WIDTH-1 downto 0);
-    BRAM_PA_clk_o          : out std_logic;
-    BRAM_PA_dout_o         : out std_logic_vector(BRAM_DATA_WIDTH-1 downto 0);
-    BRAM_PA_wea_o          : out std_logic_vector((BRAM_DATA_WIDTH/8)-1  downto 0);
-    -- Status
-    Invalid_block_o        : out std_logic; -- '1' if no tlast signal or if block size not correct 
-    Block_done_o           : out std_logic; -- indicates if block received successfully 
+    BRAM_PA_addr_o          : out std_logic_vector(BRAM_ADDR_WIDTH-1 downto 0);
+    BRAM_PA_clk_o           : out std_logic;
+    BRAM_PA_dout_o          : out std_logic_vector(BRAM_DATA_WIDTH-1 downto 0);
+    BRAM_PA_wea_o           : out std_logic_vector((BRAM_DATA_WIDTH/8)-1  downto 0);
+    -- Status               
+    Invalid_block_o         : out std_logic; -- '1' if no tlast signal or if block size not correct 
+    Block_done_o            : out std_logic; -- indicates if block received successfully 
+    Next_block_wr_i         : in std_logic_vector(1 downto 0);
 		-- User ports ends
 		-- Do not modify the ports beyond this line
 
@@ -136,7 +137,7 @@ begin
 	      write_pointer <= 0;
 	      writes_done <= '0';
 	    else
-	        if (fifo_wren = '1' and bram_byte_counter = "11" and write_pointer > 0) then
+	        if (fifo_wren = '1' and bram_byte_counter = "11" and write_pointer > 0 and Next_block_wr_i /= "00") then
 	          -- write pointer is incremented after every write to the FIFO
 	          -- when FIFO write signal is enabled.
 	          writes_done <= '0';
@@ -145,7 +146,7 @@ begin
 	          -- -- when FIFO write signal is enabled.
 	          write_pointer <= write_pointer + 1;
 	          writes_done <= '0';  
-          elsif fifo_wren = '0' and bram_byte_counter = "11"  and write_pointer > 0 then 
+          elsif fifo_wren = '0' and bram_byte_counter = "11"  and write_pointer > 0 and Next_block_wr_i /= "00" then 
             write_pointer <= write_pointer - 1; 
 	        end if;
           -- if (S_AXIS_TLAST = '1' and write_pointer = 0) then
@@ -157,7 +158,7 @@ begin
 	end process;
 
 	-- FIFO write enable generation
-	fifo_wren <= S_AXIS_TVALID and axis_tready;
+	fifo_wren <= S_AXIS_TVALID and axis_tready ;
 
 	-- -- FIFO Implementation
 	 -- FIFO_GEN: for byte_index in 0 to (C_S_AXIS_TDATA_WIDTH/8-1) generate
@@ -194,10 +195,10 @@ begin
       block_active_R <= '0';      
       tlast_buf <= '0';
       Invalid_block_o <= '0';
-      Block_done_o <= '1';
+      Block_done_o <= '0';
       BRAM_PA_wea_o <= (others => '0');
     elsif (rising_edge (S_AXIS_ACLK)) then
-      if bram_byte_counter = "11" then 
+      if bram_byte_counter = "11" and Next_block_wr_i /= "00" then 
         -- check if data is available in FIFO 
         if write_pointer > 0 then 
           Invalid_block_o <= '0';
@@ -209,7 +210,7 @@ begin
           if block_active = '0' then 
             block_active <= '1';
             block_select <= not block_select; 
-            if block_select = '1' then 
+            if Next_block_wr_i(0) = '1' then 
               bram_addr <= BLOCK_0_START_ADDR;
             else 
               bram_addr <= BLOCK_1_START_ADDR;
@@ -218,9 +219,9 @@ begin
         else -- if FIFO is empty transaction ends and it is checked if block size is valid 
           block_active <= '0';
           BRAM_PA_wea_o <= (others => '0');
-          Block_done_o <= '1';  
+          Block_done_o <= block_active;  
           tlast_buf <= '0';
-          if block_select = '0' then 
+          if Next_block_wr_i(0) = '1' then 
             if bram_addr = std_logic_vector(unsigned(BLOCK_0_START_ADDR)+
                                           to_unsigned(BRAM_ADDR_BLOCK_WIDTH,BRAM_ADDR_WIDTH)-1) then
               
