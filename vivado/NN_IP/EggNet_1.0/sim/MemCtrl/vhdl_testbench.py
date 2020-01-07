@@ -176,30 +176,31 @@ def gen_testdata(blocksize,blocknumber,filename="testdata.txt",drange=255,dtype=
                 f.write("{}\n".format(random_data[i,j]))
     return random_data
 
-def get_vectors_from_data(test_data,img_width,img_hight,blocknumber,kernel_size=3,drange=255,dtype=np.uint8):
+def get_vectors_from_data(test_data,img_width,img_hight,blocknumber,kernel_size=3,dtype=np.uint8):
     """
     Generates 3x1 vectors from test data 
 
     Parameters
     ----------
-    test_data : TYPE
-        DESCRIPTION.
-    img_width : TYPE
-        DESCRIPTION.
-    img_hight : TYPE
-        DESCRIPTION.
-    blocknumber : TYPE
-        DESCRIPTION.
-    kernel_size : TYPE, optional
-        DESCRIPTION. The default is 3.
-    drange : TYPE, optional
-        DESCRIPTION. The default is 255.
-    dtype : TYPE, optional
-        DESCRIPTION. The default is np.uint8.
+    test_data : numpy array
+        generated test data.
+    img_width : integer
+        with of test matrix.
+    img_hight : integer
+        hight of test matrix.
+    blocknumber : integer
+        number of blocks which are tested.
+    kernel_size : integer, optional
+        size of the kernel. The default is 3.
+    drange : integer, optional
+        Data. The default is 255.
+    dtype : numpy dtype, optional
+        Data type of numpy array. The default is np.uint8.
 
     Returns
     -------
-    Vector to compare with the output of the memory controller 
+    vectors : numpy array
+        Vector to compare with the output of the memory controller 
 
     """
     vector_number_per_block = (img_width+(kernel_size-1))*(img_hight+kernel_size-1)
@@ -242,3 +243,27 @@ def get_vectors_from_data(test_data,img_width,img_hight,blocknumber,kernel_size=
                 vector_cnt += 1
                 
     return vectors
+
+def get_Kernels(test_vectors):
+    """
+    Creates 3x3 
+
+    Parameters
+    ----------
+    test_vectors : numpy array
+        Generated test vectors 3x1.
+
+    Returns
+    -------
+    Kernel : numpy array
+        Kernel to compare with the output of the shiftregister
+
+    """
+    kernels = np.zeros((test_vectors.shape[0],test_vectors.shape[1],test_vectors.shape[2],test_vectors.shape[2]),dtype=np.uint8)
+    for i in range(test_vectors.shape[0]):
+        kernels[i,0,:,2] = test_vectors[i,0,:]
+        for j in range(test_vectors.shape[1]-1):
+            kernels[i,j+1,:,0] = kernels[i,j,:,1]
+            kernels[i,j+1,:,1] = kernels[i,j,:,2]
+            kernels[i,j+1,:,2] = test_vectors[i,j+1,:]
+    return kernels

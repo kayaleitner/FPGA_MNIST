@@ -113,6 +113,30 @@ if error_count_vectors == 0:
     print("Received Kernel vectors successfully!")
 else:
     print("{} errors occured receiving image".format(error_count_vectors))     
+
+# %% generate test vectors 
+test_kernels = tb.get_Kernels(test_vectors)
+    
+# %% check memory controller output 
+error_count_kernels = 0
+result_kernels = np.zeros((test_kernels.shape[0],test_kernels.shape[1],test_kernels.shape[2],test_kernels.shape[3]),dtype=np.uint8)
+for i in range(result_kernels.shape[0]):
+    file_cnt = 0
+    for k in range(test_kernels.shape[2]):
+        for h in range(test_kernels.shape[3]):
+            file_cnt += 1
+            with open("tmp/shift_data{}".format(file_cnt) + "_b{}.txt".format(i),"r") as f:
+                for j in range(result_kernels.shape[1]):
+                    result_kernels[i,j,h,k] = int(f.readline())
+                    if result_kernels[i,j,0,0] != test_kernels[i,j,0,0]:
+                        print("Error in shift_data1_b{}".format(i) + " in line {} ,".format(j) \
+                                    + "{}".format(result_kernels[i,j,0,0]) + " != {}".format(result_kernels[i,j,0,0]))
+                        error_count_kernels += 1
+    
+if error_count_vectors == 0:
+    print("Received Kernel vectors successfully!")
+else:
+    print("{} errors occured receiving image".format(error_count_vectors))       
 # %% delete tmp folder 
 error_count = error_count_rec_images + error_count_vectors
 if not KEEP_TEMPORARY_FILES and error_count == 0:
