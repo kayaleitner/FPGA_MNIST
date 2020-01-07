@@ -224,12 +224,12 @@ def get_vectors_from_data(test_data,img_width,img_hight,blocknumber,kernel_size=
                 vectors[i,vector_cnt,1] = test_data[i,j-img_width]
                 vectors[i,vector_cnt,2] = test_data[i,j]   
                 vector_cnt += 1
-            elif j >= (img_width*(img_hight+1))-1:
+            elif j >= (img_width*(img_hight+1)):
                 vectors[i,vector_cnt,0] = test_data[i,j-2*img_width]
                 vectors[i,vector_cnt,1] = 0
                 vectors[i,vector_cnt,2] = 0      
                 vector_cnt += 1
-            elif j >= (img_width*img_hight)-1:    
+            elif j >= (img_width*img_hight):    
                 #print(j)
                 vectors[i,vector_cnt,0] = test_data[i,j-2*img_width]
                 vectors[i,vector_cnt,1] = test_data[i,j-img_width]

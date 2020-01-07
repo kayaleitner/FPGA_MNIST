@@ -110,7 +110,7 @@ for i in range(NUMBER_OF_TEST_BLOCKS):
                             + "{}".format(result_vectors[i,j,2]) + " != {}".format(test_vectors[i,j,2]))
                 error_count_vectors += 1                
 if error_count_vectors == 0:
-    print("Received image data successfully!")
+    print("Received Kernel vectors successfully!")
 else:
     print("{} errors occured receiving image".format(error_count_vectors))     
 # %% delete tmp folder 
