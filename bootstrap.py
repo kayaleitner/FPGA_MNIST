@@ -54,7 +54,7 @@ class PackageManager:
             self.package_command = 'sudo apt-get'
 
     def install(self, *packages):
-        command = self.package_command + ' '.join(packages)
+        command = self.package_command + ' ' + ' '.join(packages)
         system(command=command)
 
 
