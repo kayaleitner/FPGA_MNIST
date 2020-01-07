@@ -17,12 +17,12 @@ def system(command):
 
 def check_if_package_manager_is_available():
 
-    if platform.system == "Windows":
+    if platform.system() == "Windows":
         try:
             system('choco --version')
         except:
             raise Exception("Please install the 'Choco' package manager")
-    elif platform.system == "MacOS":
+    elif platform.system() == "Darwin":
         try:
             system('brew --version')
         except:
@@ -31,9 +31,9 @@ def check_if_package_manager_is_available():
 class PackageManager:
     def __init__(self):
         super().__init__()
-        if platform.system == "Windows":
+        if platform.system() == "Windows":
             self.package_command = 'choco'
-        elif platform.system == "macOS":
+        elif platform.system/() == "Darwin":
             self.package_command = 'brew'
         else:
             self.package_command = 'sudo apt-get'
@@ -82,4 +82,3 @@ if __name__ == "__main__":
     # Install packages
     manager = PackageManager()
     manager.install('swig')
-    manager.install('')

@@ -24,6 +24,18 @@ For more details see the [Specification Document](tex/specification/specificatio
 
 For a quickstart run the script `bootstrap.sh`.
 
+_Experimental_ : It could also be done platform independent with python. This requires at least python 3 and could be run by:
+
+```bash
+python bootstrap.py
+
+# for linux/mac
+source venv/bin/activate
+
+# for windows
+./venv/bin/activate.bat
+```
+
 ### Requirements
 
 - Vivado, at least 2017.4, for creating the FPGA implemenation
