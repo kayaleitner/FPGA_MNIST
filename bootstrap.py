@@ -81,7 +81,7 @@ if __name__ == "__main__":
         system('virtualenv venv')
 
         # # Not sure if this works
-        if platform.system == 'Windows':
+        if platform.system() == 'Windows':
              pip_command = """
              \\venv\\Scripts\\activate.bat;
              pip install -r python\\requirements.txt
