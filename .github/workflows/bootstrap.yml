@@ -1,0 +1,31 @@
+name: bootstrap test
+# ToDo: This should be shifted to a docker container, so there is SWIG available
+on: [push, pull_request]
+
+jobs:
+  python_unit_test:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v1
+    
+    - name: Set up Python 3.7
+      uses: actions/setup-python@v1
+      with:
+        python-version: 3.7
+
+    - name: Install dependencies
+      run: |
+        python bootstrap.py
+        source venv/bin/activate
+        
+    - name: Try Build
+      run: |
+        cd python
+        python setup.py build
+        python setup.py build_ext --build-lib .
+        python setup.py sdist bdist_wheel
+
+    - name: Test
+      run: |
+        cd python
+        python setup.py test
