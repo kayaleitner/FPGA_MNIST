@@ -58,7 +58,6 @@ if __name__ == "__main__":
     # https://stackoverflow.com/questions/1871549/determine-if-python-is-running-inside-virtualenv?noredirect=1
     if not hasattr(sys, 'real_prefix') and not os.path.exists(join(PROJECT_DIRECTORY, 'venv')):
         venv.create('venv')
-        system('virtualenv venv')
         # Not sure if this works
         if platform.system == 'Windows':
             system(r'.\venv\bin\activate.bat')
@@ -77,3 +76,6 @@ if __name__ == "__main__":
 
 
     # Install packages
+    manager = PackageManager()
+    manager.install('swig')
+    manager.install('')
