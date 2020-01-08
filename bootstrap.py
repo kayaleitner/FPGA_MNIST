@@ -1,4 +1,6 @@
 """Purpose is to create a cross platform bootstrap file based on python
+
+Parts of the code from: https://bootstrap.pypa.io/ez_setup.py
 """
 
 
@@ -7,11 +9,17 @@ import os
 from os.path import join
 import platform
 import tarfile
-import urllib.request
 import shutil
+import subprocess
+
 
 if sys.version_info[0] < 3:
     raise Exception("Python 3 or a more recent version is required.")
+
+try:
+    from urllib.request import urlopen
+except ImportError:
+    from urllib2 import urlopen
 
 
 def system(command: str, convert_slashes=False):
@@ -41,6 +49,108 @@ def check_if_package_manager_is_available():
             system('brew --version')
         except:
             raise Exception("Please install the 'Choco' package manager")
+
+
+def download_file_powershell(url, target):
+    """
+    Download the file at url to target using Powershell.
+
+    Powershell will validate trust.
+    Raise an exception if the command cannot complete.
+    """
+    target = os.path.abspath(target)
+    ps_cmd = (
+        "[System.Net.WebRequest]::DefaultWebProxy.Credentials = "
+        "[System.Net.CredentialCache]::DefaultCredentials; "
+        '(new-object System.Net.WebClient).DownloadFile("%(url)s", "%(target)s")'
+        % locals()
+    )
+    cmd = [
+        'powershell',
+        '-Command',
+        ps_cmd,
+    ]
+    _clean_check(cmd, target)
+
+
+def has_powershell():
+    """Determine if Powershell is available."""
+    if platform.system() != 'Windows':
+        return False
+    cmd = ['powershell', '-Command', 'echo test']
+    with open(os.path.devnull, 'wb') as devnull:
+        try:
+            subprocess.check_call(cmd, stdout=devnull, stderr=devnull)
+        except Exception:
+            return False
+    return True
+
+
+download_file_powershell.viable = has_powershell
+
+
+def download_file_curl(url, target):
+    cmd = ['curl', url, '--location', '--silent', '--output', target]
+    _clean_check(cmd, target)
+
+
+def has_curl():
+    cmd = ['curl', '--version']
+    with open(os.path.devnull, 'wb') as devnull:
+        try:
+            subprocess.check_call(cmd, stdout=devnull, stderr=devnull)
+        except Exception:
+            return False
+    return True
+
+
+download_file_curl.viable = has_curl
+
+
+def download_file_wget(url, target):
+    cmd = ['wget', url, '--quiet', '--output-document', target]
+    _clean_check(cmd, target)
+
+
+def has_wget():
+    cmd = ['wget', '--version']
+    with open(os.path.devnull, 'wb') as devnull:
+        try:
+            subprocess.check_call(cmd, stdout=devnull, stderr=devnull)
+        except Exception:
+            return False
+    return True
+
+
+download_file_wget.viable = has_wget
+
+
+def download_file_insecure(url, target):
+    """Use Python to download the file, without connection authentication."""
+    src = urlopen(url)
+    try:
+        # Read all the data in one block.
+        data = src.read()
+    finally:
+        src.close()
+
+    # Write all the data in one block to avoid creating a partial file.
+    with open(target, "wb") as dst:
+        dst.write(data)
+
+
+download_file_insecure.viable = lambda: True
+
+
+def get_best_downloader():
+    downloaders = (
+        download_file_powershell,
+        download_file_curl,
+        download_file_wget,
+        download_file_insecure,
+    )
+    viable_downloaders = (dl for dl in downloaders if dl.viable())
+    return next(viable_downloaders, None)
 
 
 class PackageManager:
@@ -82,12 +192,13 @@ if __name__ == "__main__":
 
         # # Not sure if this works
         if platform.system() == 'Windows':
-             pip_command = """
-             \\venv\\Scripts\\activate.bat;
+            # \\venv\\Scripts\\activate.bat;
+            pip_command = """
+             \\venv\\Scripts\\activate.ps;
              pip install -r python\\requirements.txt
              """
         else:
-             pip_command = """
+            pip_command = """
              source ./venv/bin/activate;
              pip install -r python/requirements.txt
              """
@@ -104,6 +215,5 @@ if __name__ == "__main__":
     # Install packages
     manager = PackageManager()
     manager.install('swig')
-
 
     print('Finished workspace setup. You can now simply activate your ')
