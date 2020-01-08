@@ -2,28 +2,30 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 use work.kernel_pkg.all;
-use work.Kernel3x3;
+use work.ConvChannel;
 
-entity tb_3x3_kernel IS
-end tb_3x3_kernel;
+entity tb_conv_channel is
+end tb_conv_channel;
 
-architecture beh of tb_3x3_kernel is
+architecture beh of tb_conv_channel is
 	constant BIT_WIDTH_IN : integer := 8;
-	constant BIT_WIDTH_OUT : integer := 16;
-	constant WEIGHT : kernel_array_t := (0,1,0,0,0,0,0,0,0);
+	constant KERNEL_WIDTH_OUT : integer := 16;
+	constant BIT_WIDTH_OUT : integer := 8;
 	constant CLK_PERIOD : time := 10 ns; -- 100MHz
+	constant N : integer := 2;
 	
 	signal s_Clk_i, s_n_Res_i, s_Valid_i : std_logic;
-	signal s_X_i : std_logic_vector(BIT_WIDTH_IN*KERNEL_SIZE - 1 downto 0);
+	signal s_X_i : std_logic_vector(BIT_WIDTH_IN*N*KERNEL_SIZE - 1 downto 0);
 	signal s_Y_o : signed(BIT_WIDTH_OUT - 1 downto 0);
 begin
   
-	uit : entity work.Kernel3x3 
+	uit : entity work.ConvChannel 
 	generic map(
 		BIT_WIDTH_IN,
+		KERNEL_WIDTH_OUT,
 		BIT_WIDTH_OUT,
-		WEIGHT
-	) port map(
+		N
+	) port map( --default generics
 		Clk_i => s_Clk_i,
 		n_Res_i => s_n_Res_i,
 		Valid_i => s_Valid_i,
@@ -55,7 +57,7 @@ begin
 		s_Valid_i <= '0';
 		wait until rising_edge(s_n_Res_i);
 		s_Valid_i <= '1';
-		for I in 0 to 8 loop
+		for I in 0 to N*KERNEL_SIZE - 1 loop
 			s_X_i((I+1)*BIT_WIDTH_IN - 1 downto I*BIT_WIDTH_IN) <= std_logic_vector(to_signed(I, BIT_WIDTH_IN));
 		end loop;
 		wait until rising_edge(s_Clk_i);
