@@ -1,0 +1,11 @@
+blk_mem_gen_v8_4.v,verilog,blk_mem_gen_v8_4_1,../../../../src/blk_mem_gen_0/simulation/blk_mem_gen_v8_4.v,
+blk_mem_gen_0.v,verilog,xil_defaultlib,../../../../src/blk_mem_gen_0/sim/blk_mem_gen_0.v,
+fifo_generator_vlog_beh.v,verilog,fifo_generator_v13_2_1,../../../../src/fifo_generator_0/simulation/fifo_generator_vlog_beh.v,
+fifo_generator_v13_2_rfs.vhd,vhdl,fifo_generator_v13_2_1,../../../../src/fifo_generator_0/hdl/fifo_generator_v13_2_rfs.vhd,
+fifo_generator_v13_2_rfs.v,verilog,fifo_generator_v13_2_1,../../../../src/fifo_generator_0/hdl/fifo_generator_v13_2_rfs.v,
+fifo_generator_0.v,verilog,xil_defaultlib,../../../../src/fifo_generator_0/sim/fifo_generator_0.v,
+EggNet_v1_0_S00_AXIS.vhd,vhdl,xil_defaultlib,../../../../hdl/EggNet_v1_0_S00_AXIS.vhd,
+MemCtrl.vhd,vhdl,xil_defaultlib,../../../../src/MemCtrl/MemCtrl.vhd,
+Shiftregister_3x3.vhd,vhdl,xil_defaultlib,../../../../src/MemCtrl/Shiftregister_3x3.vhd,
+tb_memctrl.vhd,vhdl,xil_defaultlib,../../tb_memctrl.vhd,
+glbl.v,Verilog,xil_defaultlib,glbl.v

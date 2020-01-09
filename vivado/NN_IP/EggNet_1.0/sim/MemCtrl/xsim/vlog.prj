@@ -1,0 +1,16 @@
+verilog blk_mem_gen_v8_4_1  \
+"../../../../src/blk_mem_gen_0/simulation/blk_mem_gen_v8_4.v" \
+
+verilog xil_defaultlib  \
+"../../../../src/blk_mem_gen_0/sim/blk_mem_gen_0.v" \
+
+verilog fifo_generator_v13_2_1  \
+"../../../../src/fifo_generator_0/simulation/fifo_generator_vlog_beh.v" \
+"../../../../src/fifo_generator_0/hdl/fifo_generator_v13_2_rfs.v" \
+
+verilog xil_defaultlib  \
+"../../../../src/fifo_generator_0/sim/fifo_generator_0.v" \
+
+verilog xil_defaultlib "glbl.v"
+
+nosort
