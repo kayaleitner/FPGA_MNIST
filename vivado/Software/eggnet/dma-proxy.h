@@ -5,12 +5,16 @@
  * otherwise there may be issues when using cached memory. The issues were typically the 1st 32 bytes of the buffer
  * not working in the driver test.
  */
+#ifndef DMA_PROXY_H
+#define DMA_PROXY_H
 
-#define TEST_SIZE (3 * 1024 * 1024)
+#include <stdint.h>
+#define MAXIMUM_BUFFER_SIZE (3 * 1024 * 1024)
 
 struct dma_proxy_channel_interface {
-	unsigned char buffer[TEST_SIZE];
+	unsigned char buffer[MAXIMUM_BUFFER_SIZE];
 	enum proxy_status { PROXY_NO_ERROR = 0, PROXY_BUSY = 1, PROXY_TIMEOUT = 2, PROXY_ERROR = 3 } status;
 	unsigned int length;
 };
 
+#endif

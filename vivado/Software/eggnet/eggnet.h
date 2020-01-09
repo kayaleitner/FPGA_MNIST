@@ -14,7 +14,9 @@ typedef uint8_t byte_t;
 typedef enum egg_error_e {
     EGG_ERROR_NONE = 0, /// No Error
     EGG_ERROR_NULL_PTR, /// NULL Pointer Error
-    EGG_ERROR_DEVICE_COMMUNICATION_FAILED
+    EGG_ERROR_DEVICE_COMMUNICATION_FAILED,
+	EGG_ERROR_INIT_FAILDED,
+	EGG_ERROR_UDEF
 } egg_error_t;
 
 #define EGG_MEM_LAYER1_BRAM_ADDR 0x0
@@ -33,12 +35,21 @@ typedef enum egg_error_e {
 #define EGG_MEM_LAYER4_BRAM_SIZE 0ul
 
 /**
- * Initialises the kernel extension
+ * Initialises the kernel module for dma-proxy extension
  * @return Error code
  */
-egg_error_t egg_init_kernel();
+/**********************************************************************************************************************
+ *
+ *  DMA Functions
+ *
+ *********************************************************************************************************************/
 
-
+egg_error_t egg_init_dma();
+/**
+ * Closes dma-proxy dev driver
+ * @return Error code
+ */
+egg_error_t egg_close_dma();
 /**
  * Executes the EggNet in forward (inference) mode
  * @param image_buffer A pointer to memory image buffer
@@ -50,6 +61,14 @@ egg_error_t egg_init_kernel();
  * @return error code
  */
 egg_error_t egg_forward(const uint8_t *image_buffer, int batch, int height, int width, int channels, int *results);
+
+egg_error_t egg_send_single_image_sync(uint8_t *image_buffer);
+
+egg_error_t egg_send_single_image_async(uint8_t *image_buffer, int batch_size, pthread_t tid);
+
+void *egg_tx_thread(int batch, uint8_t *image_buffer);
+
+void *egg_tx_callback(void *args);
 
 
 /**********************************************************************************************************************
