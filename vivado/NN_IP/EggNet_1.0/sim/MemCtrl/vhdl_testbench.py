@@ -246,7 +246,7 @@ def get_vectors_from_data(test_data,img_width,img_hight,blocknumber,kernel_size=
 
 def get_Kernels(test_vectors):
     """
-    Creates 3x3 
+    Creates 3x3 kernel which is operated by the conv2d
 
     Parameters
     ----------
@@ -267,3 +267,106 @@ def get_Kernels(test_vectors):
             kernels[i,j+1,:,1] = kernels[i,j,:,2]
             kernels[i,j+1,:,2] = test_vectors[i,j+1,:]
     return kernels
+
+def conv_2d(kernels,weights):
+    """
+    Emulates the operation carried out by the conv2d module in the FPGA
+
+    Parameters
+    ----------
+    kernel : numpy array [B,W*H,Kh,Kw,Ci]
+        B.. Batch size
+        W*H.. Image width times hight
+        Kh.. Kernel hight
+        Kw.. Kernel width 
+        Ci.. channel number 
+        Input kernels 
+    weights : numpy array [Co,Ci,Kh,Kw]
+        Co.. output channel number
+        Ci.. input channel number
+        Kh.. Kernel hight
+        Kw .. Kernel with
+        Weigth matrix for each kernel 
+
+    Returns
+    -------
+    features: [B,W*H,Co]
+        B.. Batch size
+        W*H.. Image width times hight
+        Co.. output channel number
+        
+        8 bit output Matrix
+    """
+    features = np.zeros(kernels.shape[0],kernels.shape[1],weights.shape[0])
+    for i in range(kernels.shape[0]):
+        for j in range(kernels.shape[1]): 
+            for k in range (weights.shape[0]): 
+                features[i,j,k] = conv_channel(kernels,weights[k,:,:,:])
+    return features  
+
+
+def conv_channel(kernels,weights):
+    """
+    Emulates the operation carried out by the conv_channel module in the FPGA
+
+    Parameters
+    ----------
+    kernels : numpy array [B,W*H,Kh,Kw,Ci]
+        B.. Batch size
+        W*H.. Image width times hight
+        Kh.. Kernel hight
+        Kw.. Kernel width 
+        Ci.. channel number 
+        Input kernels 
+    weights : numpy array [Ci,Kh,Kw]
+        Ci.. input channel number
+        Kh.. Kernel hight
+        Kw .. Kernel with
+        Weigth matrix for each kernel 
+
+    Returns
+    -------
+    feature: [B,W*H]
+        B.. Batch size
+        W*H.. Image width times hight
+        
+        8 bit output Matrix
+    """
+    feature = np.zeros(kernels.shape[0],kernels.shape[1])
+    for i in range(kernels.shape[0]):
+        for j in range(kernels.shape[1]): 
+            for k in range (kernels.shape[4]): 
+                feature[i,j] += kernel_3x3(kernels[i,j,:,:,k],weights[k,:,:])
+    return feature                
+
+def kernel_3x3(kernel,weights):
+    """
+    Emulates the operation carried out by the 3x3_kernel module in the FPGA
+
+    Parameters
+    ----------
+    kernels : numpy array [B,W*H,Kh,Kw]
+        B.. Batch size
+        W*H.. Image width times hight
+        Kh.. Kernel hight
+        Kw.. Kernel width 
+        Input kernels 
+    weights : numpy array [Kh,Kw]
+        Kh.. Kernel hight
+        Kw .. Kernel with
+        Weigth matrix for each kernel 
+
+    Returns
+    -------
+    weighted_sum: [B,W*H]
+        B.. Batch size
+        W*H.. Image width times hight
+        
+        8 bit output Matrix
+    """    
+    weighted_sum = np.zeros(kernel.shape[0],kernel.shape[1])
+    for i in range(kernel.shape[0]):
+        for j in range(kernel.shape[1]):
+            weighted_sum[i,j] = np.sum(kernel[i,j,:,:] * weights)
+            
+    return weighted_sum            

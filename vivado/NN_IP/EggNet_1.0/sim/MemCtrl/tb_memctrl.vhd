@@ -15,11 +15,12 @@ architecture tb of tb_memctrl is
   constant BLOCK_LENGTH : integer := 784;
   constant BLOCKS_TO_TEST : integer := 3;
   
-  constant BRAM_ADDR_WIDTH		      : integer := 11; -- maximum = 24 
-  constant BRAM_DATA_WIDTH		      : integer := 8; -- channel number * bit depth 
+  constant L1_BRAM_ADDR_WIDTH		    : integer := 11; -- maximum = 24 
+  constant L1_DATA_WIDTH		        : integer := 8; -- bit depth of one channel  
+  constant L1_IN_CHANNEL_NUMBER		  : integer := 1; -- number of input channels 
   constant S_LAYER_DATA_WIDTH		    : integer := 32; 
-  constant S_LAYER_HIGHT            : integer := 28;
-  constant S_LAYER_WIDTH            : integer := 28;  
+  constant LAYER_HIGHT            : integer := 28;
+  constant LAYER_WIDTH            : integer := 28;  
   constant POOLING_FACTOR           : integer range 1 to 2    := 1; -- No pooling if POOLING_FACTOR = 1   
   constant STEP_SIZE                : integer range 1 to 2    := 1;       
   constant AXI4_STREAM_INPUT        : integer := 1;  
@@ -44,15 +45,27 @@ architecture tb of tb_memctrl is
       doutb : OUT STD_LOGIC_VECTOR(7 DOWNTO 0)
     );
   end component blk_mem_gen_0;
+  
+  component fifo_generator_0 IS
+    PORT (
+      clk : IN STD_LOGIC;
+      srst : IN STD_LOGIC;
+      din : IN STD_LOGIC_VECTOR(15 DOWNTO 0);
+      wr_en : IN STD_LOGIC;
+      rd_en : IN STD_LOGIC;
+      dout : OUT STD_LOGIC_VECTOR(15 DOWNTO 0);
+      full : OUT STD_LOGIC;
+      empty : OUT STD_LOGIC
+    );
+  END component fifo_generator_0;  
  
   component MemCtrl_3x3 is
     Generic(
       BRAM_ADDR_WIDTH		        : integer range 1 to 24   := 10; -- maximum = 24 
-      BRAM_DATA_WIDTH		        : integer range 1 to 512  := 8; -- channel number * bit depth 
-      S_LAYER_HIGHT             : integer := 28;
-      S_LAYER_WIDTH             : integer := 28;
-      POOLING_FACTOR            : integer range 1 to 2    := 1; -- No pooling if POOLING_FACTOR = 1 
-      STEP_SIZE                 : integer range 1 to 2    := 1;     
+      DATA_WIDTH		            : integer := 8; -- channel number * bit depth maximum = 512    
+      IN_CHANNEL_NUMBER		      : integer := 1;       
+      LAYER_HIGHT               : integer := 28;
+      LAYER_WIDTH               : integer := 28;   
       AXI4_STREAM_INPUT         : integer range 0 to 1    := 0;
       C_S_AXIS_TDATA_WIDTH	    : integer	:= 32;
       C_S00_AXI_DATA_WIDTH	    : integer	:= 32;
@@ -66,26 +79,31 @@ architecture tb of tb_memctrl is
       Layer_aresetn_i   : in std_logic;      
       -- Previous layer interface 
       S_layer_tvalid_i	: in std_logic;
-      S_layer_tdata_i   : in std_logic_vector((BRAM_DATA_WIDTH+(AXI4_STREAM_INPUT*C_S_AXIS_TDATA_WIDTH)-(AXI4_STREAM_INPUT*BRAM_DATA_WIDTH))-1 downto 0);-- if AXI4_STREAM_INPUT = 0 -> BRAM_DATA_WIDTH else C_S_AXIS_TDATA_WIDTH
-      S_layer_tkeep_i   : in std_logic_vector(((BRAM_DATA_WIDTH+(AXI4_STREAM_INPUT*C_S_AXIS_TDATA_WIDTH)-(AXI4_STREAM_INPUT*BRAM_DATA_WIDTH))/8)-1 downto 0);  --only used if next layer is AXI-stream interface 
+      S_layer_tdata_i   : in std_logic_vector(((L1_DATA_WIDTH*L1_IN_CHANNEL_NUMBER)+(AXI4_STREAM_INPUT*C_S_AXIS_TDATA_WIDTH)-(AXI4_STREAM_INPUT*(L1_DATA_WIDTH*L1_IN_CHANNEL_NUMBER)))-1 downto 0);-- if AXI4_STREAM_INPUT = 0 -> (L1_DATA_WIDTH*L1_IN_CHANNEL_NUMBER) else C_S_AXIS_TDATA_WIDTH
+      S_layer_tkeep_i   : in std_logic_vector((((L1_DATA_WIDTH*L1_IN_CHANNEL_NUMBER)+(AXI4_STREAM_INPUT*C_S_AXIS_TDATA_WIDTH)-(AXI4_STREAM_INPUT*(L1_DATA_WIDTH*L1_IN_CHANNEL_NUMBER)))/8)-1 downto 0);  --only used if next layer is AXI-stream interface 
       S_layer_tlast_i   : in std_logic;
       S_layer_tready_o  : out std_logic;     
       -- Next layer interface 
       M_layer_tvalid_o	: out std_logic;
-      M_layer_tdata_1_o : out std_logic_vector(BRAM_DATA_WIDTH-1 downto 0); --  Output vector element 1 |Vector: trans(1,2,3)
-      M_layer_tdata_2_o : out std_logic_vector(BRAM_DATA_WIDTH-1 downto 0); --  Output vector element 2 |Vector: trans(1,2,3)
-      M_layer_tdata_3_o : out std_logic_vector(BRAM_DATA_WIDTH-1 downto 0); --  Output vector element 3 |Vector: trans(1,2,3)
-      M_layer_tkeep_o   : out std_logic_vector((BRAM_DATA_WIDTH*KERNEL_SIZE/8)-1 downto 0); --only used if next layer is AXI-stream interface (default open)
+      M_layer_tdata_1_o : out std_logic_vector((L1_DATA_WIDTH*L1_IN_CHANNEL_NUMBER)-1 downto 0); --  Output vector element 1 |Vector: trans(1,2,3)
+      M_layer_tdata_2_o : out std_logic_vector((L1_DATA_WIDTH*L1_IN_CHANNEL_NUMBER)-1 downto 0); --  Output vector element 2 |Vector: trans(1,2,3)
+      M_layer_tdata_3_o : out std_logic_vector((L1_DATA_WIDTH*L1_IN_CHANNEL_NUMBER)-1 downto 0); --  Output vector element 3 |Vector: trans(1,2,3)
+      M_layer_tkeep_o   : out std_logic_vector(((L1_DATA_WIDTH*L1_IN_CHANNEL_NUMBER)*KERNEL_SIZE/8)-1 downto 0); --only used if next layer is AXI-stream interface (default open)
       M_layer_tlast_o   : out std_logic;
-      M_layer_tshdir_o    : out std_logic_vector(1 downto 0); -- shiftregister direction 01 -> shift right, 10 -> shift down, 11 -> shift up, 00 -> reset shiftregister  
       M_layer_tready_i  : in std_logic;      
+      -- M_layer FIFO
+      M_layer_fifo_srst : out std_logic;
+      M_layer_fifo_in   : out std_logic_vector(((L1_DATA_WIDTH*L1_IN_CHANNEL_NUMBER)*2)-1 downto 0);
+      M_layer_fifo_wr   : out std_logic;
+      M_layer_fifo_rd   : out std_logic;
+      M_layer_fifo_out  : in std_logic_vector(((L1_DATA_WIDTH*L1_IN_CHANNEL_NUMBER)*2)-1 downto 0);      
       -- BRAM interface
       Bram_clk_o        : out std_logic;
-      Bram_pa_addr_o    : out std_logic_vector(BRAM_ADDR_WIDTH-1 downto 0);
-      Bram_pa_data_wr_o : out std_logic_vector(BRAM_DATA_WIDTH-1 downto 0);
-      Bram_pa_wea_o     : out std_logic_vector((BRAM_DATA_WIDTH/8)-1  downto 0);
-      Bram_pb_addr_o    : out std_logic_vector(BRAM_ADDR_WIDTH-1 downto 0);
-      Bram_pb_data_rd_i : in std_logic_vector(BRAM_DATA_WIDTH-1 downto 0);
+      Bram_pa_addr_o    : out std_logic_vector(L1_BRAM_ADDR_WIDTH-1 downto 0);
+      Bram_pa_data_wr_o : out std_logic_vector((L1_DATA_WIDTH*L1_IN_CHANNEL_NUMBER)-1 downto 0);
+      Bram_pa_wea_o     : out std_logic_vector(((L1_DATA_WIDTH*L1_IN_CHANNEL_NUMBER)/8)-1  downto 0);
+      Bram_pb_addr_o    : out std_logic_vector(L1_BRAM_ADDR_WIDTH-1 downto 0);
+      Bram_pb_data_rd_i : in std_logic_vector((L1_DATA_WIDTH*L1_IN_CHANNEL_NUMBER)-1 downto 0);
       Bram_pb_rst_o     : out std_logic; -- ACTIVE HIGH!           
       -- AXI Lite dbg interface 
       AXI_lite_reg_addr_i  : in std_logic_vector(C_S00_AXI_DATA_WIDTH-1 downto 0); 	-- 31 downto 28 : Memory controller address | 27 downto 24: 32 bit vector address | 23 downto 0: BRAM address
@@ -136,34 +154,38 @@ architecture tb of tb_memctrl is
   signal s_layer_tlast          : std_logic;
   signal s_layer_tready         : std_logic;     
   signal m_layer_tvalid         : std_logic;
-  signal m_layer_tdata_1        : std_logic_vector(BRAM_DATA_WIDTH-1 downto 0);
-  signal m_layer_tdata_2        : std_logic_vector(BRAM_DATA_WIDTH-1 downto 0);
-  signal m_layer_tdata_3        : std_logic_vector(BRAM_DATA_WIDTH-1 downto 0);
-  signal m_layer_tkeep          : std_logic_vector((BRAM_DATA_WIDTH*KERNEL_SIZE/8)-1 downto 0);
+  signal m_layer_tdata_1        : std_logic_vector((L1_DATA_WIDTH*L1_IN_CHANNEL_NUMBER)-1 downto 0);
+  signal m_layer_tdata_2        : std_logic_vector((L1_DATA_WIDTH*L1_IN_CHANNEL_NUMBER)-1 downto 0);
+  signal m_layer_tdata_3        : std_logic_vector((L1_DATA_WIDTH*L1_IN_CHANNEL_NUMBER)-1 downto 0);
+  signal m_layer_tkeep          : std_logic_vector(((L1_DATA_WIDTH*L1_IN_CHANNEL_NUMBER)*KERNEL_SIZE/8)-1 downto 0);
   signal m_layer_tlast          : std_logic;
-  signal m_layer_tshdir         : std_logic_vector(1 downto 0); 
-  signal m_layer_tready         : std_logic;      
+  signal m_layer_tready         : std_logic;   
+  signal m_layer_fifo_srst      : std_logic;
+  signal m_layer_fifo_in        : std_logic_vector(((L1_DATA_WIDTH*L1_IN_CHANNEL_NUMBER)*2)-1 downto 0);
+  signal m_layer_fifo_wr        : std_logic;
+  signal m_layer_fifo_rd        : std_logic;
+  signal m_layer_fifo_out       : std_logic_vector(((L1_DATA_WIDTH*L1_IN_CHANNEL_NUMBER)*2)-1 downto 0);  
   signal bram_clk               : std_logic;
-  signal bram_pa_addr           : std_logic_vector(BRAM_ADDR_WIDTH-1 downto 0);
-  signal bram_pa_data_wr        : std_logic_vector(BRAM_DATA_WIDTH-1 downto 0);
-  signal bram_pa_wea            : std_logic_vector((BRAM_DATA_WIDTH/8)-1  downto 0);
-  signal bram_pb_addr           : std_logic_vector(BRAM_ADDR_WIDTH-1 downto 0);
-  signal bram_pb_data_rd        : std_logic_vector(BRAM_DATA_WIDTH-1 downto 0);
+  signal bram_pa_addr           : std_logic_vector(L1_BRAM_ADDR_WIDTH-1 downto 0);
+  signal bram_pa_data_wr        : std_logic_vector((L1_DATA_WIDTH*L1_IN_CHANNEL_NUMBER)-1 downto 0);
+  signal bram_pa_wea            : std_logic_vector(((L1_DATA_WIDTH*L1_IN_CHANNEL_NUMBER)/8)-1  downto 0);
+  signal bram_pb_addr           : std_logic_vector(L1_BRAM_ADDR_WIDTH-1 downto 0);
+  signal bram_pb_data_rd        : std_logic_vector((L1_DATA_WIDTH*L1_IN_CHANNEL_NUMBER)-1 downto 0);
   signal bram_pb_rst            : std_logic; -- ACTIVE HIGH!            
   signal axi_lite_reg_addr      : std_logic_vector(C_S00_AXI_DATA_WIDTH-1 downto 0); 
   signal axi_lite_reg_data      : std_logic_vector(C_S00_AXI_DATA_WIDTH-1 downto 0);
   signal s_layer_invalid_block  : std_logic;
   signal bram_block_done     : std_logic;
 
-  signal shiftreg_data_1        : std_logic_vector((BRAM_DATA_WIDTH - 1) downto 0);
-  signal shiftreg_data_2        : std_logic_vector((BRAM_DATA_WIDTH - 1) downto 0);
-  signal shiftreg_data_3        : std_logic_vector((BRAM_DATA_WIDTH - 1) downto 0);
-  signal shiftreg_data_4        : std_logic_vector((BRAM_DATA_WIDTH - 1) downto 0);
-  signal shiftreg_data_5        : std_logic_vector((BRAM_DATA_WIDTH - 1) downto 0);
-  signal shiftreg_data_6        : std_logic_vector((BRAM_DATA_WIDTH - 1) downto 0);
-  signal shiftreg_data_7        : std_logic_vector((BRAM_DATA_WIDTH - 1) downto 0);
-  signal shiftreg_data_8        : std_logic_vector((BRAM_DATA_WIDTH - 1) downto 0);
-  signal shiftreg_data_9        : std_logic_vector((BRAM_DATA_WIDTH - 1) downto 0);
+  signal shiftreg_data_1        : std_logic_vector(((L1_DATA_WIDTH*L1_IN_CHANNEL_NUMBER) - 1) downto 0);
+  signal shiftreg_data_2        : std_logic_vector(((L1_DATA_WIDTH*L1_IN_CHANNEL_NUMBER) - 1) downto 0);
+  signal shiftreg_data_3        : std_logic_vector(((L1_DATA_WIDTH*L1_IN_CHANNEL_NUMBER) - 1) downto 0);
+  signal shiftreg_data_4        : std_logic_vector(((L1_DATA_WIDTH*L1_IN_CHANNEL_NUMBER) - 1) downto 0);
+  signal shiftreg_data_5        : std_logic_vector(((L1_DATA_WIDTH*L1_IN_CHANNEL_NUMBER) - 1) downto 0);
+  signal shiftreg_data_6        : std_logic_vector(((L1_DATA_WIDTH*L1_IN_CHANNEL_NUMBER) - 1) downto 0);
+  signal shiftreg_data_7        : std_logic_vector(((L1_DATA_WIDTH*L1_IN_CHANNEL_NUMBER) - 1) downto 0);
+  signal shiftreg_data_8        : std_logic_vector(((L1_DATA_WIDTH*L1_IN_CHANNEL_NUMBER) - 1) downto 0);
+  signal shiftreg_data_9        : std_logic_vector(((L1_DATA_WIDTH*L1_IN_CHANNEL_NUMBER) - 1) downto 0);
   signal shiftreg_tvalid        : std_logic;
   signal shiftreg_tlast         : std_logic;
   signal shiftreg_tready        : std_logic;
@@ -173,12 +195,12 @@ architecture tb of tb_memctrl is
   signal TbClock : std_logic := '0';
   signal TbSimEnded : std_logic := '0';
   
-  type   RAM_TYPE IS ARRAY(BLOCK_LENGTH*BLOCKS_TO_TEST-1 downto 0) OF std_logic_vector(BRAM_DATA_WIDTH-1 downto 0); 
+  type   RAM_TYPE IS ARRAY(BLOCK_LENGTH*BLOCKS_TO_TEST-1 downto 0) OF std_logic_vector((L1_DATA_WIDTH*L1_IN_CHANNEL_NUMBER)-1 downto 0); 
   signal AXI_data_buffer      : RAM_TYPE := (others => X"00");
-  type   BRAM_TYPE IS ARRAY(BLOCK_LENGTH*2-1 downto 0) OF std_logic_vector(BRAM_DATA_WIDTH-1 downto 0); 
+  type   BRAM_TYPE IS ARRAY(BLOCK_LENGTH*2-1 downto 0) OF std_logic_vector((L1_DATA_WIDTH*L1_IN_CHANNEL_NUMBER)-1 downto 0); 
   signal BRAM_data_buffer      : BRAM_TYPE := (others => X"00"); 
   signal dbg_bram_data_buffer      : BRAM_TYPE := (others => X"00"); 
-  type   M_LAYER_TYPE IS ARRAY(BLOCK_LENGTH*3-1 downto 0) OF std_logic_vector(BRAM_DATA_WIDTH-1 downto 0);
+  type   M_LAYER_TYPE IS ARRAY(BLOCK_LENGTH*3-1 downto 0) OF std_logic_vector((L1_DATA_WIDTH*L1_IN_CHANNEL_NUMBER)-1 downto 0);
   signal M_LAYER_buffer_1      : M_LAYER_TYPE := (others => X"00");
   signal M_LAYER_buffer_2      : M_LAYER_TYPE := (others => X"00");
   signal M_LAYER_buffer_3      : M_LAYER_TYPE := (others => X"00");
@@ -209,14 +231,13 @@ architecture tb of tb_memctrl is
  
 begin
 
-  dut: MemCtrl_3x3
+  dut_L1: MemCtrl_3x3
   generic map(                                   
-    BRAM_ADDR_WIDTH		      => BRAM_ADDR_WIDTH		 ,
-    BRAM_DATA_WIDTH		      => BRAM_DATA_WIDTH		 ,
-    S_LAYER_HIGHT           => S_LAYER_HIGHT       ,
-    S_LAYER_WIDTH           => S_LAYER_WIDTH       ,
-    POOLING_FACTOR          => POOLING_FACTOR      ,
-    STEP_SIZE               => STEP_SIZE           ,
+    BRAM_ADDR_WIDTH		      => L1_BRAM_ADDR_WIDTH		 ,
+    DATA_WIDTH		          => L1_DATA_WIDTH		    ,
+    IN_CHANNEL_NUMBER       => L1_IN_CHANNEL_NUMBER,
+    LAYER_HIGHT             => LAYER_HIGHT       ,
+    LAYER_WIDTH             => LAYER_WIDTH       ,
     AXI4_STREAM_INPUT       => AXI4_STREAM_INPUT   ,
     C_S_AXIS_TDATA_WIDTH    => C_S_AXIS_TDATA_WIDTH,
     C_S00_AXI_DATA_WIDTH    => C_S00_AXI_DATA_WIDTH,
@@ -236,8 +257,12 @@ begin
     M_layer_tdata_3_o       => m_layer_tdata_3      ,
     M_layer_tkeep_o         => m_layer_tkeep        ,
     M_layer_tlast_o         => m_layer_tlast        ,
-    M_layer_tshdir_o        => m_layer_tshdir       ,
     M_layer_tready_i        => m_layer_tready       ,
+    M_layer_fifo_srst       => m_layer_fifo_srst    ,
+    M_layer_fifo_in         => m_layer_fifo_in      ,
+    M_layer_fifo_wr         => m_layer_fifo_wr      ,
+    M_layer_fifo_rd         => m_layer_fifo_rd      ,
+    M_layer_fifo_out        => m_layer_fifo_out     ,
     Bram_clk_o              => bram_clk             ,
     Bram_pa_addr_o          => bram_pa_addr         ,
     Bram_pa_data_wr_o       => bram_pa_data_wr      ,
@@ -249,9 +274,37 @@ begin
     AXI_lite_reg_data_o     => axi_lite_reg_data    ,
     S_layer_invalid_block_o => s_layer_invalid_block);
 
+  -- ********************* Instantiation of Block RAM ************************************************  
+  Bram_inst : blk_mem_gen_0
+  port map (clka  => bram_clk,
+            wea   => bram_pa_wea,
+            addra => bram_pa_addr,
+            dina  => bram_pa_data_wr,
+            clkb  => bram_clk,
+            addrb => bram_pb_addr,
+            doutb => bram_pb_data_rd
+  );
+
+
+  -- ********************* FIFO to buffer 2 lines (3x3 Kernel)   *************************************
+  -- Required in order to provide a new Data vector at each clock cycle 
+  -- This method triples the performance because only one clock cycle is required to fetch a data vector
+
+  linebuffer: fifo_generator_0 
+    port map (
+      clk   => layer_clk,
+      srst  => m_layer_fifo_srst,
+      din   => m_layer_fifo_in,
+      wr_en => m_layer_fifo_wr,
+      rd_en => m_layer_fifo_rd,
+      dout  => m_layer_fifo_out,
+      full  => open,
+      empty => open 
+    );    
+
   shiftregister: ShiftRegister_3x3
     generic map(
-        DATA_WIDTH => BRAM_DATA_WIDTH
+        DATA_WIDTH => (L1_DATA_WIDTH*L1_IN_CHANNEL_NUMBER)
     )
     port map(
       Clk_i       => layer_clk,		 
@@ -389,7 +442,7 @@ begin
         debug_mem_ctrl <= std_logic_vector(to_unsigned(1,debug_mem_ctrl'length));
         debug_bram_addr <= std_logic_vector(data_counter);
         if data_counter > 0 then 
-          dbg_bram_data_buffer(to_integer(data_counter)-1) <= axi_lite_reg_data(BRAM_DATA_WIDTH-1 downto 0);
+          dbg_bram_data_buffer(to_integer(data_counter)-1) <= axi_lite_reg_data((L1_DATA_WIDTH*L1_IN_CHANNEL_NUMBER)-1 downto 0);
         end if;        
         if data_counter > (BLOCK_LENGTH*2) then 
           data_counter := (others => '0');
@@ -476,7 +529,7 @@ begin
       for j in 0 to BLOCK_LENGTH-1 loop
         readline(file_TEST_DATA, v_ILINE);
         read(v_ILINE, read_data);
-        AXI_data_buffer((i*BLOCK_LENGTH)+j) <= std_logic_vector(to_unsigned(read_data,BRAM_DATA_WIDTH));
+        AXI_data_buffer((i*BLOCK_LENGTH)+j) <= std_logic_vector(to_unsigned(read_data,(L1_DATA_WIDTH*L1_IN_CHANNEL_NUMBER)));
         --report "read_data=" & integer'image(read_data) 
         --        & " i=" & integer'image(i) & " j=" & integer'image(j);              
         if endfile(file_TEST_DATA) = true then 
@@ -640,17 +693,7 @@ begin
     block_cnt := block_cnt+1;
   end process;
  
- 
-  -- ********************* Instantiation of Block RAM ************************************************  
-  Bram_inst : blk_mem_gen_0
-  port map (clka  => bram_clk,
-            wea   => bram_pa_wea,
-            addra => bram_pa_addr,
-            dina  => bram_pa_data_wr,
-            clkb  => bram_clk,
-            addrb => bram_pb_addr,
-            doutb => bram_pb_data_rd
-  );
+
 
 end tb;
 

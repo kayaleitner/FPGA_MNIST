@@ -5,11 +5,10 @@ use ieee.numeric_std.all;
 entity MemCtrl_3x3 is
   Generic(
     BRAM_ADDR_WIDTH		        : integer range 1 to 24   := 10; -- maximum = 24 
-    BRAM_DATA_WIDTH		        : integer range 1 to 512  := 8; -- channel number * bit depth  
-    S_LAYER_HIGHT             : integer := 28;
-    S_LAYER_WIDTH             : integer := 28;
-    POOLING_FACTOR            : integer range 1 to 2    := 1; -- No pooling if POOLING_FACTOR = 1 
-    STEP_SIZE                 : integer range 1 to 2    := 1;
+    DATA_WIDTH		            : integer := 8; -- channel number * bit depth maximum = 512    
+    IN_CHANNEL_NUMBER		      : integer := 1; 
+    LAYER_HIGHT               : integer := 28; -- Layer hight of next layer 
+    LAYER_WIDTH               : integer := 28; -- Layer width of next layer 
     
     AXI4_STREAM_INPUT         : integer range 0 to 1 := 0; -- integer to calculate S_LAYER_DATA_WIDTH 
     C_S_AXIS_TDATA_WIDTH	    : integer	:= 32;
@@ -25,28 +24,34 @@ entity MemCtrl_3x3 is
     
     -- Previous layer interface 
     S_layer_tvalid_i	: in std_logic;
-    S_layer_tdata_i   : in std_logic_vector((BRAM_DATA_WIDTH+(AXI4_STREAM_INPUT*C_S_AXIS_TDATA_WIDTH)-(AXI4_STREAM_INPUT*BRAM_DATA_WIDTH))-1 downto 0); -- if AXI4_STREAM_INPUT = 0 -> BRAM_DATA_WIDTH else C_S_AXIS_TDATA_WIDTH
-    S_layer_tkeep_i   : in std_logic_vector(((BRAM_DATA_WIDTH+(AXI4_STREAM_INPUT*C_S_AXIS_TDATA_WIDTH)-(AXI4_STREAM_INPUT*BRAM_DATA_WIDTH))/8)-1 downto 0); --only used if next layer is AXI-stream interface 
+    S_layer_tdata_i   : in std_logic_vector(((DATA_WIDTH*IN_CHANNEL_NUMBER)+(AXI4_STREAM_INPUT*C_S_AXIS_TDATA_WIDTH)-(AXI4_STREAM_INPUT*(DATA_WIDTH*IN_CHANNEL_NUMBER)))-1 downto 0); -- if AXI4_STREAM_INPUT = 0 -> (DATA_WIDTH*IN_CHANNEL_NUMBER) else C_S_AXIS_TDATA_WIDTH
+    S_layer_tkeep_i   : in std_logic_vector((((DATA_WIDTH*IN_CHANNEL_NUMBER)+(AXI4_STREAM_INPUT*C_S_AXIS_TDATA_WIDTH)-(AXI4_STREAM_INPUT*(DATA_WIDTH*IN_CHANNEL_NUMBER)))/8)-1 downto 0); --only used if next layer is AXI-stream interface 
     S_layer_tlast_i   : in std_logic;
-    S_layer_tready_o  : out std_logic;
+    S_layer_tready_o  : out std_logic;   
     
     -- Next layer interface 
     M_layer_tvalid_o	: out std_logic;
-    M_layer_tdata_1_o : out std_logic_vector(BRAM_DATA_WIDTH-1 downto 0); --  Output vector element 1 |Vector: trans(1,2,3)
-    M_layer_tdata_2_o : out std_logic_vector(BRAM_DATA_WIDTH-1 downto 0); --  Output vector element 2 |Vector: trans(1,2,3)
-    M_layer_tdata_3_o : out std_logic_vector(BRAM_DATA_WIDTH-1 downto 0); --  Output vector element 3 |Vector: trans(1,2,3)
-    M_layer_tkeep_o   : out std_logic_vector((BRAM_DATA_WIDTH*3/8)-1 downto 0); --only used if next layer is AXI-stream interface (default open)
+    M_layer_tdata_1_o : out std_logic_vector((DATA_WIDTH*IN_CHANNEL_NUMBER)-1 downto 0); --  Output vector element 1 |Vector: trans(1,2,3)
+    M_layer_tdata_2_o : out std_logic_vector((DATA_WIDTH*IN_CHANNEL_NUMBER)-1 downto 0); --  Output vector element 2 |Vector: trans(1,2,3)
+    M_layer_tdata_3_o : out std_logic_vector((DATA_WIDTH*IN_CHANNEL_NUMBER)-1 downto 0); --  Output vector element 3 |Vector: trans(1,2,3)
+    M_layer_tkeep_o   : out std_logic_vector(((DATA_WIDTH*IN_CHANNEL_NUMBER)*3/8)-1 downto 0); --only used if next layer is AXI-stream interface (default open)
     M_layer_tlast_o   : out std_logic;
-    M_layer_tshdir_o  : out std_logic_vector(1 downto 0); -- shiftregister direction 01 -> shift right, 10 -> shift down, 11 -> shift up, 00 -> reset shiftregister  
     M_layer_tready_i  : in std_logic;
+
+    -- M_layer FIFO
+    M_layer_fifo_srst : out std_logic;
+    M_layer_fifo_in   : out std_logic_vector(((DATA_WIDTH*IN_CHANNEL_NUMBER)*2)-1 downto 0);
+    M_layer_fifo_wr   : out std_logic;
+    M_layer_fifo_rd   : out std_logic;
+    M_layer_fifo_out  : in std_logic_vector(((DATA_WIDTH*IN_CHANNEL_NUMBER)*2)-1 downto 0);
     
     -- BRAM interface
     Bram_clk_o        : out std_logic;
     Bram_pa_addr_o    : out std_logic_vector(BRAM_ADDR_WIDTH-1 downto 0);
-    Bram_pa_data_wr_o : out std_logic_vector(BRAM_DATA_WIDTH-1 downto 0);
-    Bram_pa_wea_o     : out std_logic_vector((BRAM_DATA_WIDTH/8)-1  downto 0);
+    Bram_pa_data_wr_o : out std_logic_vector((DATA_WIDTH*IN_CHANNEL_NUMBER)-1 downto 0);
+    Bram_pa_wea_o     : out std_logic_vector(((DATA_WIDTH*IN_CHANNEL_NUMBER)/8)-1  downto 0);
     Bram_pb_addr_o    : out std_logic_vector(BRAM_ADDR_WIDTH-1 downto 0);
-    Bram_pb_data_rd_i : in std_logic_vector(BRAM_DATA_WIDTH-1 downto 0);
+    Bram_pb_data_rd_i : in std_logic_vector((DATA_WIDTH*IN_CHANNEL_NUMBER)-1 downto 0);
     Bram_pb_rst_o     : out std_logic; -- ACTIVE HIGH!
     
     -- AXI Lite dbg interface 
@@ -61,17 +66,16 @@ end MemCtrl_3x3;
 
 architecture Behavioral of MemCtrl_3x3 is
 
-constant BRAM_ADDR_BLOCK_WIDTH      : integer := S_LAYER_HIGHT * S_LAYER_WIDTH;
+constant BRAM_ADDR_BLOCK_WIDTH      : integer := LAYER_HIGHT * LAYER_WIDTH;
+constant BRAM_DATA_WIDTH            : integer := (DATA_WIDTH*IN_CHANNEL_NUMBER);
 constant DBG_MEM_CTRL_ADDR_WIDTH    : integer := 4;
 constant DBG_REA_32BIT_WIDTH        : integer := 4;
 constant DBG_BRAM_ADDRESS_WIDTH     : integer := 24;
 constant DBG_MAX_REA                : integer := BRAM_DATA_WIDTH/C_S00_AXI_DATA_WIDTH;
-constant M_LAYER_HIGHT              : integer := 28/POOLING_FACTOR;
-constant M_LAYER_WIDTH              : integer := 28/POOLING_FACTOR;
 constant KERNEL_SIZE                : integer := 3;
 
-type RD_STATES is (IDLE, START,MOVE_RIGHT, MOVE_DOWN, WAIT_CY, PADDING, STOP);
-type WR_STATES is (START,MOVE_LEFT,MOVE_RIGHT, MOVE_DOWN_NL, MOVE_DOWN_NR,STOP); 
+type RD_STATES is (START,MOVE_RIGHT, WAIT_CY, PADDING);
+type WR_STATES is (START,MOVE); 
 type WR_BL_STATES is (IDLE,BLOCK0,BLOCK1); 
 type RD_BL_STATES is (IDLE,BLOCK0,BLOCK1); 
 
@@ -121,19 +125,6 @@ component EggNet_v1_0_S00_AXIS is
 	);
 end component EggNet_v1_0_S00_AXIS;
 
-component fifo_generator_0 IS
-  PORT (
-    clk : IN STD_LOGIC;
-    srst : IN STD_LOGIC;
-    din : IN STD_LOGIC_VECTOR(15 DOWNTO 0);
-    wr_en : IN STD_LOGIC;
-    rd_en : IN STD_LOGIC;
-    dout : OUT STD_LOGIC_VECTOR(15 DOWNTO 0);
-    full : OUT STD_LOGIC;
-    empty : OUT STD_LOGIC
-  );
-END component fifo_generator_0;
-
 signal rd_state         :RD_STATES;
 signal wr_state         :WR_STATES;
 signal rd_bl_state      :RD_BL_STATES;
@@ -155,15 +146,6 @@ signal rd_block_done_R  :std_logic;
 signal wr_block_done    :std_logic; 
 signal wr_block_done_R  :std_logic; 
 signal block_full       :std_logic_vector(1 downto 0);
-
-signal fifo_in          :std_logic_vector((BRAM_DATA_WIDTH*(KERNEL_SIZE-1))-1 downto 0);
-signal fifo_out         :std_logic_vector((BRAM_DATA_WIDTH*(KERNEL_SIZE-1))-1 downto 0);
-signal fifo_empty       :std_logic;
-signal fifo_full        :std_logic;
-signal fifo_srst        :std_logic;
-signal fifo_rd          :std_logic;
-signal fifo_wr          :std_logic;
-
 
 begin
 -- ********************* Block control *************************************************************
@@ -254,22 +236,6 @@ begin
     wr_block_done_R <= wr_block_done;  
   end if;
 end process; 
-
--- ********************* FIFO to buffer 2 lines (3x3 Kernel)   *************************************
--- Required in order to provide a new Data vector at each clock cycle 
--- This method triples the performance because only one clock cycle is required to fetch a data vector
-
-linebuffer: fifo_generator_0 
-  port map (
-    clk   => Layer_clk_i,
-    srst  => fifo_srst,
-    din   => fifo_in,
-    wr_en => fifo_wr,
-    rd_en => fifo_rd,
-    dout  => fifo_out,
-    full  => fifo_empty,
-    empty => fifo_full 
-  );
    
 -- ********************* Read block RAM (debug off) ************************************************
 M_layer_tvalid_o <= m_layer_tvalid;
@@ -278,13 +244,12 @@ M_layer_tkeep_o <= (others => '1') when m_layer_tvalid = '1' else (others => '0'
 DefaultRead: process(Layer_clk_i, Layer_aresetn_i) 
   variable state_cnt   : integer range 0 to (BRAM_ADDR_WIDTH-1) := 0;
   variable position    : unsigned(BRAM_ADDR_WIDTH-1 downto 0) := to_unsigned(0, BRAM_ADDR_WIDTH);
-  variable rd_pixel_row_cnt : integer range 0 to (M_LAYER_WIDTH+KERNEL_SIZE) := 0;
+  variable rd_pixel_row_cnt : integer range 0 to (LAYER_WIDTH+KERNEL_SIZE) := 0;
 begin
   if Layer_aresetn_i = '0' then 
     mem_rd_addr <= (others => '0');
     M_layer_tlast_o <= '0';
     m_layer_tvalid <= '0';
-    M_layer_tshdir_o <= "00"; 
     M_layer_tdata_1_o <= (others => '0');
     M_layer_tdata_2_o <= (others => '0');
     M_layer_tdata_3_o <= (others => '0');
@@ -296,10 +261,10 @@ begin
     state_cnt := 0;
     rd_pixel_row_cnt := 0;
     
-    fifo_srst <= '0';
-    fifo_in <= (others => '0');
-    fifo_rd <= '0';
-    fifo_wr <= '0';
+    M_layer_fifo_srst <= '0';
+    M_layer_fifo_in <= (others => '0');
+    M_layer_fifo_rd <= '0';
+    M_layer_fifo_wr <= '0';
     
   elsif rising_edge(Layer_clk_i) then   
     case rd_state is 
@@ -317,15 +282,14 @@ begin
         end if;
         state_cnt := 0;
         rd_pixel_row_cnt := 0;
-        M_layer_tshdir_o <= "00";
         m_layer_tvalid <= '0';
         M_layer_tlast_o <= '0';
-        fifo_srst <= '1'; 
-        fifo_wr <= '0';
-        fifo_rd <= '0';
+        M_layer_fifo_srst <= '1'; 
+        M_layer_fifo_wr <= '0';
+        M_layer_fifo_rd <= '0';
         
       when WAIT_CY => -- Required because fetching data from BRAM takes 2 cycles (pipelined) 
-        fifo_srst <= '0';
+        M_layer_fifo_srst <= '0';
         position := position+1;
         mem_rd_addr <= std_logic_vector(position);
         if state_cnt = 1 then 
@@ -338,77 +302,74 @@ begin
         m_layer_tvalid <= '1';    
         -- Upper Padding 
         if rd_pixel_row_cnt = 0 then
-            fifo_in((2*BRAM_DATA_WIDTH)-1 downto BRAM_DATA_WIDTH) <= (others => '0');
-            fifo_in(BRAM_DATA_WIDTH-1 downto 0) <= Bram_pb_data_rd_i;
+            M_layer_fifo_in((2*BRAM_DATA_WIDTH)-1 downto BRAM_DATA_WIDTH) <= (others => '0');
+            M_layer_fifo_in(BRAM_DATA_WIDTH-1 downto 0) <= Bram_pb_data_rd_i;
             M_layer_tdata_1_o <= (others => '0');
             M_layer_tdata_2_o <= (others => '0');
             M_layer_tdata_3_o <= Bram_pb_data_rd_i; 
-            fifo_rd <= '0';
+            M_layer_fifo_rd <= '0';
         -- Lower Padding 
-        elsif rd_pixel_row_cnt > (M_LAYER_HIGHT-1) then
-            fifo_in((2*BRAM_DATA_WIDTH)-1 downto BRAM_DATA_WIDTH) <= fifo_out(BRAM_DATA_WIDTH-1 downto 0);
-            fifo_in(BRAM_DATA_WIDTH-1 downto 0) <= (others => '0');
-            fifo_rd <= '1'; -- overwritten if M_layer_tready_i = '0' (More readable like this) 
-            M_layer_tdata_1_o <= fifo_out((2*BRAM_DATA_WIDTH)-1 downto BRAM_DATA_WIDTH);
-            M_layer_tdata_2_o <= fifo_out(BRAM_DATA_WIDTH-1 downto 0);
+        elsif rd_pixel_row_cnt > (LAYER_HIGHT-1) then
+            M_layer_fifo_in((2*BRAM_DATA_WIDTH)-1 downto BRAM_DATA_WIDTH) <= M_layer_fifo_out(BRAM_DATA_WIDTH-1 downto 0);
+            M_layer_fifo_in(BRAM_DATA_WIDTH-1 downto 0) <= (others => '0');
+            M_layer_fifo_rd <= '1'; -- overwritten if M_layer_tready_i = '0' (More readable like this) 
+            M_layer_tdata_1_o <= M_layer_fifo_out((2*BRAM_DATA_WIDTH)-1 downto BRAM_DATA_WIDTH);
+            M_layer_tdata_2_o <= M_layer_fifo_out(BRAM_DATA_WIDTH-1 downto 0);
             M_layer_tdata_3_o <= (others => '0');            
             
             
         -- Default Vector
         else
-            fifo_in((2*BRAM_DATA_WIDTH)-1 downto BRAM_DATA_WIDTH) <= fifo_out(BRAM_DATA_WIDTH-1 downto 0);
-            fifo_in(BRAM_DATA_WIDTH-1 downto 0) <= Bram_pb_data_rd_i;
-            fifo_rd <= '1'; -- overwritten if M_layer_tready_i = '0' (More readable like this) 
-            M_layer_tdata_1_o <= fifo_out((2*BRAM_DATA_WIDTH)-1 downto BRAM_DATA_WIDTH);
-            M_layer_tdata_2_o <= fifo_out(BRAM_DATA_WIDTH-1 downto 0);
+            M_layer_fifo_in((2*BRAM_DATA_WIDTH)-1 downto BRAM_DATA_WIDTH) <= M_layer_fifo_out(BRAM_DATA_WIDTH-1 downto 0);
+            M_layer_fifo_in(BRAM_DATA_WIDTH-1 downto 0) <= Bram_pb_data_rd_i;
+            M_layer_fifo_rd <= '1'; -- overwritten if M_layer_tready_i = '0' (More readable like this) 
+            M_layer_tdata_1_o <= M_layer_fifo_out((2*BRAM_DATA_WIDTH)-1 downto BRAM_DATA_WIDTH);
+            M_layer_tdata_2_o <= M_layer_fifo_out(BRAM_DATA_WIDTH-1 downto 0);
             M_layer_tdata_3_o <= Bram_pb_data_rd_i;             
         end if;  
         -- Positon count 
         if M_layer_tready_i = '1' then -- Wait till slave is ready
-          if state_cnt < M_LAYER_WIDTH-2 then  
+          if state_cnt < LAYER_WIDTH-2 then  
             state_cnt := state_cnt +1;            
             if position < 2*BRAM_ADDR_BLOCK_WIDTH-1 then
               position := position+1;             
             end if;
             mem_rd_addr <= std_logic_vector(position);
-          elsif state_cnt < M_LAYER_WIDTH-1 then -- necassary because BRAM read takes 2 cycles 
+          elsif state_cnt < LAYER_WIDTH-1 then -- necassary because BRAM read takes 2 cycles 
             state_cnt := state_cnt +1;
-            fifo_rd <= '0';
+            M_layer_fifo_rd <= '0';
           else   
             rd_state <= PADDING;
-            fifo_rd <= '0';
+            M_layer_fifo_rd <= '0';
             rd_pixel_row_cnt := rd_pixel_row_cnt +1;
             state_cnt := 0;  
-          end if;      
-          M_layer_tshdir_o <= "01";   
-          fifo_wr <= '1';          
+          end if;       
+          M_layer_fifo_wr <= '1';          
         else 
-          fifo_wr <= '0';
-          fifo_rd <= '0';
-          M_layer_tshdir_o <= "00";
+          M_layer_fifo_wr <= '0';
+          M_layer_fifo_rd <= '0';
         end if;
         
       when PADDING =>  -- set output vector to 0 for KERNEL_SIZE-1 cycles       
         m_layer_tvalid <= '1';
-        fifo_wr <= '0'; 
-        fifo_rd <= '0';
+        M_layer_fifo_wr <= '0'; 
+        M_layer_fifo_rd <= '0';
         M_layer_tdata_1_o <= (others => '0');
         M_layer_tdata_2_o <= (others => '0');
         M_layer_tdata_3_o <= (others => '0');
         
         if M_layer_tready_i = '1' then -- Wait till slave is ready
-          M_layer_tshdir_o <= "01"; 
           if position < 2*BRAM_ADDR_BLOCK_WIDTH-1 then
             position := position+1;             
           end if;         
           mem_rd_addr <= std_logic_vector(position);       
-          fifo_rd <= '1';
+          M_layer_fifo_rd <= '1';
           if state_cnt = KERNEL_SIZE-2 then -- state_cnt = 1 
-            if rd_pixel_row_cnt = (M_LAYER_HIGHT-1+KERNEL_SIZE) then 
+            if rd_pixel_row_cnt = (LAYER_HIGHT-1+KERNEL_SIZE) then 
               rd_state <= START;  
               rd_block_done <= '1';
               M_layer_tlast_o <= '1'; 
-              fifo_rd <= '0';
+              M_layer_fifo_rd <= '0';
             else
               rd_state <= MOVE_RIGHT;
             end if;
@@ -416,8 +377,6 @@ begin
           else 
             state_cnt := state_cnt +1;
           end if;
-        else 
-          M_layer_tshdir_o <= "00";
         end if;   
         
       when others => 
@@ -433,7 +392,7 @@ DefaultWrite : if AXI4_STREAM_INPUT = 0 generate
   DefaultWriteP: process(Layer_clk_i, Layer_aresetn_i) 
     variable state_cnt   : integer range 0 to (BRAM_ADDR_WIDTH-1) := 0;
     variable position    : unsigned(BRAM_ADDR_WIDTH-1 downto 0) := to_unsigned(0, BRAM_ADDR_WIDTH);
-    variable wr_pixel_row_cnt : integer range 0 to (S_LAYER_WIDTH+KERNEL_SIZE) := 0;
+    variable wr_pixel_row_cnt : integer range 0 to (LAYER_WIDTH+KERNEL_SIZE) := 0;
   begin
     if Layer_aresetn_i = '0' then 
       
@@ -458,12 +417,12 @@ DefaultWrite : if AXI4_STREAM_INPUT = 0 generate
             position := to_unsigned(0, position'length);
             Bram_pa_addr_o <= (others => '0');
             S_layer_tready_o <= '1';
-            wr_state <= MOVE_RIGHT;
+            wr_state <= MOVE;
           elsif next_block_read(1) = '1' then  
             position := to_unsigned(BRAM_ADDR_BLOCK_WIDTH,position'length);
             Bram_pa_addr_o <= std_logic_vector(position);
             S_layer_tready_o <= '1';
-            wr_state <= MOVE_RIGHT;
+            wr_state <= MOVE;
           else 
             S_layer_tready_o <= '0'; 
           end if;
@@ -473,22 +432,7 @@ DefaultWrite : if AXI4_STREAM_INPUT = 0 generate
           wr_pixel_row_cnt := 0;
           wr_block_done <= '0'; 
           
-        when MOVE_LEFT => 
-          if S_layer_tvalid_i = '1' then 
-            Bram_pa_data_wr_o <= S_layer_tdata_i;
-            Bram_pa_addr_o <= std_logic_vector(position);
-            Bram_pa_wea_o <= (others => '1');
-            position := position-1; 
-            state_cnt := state_cnt+1; 
-          else 
-            Bram_pa_wea_o <= (others => '0');
-          end if;   
-          if state_cnt = S_LAYER_WIDTH-1 then 
-            wr_state <= MOVE_DOWN_NR;
-            state_cnt := 0;
-          end if;
-          
-        when MOVE_RIGHT => 
+        when MOVE => 
           if S_layer_tvalid_i = '1' then 
             Bram_pa_data_wr_o <= S_layer_tdata_i;
             Bram_pa_addr_o <= std_logic_vector(position);
@@ -498,48 +442,11 @@ DefaultWrite : if AXI4_STREAM_INPUT = 0 generate
           else 
             Bram_pa_wea_o <= (others => '0');  
           end if;   
-          if state_cnt = S_LAYER_WIDTH-1 then 
-            wr_state <= MOVE_DOWN_NL;
+          if state_cnt >= BRAM_ADDR_BLOCK_WIDTH-1 then 
+            wr_state <= START;
+            S_layer_tready_o <= '0';
             state_cnt := 0;
           end if;
-                    
-        when MOVE_DOWN_NL => 
-          if S_layer_tvalid_i = '1' then 
-            Bram_pa_data_wr_o <= S_layer_tdata_i;
-            Bram_pa_addr_o <= std_logic_vector(position);
-            Bram_pa_wea_o <= (others => '1');
-            position := position+S_LAYER_WIDTH; 
-            state_cnt := 0; 
-            wr_pixel_row_cnt := wr_pixel_row_cnt+1;
-            if wr_pixel_row_cnt >= (S_LAYER_HIGHT-1) then
-              wr_state <= START;
-              wr_block_done <= '1';
-              S_layer_invalid_block_o <= not S_layer_tlast_i;
-            else
-              wr_state <= MOVE_LEFT;
-            end if;
-          else 
-            Bram_pa_wea_o <= (others => '0');  
-          end if;  
-          
-        when MOVE_DOWN_NR => 
-          if S_layer_tvalid_i = '1' then 
-            Bram_pa_data_wr_o <= S_layer_tdata_i;
-            Bram_pa_addr_o <= std_logic_vector(position);
-            Bram_pa_wea_o <= (others => '1');
-            position := position+S_LAYER_WIDTH; 
-            state_cnt := 0; 
-            wr_pixel_row_cnt := wr_pixel_row_cnt+1;
-            if wr_pixel_row_cnt >= (S_LAYER_HIGHT-1) then
-              wr_state <= START;
-              wr_block_done <= '1';
-              S_layer_invalid_block_o <= not S_layer_tlast_i;
-            else
-              wr_state <= MOVE_RIGHT;
-            end if;  
-          else 
-            Bram_pa_wea_o <= (others => '0');  
-          end if; 
    
         when others => 
           wr_state <= START;

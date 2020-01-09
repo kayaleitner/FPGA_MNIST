@@ -23,6 +23,8 @@ IMG_HIGTH = 28
 KERNEL_SIZE = 3
 BLOCK_SIZE = IMG_WIDTH*IMG_HIGTH
 NUMBER_OF_TEST_BLOCKS = 3
+CI_L1 = 1
+CO_L1 = 16
 
 # %% create tmp folder, delete folder if not tmp exists and create new one
 if os.path.isdir('tmp'):
@@ -34,6 +36,18 @@ except : print("Error creating tmp folder!")
 # %% create test data file
 
 image_data = tb.gen_testdata(BLOCK_SIZE,NUMBER_OF_TEST_BLOCKS)
+
+# %% generate test vectors 
+test_vectors = tb.get_vectors_from_data(image_data,IMG_WIDTH,IMG_HIGTH,NUMBER_OF_TEST_BLOCKS)
+
+# %% generate test kernels 
+test_kernels = tb.get_Kernels(test_vectors)
+
+# %% calculate Layer output as new memory controller input 
+weights_L1 = np.ones((CO_L1,CI_L1,KERNEL_SIZE,KERNEL_SIZE),dtype=np.int8)
+weights_L1[:,:,1,:] = 0
+weights_L1[:,:,2,:] = -1
+features_L1 = tb.conv_2d(test_kernels,weights_L1)
              
 # %% run ghdl 
 # Saving console ouput in log file is not working on windows            
@@ -80,10 +94,7 @@ if error_count_rec_images == 0:
     print("Received image data successfully!")
 else:
     print("{} errors occured receiving image".format(error_count_rec_images))    
-    
-# %% generate test vectors 
-test_vectors = tb.get_vectors_from_data(image_data,IMG_WIDTH,IMG_HIGTH,NUMBER_OF_TEST_BLOCKS)
-    
+      
 # %% check memory controller output 
 error_count_vectors = 0
 result_vectors = np.zeros((test_vectors.shape[0],test_vectors.shape[1],test_vectors.shape[2]),dtype=np.uint8)
@@ -114,10 +125,8 @@ if error_count_vectors == 0:
 else:
     print("{} errors occured receiving image".format(error_count_vectors))     
 
-# %% generate test vectors 
-test_kernels = tb.get_Kernels(test_vectors)
     
-# %% check memory controller output 
+# %% check memory shiftregister output 
 error_count_kernels = 0
 result_kernels = np.zeros((test_kernels.shape[0],test_kernels.shape[1],test_kernels.shape[2],test_kernels.shape[3]),dtype=np.uint8)
 for i in range(result_kernels.shape[0]):
@@ -134,9 +143,11 @@ for i in range(result_kernels.shape[0]):
                         error_count_kernels += 1
     
 if error_count_vectors == 0:
-    print("Received Kernel vectors successfully!")
+    print("Received Kernel from shiftregister successfully!")
 else:
-    print("{} errors occured receiving image".format(error_count_vectors))       
+    print("{} errors occured receiving image".format(error_count_vectors)) 
+
+      
 # %% delete tmp folder 
 error_count = error_count_rec_images + error_count_vectors
 if not KEEP_TEMPORARY_FILES and error_count == 0:
