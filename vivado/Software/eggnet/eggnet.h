@@ -34,22 +34,25 @@ typedef enum egg_error_e {
 #define EGG_MEM_LAYER3_BRAM_SIZE 0ul
 #define EGG_MEM_LAYER4_BRAM_SIZE 0ul
 
-/**
- * Initialises the kernel module for dma-proxy extension
- * @return Error code
- */
+
 /**********************************************************************************************************************
  *
  *  DMA Functions
  *
  *********************************************************************************************************************/
 
+/**
+ * Initialises the kernel module for dma-proxy extension
+ * @return Error code
+ */
 egg_error_t egg_init_dma();
+
 /**
  * Closes dma-proxy dev driver
  * @return Error code
  */
 egg_error_t egg_close_dma();
+
 /**
  * Executes the EggNet in forward (inference) mode
  * @param image_buffer A pointer to memory image buffer
