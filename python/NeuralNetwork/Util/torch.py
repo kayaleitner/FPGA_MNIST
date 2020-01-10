@@ -4,10 +4,9 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 
-
 MNIST_CLASSES = tuple(map(str, [i for i in range(10)]))
-FASHION_MNIST_CLASSES = ('T-shirt/top', 'Trouser', 'Pullover', 'Dress', 'Coat', 'Sandal', 'Shirt', 'Sneaker', 'Bag', 'Ankle Boot')
-
+FASHION_MNIST_CLASSES = (
+'T-shirt/top', 'Trouser', 'Pullover', 'Dress', 'Coat', 'Sandal', 'Shirt', 'Sneaker', 'Bag', 'Ankle Boot')
 
 
 def matplotlib_imshow(img, one_channel=False, denorm_func=None):
@@ -79,3 +78,5 @@ def select_n_random(data, labels, n=100):
 
     perm = torch.randperm(len(data))
     return data[perm][:n], labels[perm][:n]
+
+

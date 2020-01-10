@@ -9,6 +9,12 @@ class Layer:
     def __call__(self, *args, **kwargs):
         raise NotImplementedError()
 
+    def backprop(self, *args):
+        raise NotImplementedError()
+
+    def update_weights(self, *args):
+        raise NotImplementedError()
+
     def __add__(self, other: object) -> list:
         """
         Combine them in a list

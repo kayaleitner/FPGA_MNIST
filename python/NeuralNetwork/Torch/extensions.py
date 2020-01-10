@@ -14,6 +14,7 @@ class ReLU_FPGA(torch.autograd.Function):
     torch.autograd.Function and implementing the forward and backward passes
     which operate on Tensors.
     """
+
     @staticmethod
     def forward(ctx, input):
         """
@@ -40,13 +41,13 @@ class ReLU_FPGA(torch.autograd.Function):
         return grad_input
 
 
-
 class FullyConnect_FPGA(torch.autograd.Function):
     """
     We can implement our own custom autograd Functions by subclassing
     torch.autograd.Function and implementing the forward and backward passes
     which operate on Tensors.
     """
+
     @staticmethod
     def forward(ctx, input):
         """
@@ -72,6 +73,18 @@ class FullyConnect_FPGA(torch.autograd.Function):
         grad_input = grad_output.clone()
         grad_input[input < 0] = 0
         return grad_input
+
+
+class Rescale(torch.autograd.Function):
+
+    @staticmethod
+    def forward(x, *args):
+        pass
+
+    @staticmethod
+    def backward(*args):
+        pass
+
 
 
 
@@ -109,3 +122,23 @@ class ScipyConv2d(Module):
 
     def forward(self, input):
         return ScipyConv2dFunction.apply(input, self.filter, self.bias)
+
+
+
+class RescaleLayer(Module):
+    
+    def __init__(self):
+        super(RescaleLayer, self).__init__()
+        self.moving_average = 0
+        self.moving_std = 0
+        self.count = 0
+
+    def forward(self, *input, **kwargs):
+        x = input[0]
+        self.moving_average = \
+            self.moving_average * self.count / (self.count + 1) + \
+            x * 1.0 / (self.count + 1)
+        self.count = self.count + 1
+
+        self.moving_std = 1.0/self.count *
+        return x - self.moving_average
