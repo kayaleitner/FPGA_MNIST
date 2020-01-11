@@ -1,6 +1,3 @@
-import matplotlib.pyplot as plt
-
-
 def trim_axs(axs, N):
     """little helper to massage the axs list to have correct length..."""
     axs = axs.flat
@@ -21,6 +18,7 @@ def plot_network_parameter_histogram(weights, names=None, cols=3, figsize=(10, 8
     Returns: The figure and the axes
 
     """
+    import matplotlib.pyplot as plt
 
     if names is None:
         names = ["W_{}: {}".format(i, w.shape) for i, w in enumerate(weights)]
@@ -39,4 +37,3 @@ def plot_network_parameter_histogram(weights, names=None, cols=3, figsize=(10, 8
         i += 1
 
     return fig1, axs
-

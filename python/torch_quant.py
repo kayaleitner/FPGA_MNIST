@@ -87,6 +87,8 @@ if __name__ == '__main__':
     # Load models
     keras_lenet = NeuralNetwork.Util.open_keras_model(save_dir=keras_save_dir)
     nn_lenet = NN.Network.LeNet.load_from_files(save_dir=nn_save_dir)
+    nn_lenet.cast(new_dtype=np.float16)
+
 
     # Compare results
     (lbls, imgs) = next(reader.get_next(batch_size=10))
@@ -95,10 +97,11 @@ if __name__ == '__main__':
     lbls_nn = nn_lenet.forward(x=imgs_float)
 
     # Cast to numpy
-    lbls_keras = lbls_keras.argmax(axis=1)
+    lbls_keras = lbls_keras.numpy().argmax(axis=1)
     lbls_nn = lbls_nn.argmax(axis=1)
 
     print("Keras:  ", lbls_keras)
     print("NN:     ", lbls_nn)
 
-    assert np.all(lbls_nn, lbls_keras)
+    assert np.all(lbls_nn == lbls_keras)
+

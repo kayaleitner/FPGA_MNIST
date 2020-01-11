@@ -12,10 +12,11 @@ class FullyConnectedLayer(Layer):
     W: ndarray  # Weights of the layer, dimensions: [IN x OUT]
     b: ndarray  # bias of the layer
 
-    def __init__(self, input_size, output_size, activation=None):
-        self.W = np.random.rand(input_size, output_size)
-        self.b = np.random.rand(output_size)
+    def __init__(self, input_size, output_size, activation=None, dtype=np.float32):
+        self.W = np.random.rand(input_size, output_size).astype(dtype=dtype)
+        self.b = np.random.rand(output_size).astype(dtype=dtype)
         self.activation = activation
+        self.dtype = dtype
 
     def __call__(self, *args, **kwargs):
         # use the '@' sign to refer to a tensor dot
@@ -38,3 +39,7 @@ class FullyConnectedLayer(Layer):
 
     def get_output_shape(self, input_data_shape: ndarray = None):
         return self.W.shape[1], -1
+
+    def cast(self, new_dtype: np.dtype):
+        self.W = self.W.astype(dtype=new_dtype)
+        self.b = self.b.astype(dtype=new_dtype)

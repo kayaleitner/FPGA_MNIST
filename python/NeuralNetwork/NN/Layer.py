@@ -1,3 +1,4 @@
+import numpy as np
 from numpy.core.multiarray import ndarray
 
 
@@ -28,7 +29,7 @@ class Layer:
         Get the valid shape of input data for this layer
         :return: a tuple with the valid dimensions
         """
-        return NotImplementedError
+        raise NotImplementedError()
 
     def get_output_shape(self, input_data_shape: ndarray = None):
         """
@@ -36,4 +37,7 @@ class Layer:
         :param input_data_shape: An optional input tensor
         :return: a tuple with the valid dimensions
         """
-        return NotImplementedError
+        raise NotImplementedError()
+
+    def cast(self, new_dtype: np.dtype):
+        pass

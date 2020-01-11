@@ -85,14 +85,15 @@ class LeNet(Network):
     FC1_SHAPE = (32 * 7 * 7, 32)
     FC2_SHAPE = (32, 10)
 
-    def __init__(self):
+    def __init__(self, dtype=np.float32):
         r1 = ReshapeLayer(newshape=[-1, 28, 28, 1])
-        cn1 = ConvLayer(in_channels=1, out_channels=16, kernel_size=3, activation='relu')  # [? 28 28 16]
+        cn1 = ConvLayer(in_channels=1, out_channels=16, kernel_size=3, activation='relu',
+                        dtype=np.float32)  # [? 28 28 16]
         mp1 = MaxPoolLayer(size=2)  # [? 14 14 16]
         cn2 = ConvLayer(in_channels=16, out_channels=32, kernel_size=3, activation='relu')  # [? 14 14 32]
         mp2 = MaxPoolLayer(size=2)  # [?  7  7 32]
         r2 = ReshapeLayer(newshape=[-1, 32 * 7 * 7])
-        fc1 = FullyConnectedLayer(input_size=32 * 7 * 7, output_size=32, activation='relu')
+        fc1 = FullyConnectedLayer(input_size=32 * 7 * 7, output_size=32, activation='relu', dtype=np.float32)
         fc2 = FullyConnectedLayer(input_size=32, output_size=10, activation='softmax')
 
         # Store a reference to each layer
@@ -167,3 +168,7 @@ class LeNet(Network):
 
                 weight_loaded = np.loadtxt(weight_file)
                 # ToDo: Finish this up by mapping the weights to the right layer
+
+    def cast(self, new_dtype: np.dtype):
+        for layer in self.layers:
+            layer.cast(new_dtype=new_dtype)

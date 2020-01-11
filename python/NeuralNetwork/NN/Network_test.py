@@ -42,7 +42,7 @@ class NetworkTestCase(unittest.TestCase):
             # ConvLayer(in_channels=32, out_channels=64, kernel_size=3),  # [?  7  7 64]
             # MaxPoolLayer(size=2),
             ReshapeLayer(newshape=[-1, 32*7*7]),
-            FullyConnectedLayer(input_size=32*7*7, output_size=64),
+            FullyConnectedLayer(input_size=32 * 7 * 7, output_size=64),
             FullyConnectedLayer(input_size=64, output_size=10),
         ]
 

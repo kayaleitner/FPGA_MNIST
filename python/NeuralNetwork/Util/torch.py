@@ -1,4 +1,3 @@
-import matplotlib.pyplot as plt
 import numpy as np
 
 import torch
@@ -6,7 +5,7 @@ import torch.nn.functional as F
 
 MNIST_CLASSES = tuple(map(str, [i for i in range(10)]))
 FASHION_MNIST_CLASSES = (
-'T-shirt/top', 'Trouser', 'Pullover', 'Dress', 'Coat', 'Sandal', 'Shirt', 'Sneaker', 'Bag', 'Ankle Boot')
+    'T-shirt/top', 'Trouser', 'Pullover', 'Dress', 'Coat', 'Sandal', 'Shirt', 'Sneaker', 'Bag', 'Ankle Boot')
 
 
 def matplotlib_imshow(img, one_channel=False, denorm_func=None):
@@ -20,6 +19,8 @@ def matplotlib_imshow(img, one_channel=False, denorm_func=None):
     Returns:
         None
     """
+    import matplotlib.pyplot as plt
+
     if one_channel:
         img = img.mean(dim=0)
     # ToDo: Somethings still wrong here
@@ -55,6 +56,7 @@ def plot_classes_preds(net, images, labels, classes):
     information based on whether the prediction was correct or not.
     Uses the "images_to_probs" function.
     """
+    import matplotlib.pyplot as plt
     preds, probs = images_to_probs(net, images)
     # plot the images in the batch, along with predicted and true labels
     fig = plt.figure(figsize=(12, 48))
@@ -78,5 +80,3 @@ def select_n_random(data, labels, n=100):
 
     perm = torch.randperm(len(data))
     return data[perm][:n], labels[perm][:n]
-
-

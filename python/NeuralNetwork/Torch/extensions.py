@@ -122,7 +122,7 @@ class ScipyConv2d(Module):
 
 
 class RescaleLayer(Module):
-    
+
     def __init__(self):
         super(RescaleLayer, self).__init__()
         self.moving_average = 0

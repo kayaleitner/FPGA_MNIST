@@ -9,16 +9,19 @@ from NeuralNetwork.NN.Activations import relu
 from NeuralNetwork.Ext.NeuralNetworkExtension import conv2d as conv2d_ext
 
 
-def init_kernel(input_channels: int, out_channels: int = 3, kernel_size: int = 5) -> ndarray:
+def init_kernel(input_channels: int, out_channels: int = 3, kernel_size: int = 5, dtype=np.float32) -> ndarray:
     """
-    Creates a new convolution filter
-    :rtype: ndarray
-    :param out_channels:
-    :param input_channels:
-    :param kernel_size:
-    :return: Filter tensor with dimension [filter_height, filter_width, in_channels, out_channels]
+    Creates a new convolution filter with random initialization
+    Args:
+        input_channels:
+        out_channels:
+        kernel_size:
+        dtype:
+
+    Returns:
+
     """
-    return np.random.rand(kernel_size, kernel_size, input_channels, out_channels)
+    return np.random.rand(kernel_size, kernel_size, input_channels, out_channels).astype(dtype=dtype)
 
 
 def test_kernel_gauss(size=5, sigma=1.6) -> ndarray:
@@ -123,15 +126,19 @@ class ConvLayer(Layer):
     activation: Optional[str]
     b: ndarray
     kernel: ndarray
+    dtype: np.dtype
 
-    def __init__(self, in_channels, out_channels, kernel_size, activation=None):
-        self.kernel = init_kernel(in_channels, out_channels, kernel_size)
-        self.b = np.random.rand(out_channels)
+    def __init__(self, in_channels, out_channels, kernel_size, activation=None, dtype=np.float32):
+        self.kernel = init_kernel(in_channels, out_channels, kernel_size, dtype=dtype)
+        self.b = np.random.rand(out_channels).astype(dtype=dtype)
         self.activation = activation
+        self.dtype = dtype
 
     def __call__(self, *args, **kwargs):
-        z = conv2d(args[0], self.kernel, stride=1) + self.b
-        # z = conv2d_fast(args[0].astype(np.float32), self.kernel.astype(np.float32), stride=1) + self.b
+        if self.dtype == np.float32:
+            z = conv2d_fast(args[0].astype(np.float32), self.kernel.astype(np.float32), stride=1) + self.b
+        else:
+            z = conv2d(args[0], self.kernel, stride=1) + self.b
 
         if self.activation is None:
             return z
@@ -152,6 +159,10 @@ class ConvLayer(Layer):
         # Input data:  [batch, in_height, in_width, in_channels]
         # Kernel size: [fh, fw, kin_ch, kout_ch]
         return -1, -1, -1, self.kernel.shape[3]
+
+    def cast(self, new_dtype: np.dtype):
+        self.kernel = self.kernel.astype(dtype=new_dtype)
+        self.b = self.b.astype(dtype=new_dtype)
 
 
 def pooling_max(data_in: ndarray, pool_size: int, stride=2):
