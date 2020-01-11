@@ -155,6 +155,9 @@ class MnistDataReader:
     def get_ActualImageNumber(self):
         return self.__actualImg
 
+    def get_iterator(self, batchsize=10):
+        return self.get_next(batch_size=batchsize)
+
     def get_next(self, batch_size=10):
         """
         Same as `get_Arrays` except by using the yield keyword it can be used in loop

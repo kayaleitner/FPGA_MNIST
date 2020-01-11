@@ -28,14 +28,12 @@ def train_keras(save_dir, IMG_HEIGHT=28, IMG_WIDTH=28):
 
     model = Sequential([
         Reshape((IMG_HEIGHT, IMG_WIDTH, 1), input_shape=(IMG_HEIGHT, IMG_WIDTH)),
-        Conv2D(16, 5, padding='same', activation='relu', use_bias=True),  # 3x3x4 filter
+        Conv2D(16, 3, padding='same', activation='relu', use_bias=True),  # 3x3x4 filter
         Dropout(0.2),
         MaxPooling2D(),
-        Conv2D(32, 5, padding='same', activation='relu', use_bias=True),  # 3x3x8 filter
+        Conv2D(32, 3, padding='same', activation='relu', use_bias=True),  # 3x3x8 filter
         Dropout(0.2),
         MaxPooling2D(),
-        Conv2D(64, 5, padding='valid', activation='relu', use_bias=True),  # 3x3x8 filter
-        Dropout(0.2),
         Flatten(),
         Dense(32, activation='relu'),
         Dropout(0.2),
@@ -78,8 +76,8 @@ if __name__ == '__main__':
     keras_save_dir = 'test/training_1'
 
     # Train Keras (optional if data is already stored)
-    m = train_keras(save_dir=keras_save_dir)
-    NeuralNetwork.Util.save_keras_model_weights(m, save_path=nn_save_dir)
+    # m = train_keras(save_dir=keras_save_dir)
+    # NeuralNetwork.Util.save_keras_model_weights(m, save_path=nn_save_dir)
 
     # Prepare Reader
     data_loader = Reader.MnistDataDownloader(folder_path=mnist_data_dir)
@@ -91,9 +89,14 @@ if __name__ == '__main__':
     nn_lenet = NN.Network.LeNet.load_from_files(save_dir=nn_save_dir)
 
     # Compare results
-    (imgs, lbls) = reader.get_next(batch_size=10)
-    lbls_keras = keras_lenet(inputs=imgs)
-    lbls_nn = nn_lenet.forward(x=imgs)
+    (lbls, imgs) = next(reader.get_next(batch_size=10))
+    imgs_float = imgs.astype(dtype=np.float) / 256
+    lbls_keras = keras_lenet(inputs=imgs_float)
+    lbls_nn = nn_lenet.forward(x=imgs_float)
+
+    # Cast to numpy
+    lbls_keras = lbls_keras.argmax(axis=1)
+    lbls_nn = lbls_nn.argmax(axis=1)
 
     print("Keras:  ", lbls_keras)
     print("NN:     ", lbls_nn)

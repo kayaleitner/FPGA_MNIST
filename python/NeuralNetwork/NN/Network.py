@@ -121,14 +121,14 @@ class LeNet(Network):
 
         model = LeNet()
 
-        model.cn1.kernel = np.loadtxt(os.path.join(save_dir, '0.txt')).reshape(model.cn1.kernel.shape)
-        model.cn1.b = np.loadtxt(os.path.join(save_dir, '1.txt')).reshape(model.cn1.b.shape)
-        model.cn2.kernel = np.loadtxt(os.path.join(save_dir, '2.txt')).reshape(model.cn2.kernel.shape)
-        model.cn1.b = np.loadtxt(os.path.join(save_dir, '3.txt')).reshape(model.cn2.b.shape)
-        model.fc1.W = np.loadtxt(os.path.join(save_dir, '4.txt')).reshape(model.fc1.W.shape)
-        model.fc1.b = np.loadtxt(os.path.join(save_dir, '5.txt')).reshape(model.fc1.b.shape)
-        model.fc2.W = np.loadtxt(os.path.join(save_dir, '6.txt')).reshape(model.fc1.W.shape)
-        model.fc2.b = np.loadtxt(os.path.join(save_dir, '7.txt')).reshape(model.fc1.b.shape)
+        model.cn1.kernel = np.loadtxt(os.path.join(save_dir, 'w0.txt')).reshape(model.cn1.kernel.shape)
+        model.cn1.b = np.loadtxt(os.path.join(save_dir, 'w1.txt')).reshape(model.cn1.b.shape)
+        model.cn2.kernel = np.loadtxt(os.path.join(save_dir, 'w2.txt')).reshape(model.cn2.kernel.shape)
+        model.cn2.b = np.loadtxt(os.path.join(save_dir, 'w3.txt')).reshape(model.cn2.b.shape)
+        model.fc1.W = np.loadtxt(os.path.join(save_dir, 'w4.txt')).reshape(model.fc1.W.shape)
+        model.fc1.b = np.loadtxt(os.path.join(save_dir, 'w5.txt')).reshape(model.fc1.b.shape)
+        model.fc2.W = np.loadtxt(os.path.join(save_dir, 'w6.txt')).reshape(model.fc2.W.shape)
+        model.fc2.b = np.loadtxt(os.path.join(save_dir, 'w7.txt')).reshape(model.fc2.b.shape)
 
         return model
 
