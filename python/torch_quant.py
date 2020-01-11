@@ -4,6 +4,7 @@ This scripts shall observe the influence of accuracy on different quantization s
 import os
 import numpy as np
 
+import NeuralNetwork.Util
 import NeuralNetwork.NN as NN
 import NeuralNetwork.Ext as Ext
 import NeuralNetwork.Reader as Reader
@@ -14,27 +15,21 @@ import tensorflow as tf
 import tensorflow.keras as keras
 
 """
-Prepartions: MNIST, loadweights, etc
+Preparations: MNIST, loadweights, etc
 """
 
+mnist_data_dir = 'test/MNIST'
+nn_save_dir = 'test/lenet'
+keras_save_dir = 'test/training_1'
+
 # Prepare Reader
-data_loader = Reader.MnistDataDownloader("test/MNIST/")
-path_img, path_lbl = data_loader.get_path(Reader.DataSetType.TRAIN)
-reader = Reader.MnistDataReader(path_img, path_lbl)
+data_loader = Reader.MnistDataDownloader(folder_path=mnist_data_dir)
+path_img, path_lbl = data_loader.get_path(dataset_type=Reader.DataSetType.TRAIN)
+reader = Reader.MnistDataReader(image_filename=path_img, label_filename=path_lbl)
 
-# Load Weights
-checkpoint_path = "test/training_1/cp.ckpt"
-checkpoint_dir = os.path.abspath(os.path.dirname(checkpoint_path))
-os.path.join(checkpoint_dir, "model_config.json")
-if not os.path.exists(checkpoint_dir):
-    raise RuntimeError("There is no trained model data!")
+# Load models
+keras_lenet = NeuralNetwork.Util.open_keras_model(save_dir=keras_save_dir)
+nn_lenet = NN.LeNet.load_from_files(save_dir=nn_save_dir)
 
-# Reload the model from the 2 files we saved
-with open(os.path.join(checkpoint_dir, "model_config.json")) as json_file:
-    json_config = json_file.read()
-
-model = keras.models.model_from_json(json_config)
-model.load_weights(os.path.join(checkpoint_dir, "weights.h5"))
-
-nn_lenet = NN.LeNet.load_from_files(save_dir=save_dir)
-
+# Compare results
+keras_lenet()

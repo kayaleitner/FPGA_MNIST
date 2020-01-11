@@ -77,22 +77,18 @@ class LeNet(Network):
 
     CN1_SHAPE = (1, 16, 3, 3)
     CN2_SHAPE = (16, 32, 3, 3)
-    FC1_SHAPE = (32 * 7 * 7, 64)
-    FC2_SHAPE = (64, 10)
+    FC1_SHAPE = (32 * 7 * 7, 32)
+    FC2_SHAPE = (32, 10)
 
     def __init__(self):
         r1 = ReshapeLayer(newshape=[-1, 28, 28, 1])
-        cn1 = ConvLayer(in_channels=1, out_channels=16,
-                        kernel_size=3, activation='relu')  # [? 28 28 16]
+        cn1 = ConvLayer(in_channels=1, out_channels=16, kernel_size=3, activation='relu')  # [? 28 28 16]
         mp1 = MaxPoolLayer(size=2)  # [? 14 14 16]
-        cn2 = ConvLayer(in_channels=16, out_channels=32,
-                        kernel_size=3, activation='relu')  # [? 14 14 32]
+        cn2 = ConvLayer(in_channels=16, out_channels=32, kernel_size=3, activation='relu')  # [? 14 14 32]
         mp2 = MaxPoolLayer(size=2)  # [?  7  7 32]
         r2 = ReshapeLayer(newshape=[-1, 32 * 7 * 7])
-        fc1 = FullyConnectedLayer(
-            input_size=32 * 7 * 7, output_size=64, activation='relu')
-        fc2 = FullyConnectedLayer(
-            input_size=64, output_size=10, activation='softmax')
+        fc1 = FullyConnectedLayer(input_size=32 * 7 * 7, output_size=32, activation='relu')
+        fc2 = FullyConnectedLayer(input_size=32, output_size=10, activation='softmax')
 
         # Store a reference to each layer
         self.r1 = r1
