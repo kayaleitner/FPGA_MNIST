@@ -3,9 +3,11 @@ from typing import List
 
 import numpy as np
 
-from NeuralNetwork.NN import ReshapeLayer, ConvLayer, MaxPoolLayer, FullyConnectedLayer
+from NeuralNetwork.NN.ConvLayer import ConvLayer, MaxPoolLayer
 from NeuralNetwork.NN.Costs import mean_squared_error
+from NeuralNetwork.NN.FullyConnected import FullyConnectedLayer
 from NeuralNetwork.NN.Layer import Layer
+from NeuralNetwork.NN.Util import ReshapeLayer
 
 
 def check_layers(list_of_layers: List[Layer]):
@@ -47,7 +49,10 @@ class Network:
 
         self.layers = list_of_layers
 
-    def forward(self, x):
+    def __call__(self, *args, **kwargs):
+        return self.forward(*args, **kwargs)
+
+    def forward(self, x, *args, **kwargs):
         z, _ = self.forward_intermediate(x)
         return z
 
@@ -162,6 +167,3 @@ class LeNet(Network):
 
                 weight_loaded = np.loadtxt(weight_file)
                 # ToDo: Finish this up by mapping the weights to the right layer
-
-
-

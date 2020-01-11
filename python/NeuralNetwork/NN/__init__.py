@@ -2,11 +2,12 @@
 Neural Network Module
 """
 
-from .Activations import *
-from .ConvLayer import *
-from .Costs import *
-from .FullyConnected import *
-from .Layer import *
-from .Network import *
-from .Quant import *
-from .Util import *
+from . import Activations
+from . import ConvLayer
+from . import Costs
+from . import FullyConnected
+from . import Layer
+from . import Network
+from . import Quant
+from . import Util
+
