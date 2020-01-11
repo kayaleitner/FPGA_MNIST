@@ -86,9 +86,6 @@ class Rescale(torch.autograd.Function):
         pass
 
 
-
-
-
 class ScipyConv2dFunction(Function):
 
     @staticmethod
@@ -124,7 +121,6 @@ class ScipyConv2d(Module):
         return ScipyConv2dFunction.apply(input, self.filter, self.bias)
 
 
-
 class RescaleLayer(Module):
     
     def __init__(self):
@@ -140,5 +136,7 @@ class RescaleLayer(Module):
             x * 1.0 / (self.count + 1)
         self.count = self.count + 1
 
-        self.moving_std = 1.0/self.count *
-        return x - self.moving_average
+        self.moving_std = 1.0 / self.count * (x - self.moving_average) ** 2 + \
+                          self.count / (self.count + 1) * self.moving_std
+
+        return (x - self.moving_average) / self.moving_std
