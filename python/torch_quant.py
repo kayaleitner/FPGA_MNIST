@@ -86,22 +86,27 @@ if __name__ == '__main__':
 
     # Load models
     keras_lenet = NeuralNetwork.Util.open_keras_model(save_dir=keras_save_dir)
-    nn_lenet = NN.Network.LeNet.load_from_files(save_dir=nn_save_dir)
-    nn_lenet.cast(new_dtype=np.float16)
+    nn_lenet_f64 = NN.Network.LeNet.load_from_files(save_dir=nn_save_dir)
+    nn_lenet_f32 = nn_lenet_f64.cast(new_dtype=np.float32)
+    nn_lenet_f16 = nn_lenet_f64.cast(new_dtype=np.float16)
 
+    nn_lenet_i32 = nn_lenet_f64.cast(new_dtype=np.int32)
+    nn_lenet_i16 = nn_lenet_f64.cast(new_dtype=np.int16)
+    nn_lenet_i8 = nn_lenet_f64.cast(new_dtype=np.int8)
 
     # Compare results
     (lbls, imgs) = next(reader.get_next(batch_size=10))
     imgs_float = imgs.astype(dtype=np.float) / 256
     lbls_keras = keras_lenet(inputs=imgs_float)
-    lbls_nn = nn_lenet.forward(x=imgs_float)
 
-    # Cast to numpy
     lbls_keras = lbls_keras.numpy().argmax(axis=1)
-    lbls_nn = lbls_nn.argmax(axis=1)
+    lbls_nn_f64 = nn_lenet_f64.forward(x=imgs_float).argmax(axis=1)
+    lbls_nn_f32 = nn_lenet_f32.forward(x=imgs_float).argmax(axis=1)
+    lbls_nn_f16 = nn_lenet_f16.forward(x=imgs_float).argmax(axis=1)
+    lbls_nn_i32 = nn_lenet_i32.forward(x=imgs_float).argmax(axis=1)
+    lbls_nn_i16 = nn_lenet_i16.forward(x=imgs_float).argmax(axis=1)
+    lbls_nn_i8 = nn_lenet_i8.forward(x=imgs_float).argmax(axis=1)
 
-    print("Keras:  ", lbls_keras)
-    print("NN:     ", lbls_nn)
 
-    assert np.all(lbls_nn == lbls_keras)
+
 

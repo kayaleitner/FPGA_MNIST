@@ -352,6 +352,11 @@ error:
     return return_value;
 }
 
+/*******************************************************************************************************
+ *
+ * Macro Meta Programming Section
+ *
+ *******************************************************************************************************/
 
 #define new_conv_protofunc_definition(dtype)                                                            \
     int conv2d_##dtype(const dtype* __restrict data_in, const int batch, const int in_h,                \
@@ -436,6 +441,7 @@ error:
     error:                                                                                              \
         return return_value;                                                                            \
     }
+
 
 
 new_conv_protofunc_definition(float);

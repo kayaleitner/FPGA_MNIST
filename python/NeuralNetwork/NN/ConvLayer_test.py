@@ -2,9 +2,8 @@ import unittest
 
 import numpy as np
 import tensorflow as tf
-from tensorflow.keras.layers import Conv2D, Reshape
 
-from NeuralNetwork.NN.ConvLayer import ConvLayer, MaxPoolLayer
+from NeuralNetwork.NN.ConvLayer import Conv2dLayer, MaxPool2dLayer
 
 
 def indices(a, func):
@@ -25,7 +24,7 @@ def ind2sub(ind, shape):
 class PoolLayerTest(unittest.TestCase):
 
     def test_pool(self):
-        pl = MaxPoolLayer(size=2)
+        pl = MaxPool2dLayer(size=2)
 
         img = np.array([
             [1, 2, 1, 1],
@@ -54,7 +53,7 @@ class PoolLayerTest(unittest.TestCase):
         y_tf = tf.nn.max_pool2d(test_img, ksize=2, strides=2, padding='SAME', data_format='NHWC')
         y_tf = y_tf.numpy()  # calculate numpy array
 
-        mp = MaxPoolLayer(size=2)
+        mp = MaxPool2dLayer(size=2)
         y = mp(test_img)
 
         self.assertEqual(y_tf.shape, y.shape)
@@ -66,7 +65,7 @@ class PoolLayerTest(unittest.TestCase):
 class ConvLayerTest(unittest.TestCase):
 
     def test_conv(self):
-        cl = ConvLayer(in_channels=1, out_channels=3, kernel_size=5)
+        cl = Conv2dLayer(in_channels=1, out_channels=3, kernel_size=5)
 
         test_img = np.random.rand(4, 28, 28, 1)  # create 4 test images
 
@@ -83,7 +82,7 @@ class ConvLayerTest(unittest.TestCase):
 
         y_tf = tf.nn.conv2d(x, kernel, strides=1, padding='SAME')
         y_tf = y_tf.numpy()  # calculate numpy array
-        cl = ConvLayer(in_channels=1, out_channels=3, kernel_size=5)
+        cl = Conv2dLayer(in_channels=1, out_channels=3, kernel_size=5)
         cl.kernel = kernel
         cl.b = b
         y = cl(x)
@@ -106,7 +105,7 @@ class ConvLayerTest(unittest.TestCase):
 
         y_tf = tf.nn.conv2d(x, kernel, strides=1, padding='SAME')
         y_tf = y_tf.numpy()  # calculate numpy array
-        cl = ConvLayer(in_channels=1, out_channels=3, kernel_size=5)
+        cl = Conv2dLayer(in_channels=1, out_channels=3, kernel_size=5)
         cl.kernel = kernel
         cl.b = b
         y = cl(x)
@@ -127,7 +126,7 @@ class ConvLayerTest(unittest.TestCase):
 
         y_tf = tf.nn.conv2d(x, kernel, strides=1, padding='SAME')
         y_tf = y_tf.numpy()  # calculate numpy array
-        cl = ConvLayer(in_channels=8, out_channels=16, kernel_size=5)
+        cl = Conv2dLayer(in_channels=8, out_channels=16, kernel_size=5)
         cl.kernel = kernel
         cl.b = b
         y = cl(x)
@@ -148,7 +147,7 @@ class ConvLayerTest(unittest.TestCase):
         y_tf = tf.nn.conv2d(x, kernel, strides=1, padding='SAME')
         y_tf = tf.nn.relu(y_tf)
         y_tf = y_tf.numpy()  # calculate numpy array
-        cl = ConvLayer(in_channels=8, out_channels=16, kernel_size=5, activation='relu')
+        cl = Conv2dLayer(in_channels=8, out_channels=16, kernel_size=5, activation='relu')
         cl.kernel = kernel
         cl.b = b
         y = cl(x)

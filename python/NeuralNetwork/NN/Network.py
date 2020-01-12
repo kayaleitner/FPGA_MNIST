@@ -3,10 +3,11 @@ from typing import List
 
 import numpy as np
 
-from NeuralNetwork.NN.ConvLayer import ConvLayer, MaxPoolLayer
+from NeuralNetwork.NN.ConvLayer import Conv2dLayer, MaxPool2dLayer
 from NeuralNetwork.NN.Costs import mean_squared_error
 from NeuralNetwork.NN.FullyConnected import FullyConnectedLayer
 from NeuralNetwork.NN.Layer import Layer
+from NeuralNetwork.NN.Quant import QuantConvLayerType, QuantFullyConnectedType, quantize_vector
 from NeuralNetwork.NN.Util import ReshapeLayer
 
 
@@ -87,10 +88,10 @@ class LeNet(Network):
 
     def __init__(self, dtype=np.float32):
         r1 = ReshapeLayer(newshape=[-1, 28, 28, 1])
-        cn1 = ConvLayer(in_channels=1, out_channels=16, kernel_size=3, activation='relu',
-                        dtype=np.float32)  # [? 28 28 16]
+        cn1 = Conv2dLayer(in_channels=1, out_channels=16, kernel_size=3, activation='relu',
+                          dtype=np.float32)  # [? 28 28 16]
         mp1 = MaxPoolLayer(size=2)  # [? 14 14 16]
-        cn2 = ConvLayer(in_channels=16, out_channels=32, kernel_size=3, activation='relu')  # [? 14 14 32]
+        cn2 = Conv2dLayer(in_channels=16, out_channels=32, kernel_size=3, activation='relu')  # [? 14 14 32]
         mp2 = MaxPoolLayer(size=2)  # [?  7  7 32]
         r2 = ReshapeLayer(newshape=[-1, 32 * 7 * 7])
         fc1 = FullyConnectedLayer(input_size=32 * 7 * 7, output_size=32, activation='relu', dtype=np.float32)
@@ -169,6 +170,50 @@ class LeNet(Network):
                 weight_loaded = np.loadtxt(weight_file)
                 # ToDo: Finish this up by mapping the weights to the right layer
 
+    def __copy__(self):
+        net = Network(list_of_layers=self.layers.copy())
+        return net
+
+
     def cast(self, new_dtype: np.dtype):
-        for layer in self.layers:
-            layer.cast(new_dtype=new_dtype)
+
+        # Only cast to other floating point types
+        if False and not (new_dtype in (np.float, np.float32, np.float16)):
+            # for integer types take special considerations
+            return self.quantize_network()
+        else:
+            net = self.__copy__()
+            for layer in net.layers:
+                layer.cast(new_dtype=new_dtype)
+            return net
+
+    @staticmethod
+    def quantize_network(network: Network, target_dype=np.int16,
+                         full_layer_quant_type=QuantFullyConnectedType.FULL_LAYER,
+                         conv_layer_quant_type=QuantConvLayerType.PER_CHANNEL):
+        """
+        Quantizes the weights and activations of the network and returns a copy
+
+        A Survey on Methods and Theories of Quantized Neural Networks,
+        Yunhui Guo
+        University of California, San Diego,
+        arXiv:1808.04752v2, 2018
+
+        Args:
+            network: the network that should be quantized
+            target_dype:
+            full_layer_quant_type:
+            conv_layer_quant_type:
+
+        Returns:
+
+        """
+
+        quantize_vector(x, bits=8, max_value=1, min_value=-1)
+
+        # Step 1: Copy network and layers
+        layers_copy = [layer.deepcopy() for layer in network.layers]
+
+        [layer.cast(new_dtype=np.int32) for layer in network.layers]
+
+        pass

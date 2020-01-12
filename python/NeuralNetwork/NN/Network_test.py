@@ -2,7 +2,7 @@ import unittest
 
 import numpy as np
 
-from NeuralNetwork.NN.ConvLayer import ConvLayer, MaxPoolLayer
+from NeuralNetwork.NN.ConvLayer import Conv2dLayer, MaxPoolLayer
 from NeuralNetwork.NN.FullyConnected import FullyConnectedLayer
 from NeuralNetwork.NN.Network import Network, check_layers
 from NeuralNetwork.NN.Util import ReshapeLayer
@@ -35,9 +35,9 @@ class NetworkTestCase(unittest.TestCase):
 
         layers = [
             ReshapeLayer(newshape=[-1, 28, 28, 1]),
-            ConvLayer(in_channels=1, out_channels=16, kernel_size=3),   # [? 28 28 16]
+            Conv2dLayer(in_channels=1, out_channels=16, kernel_size=3),   # [? 28 28 16]
             MaxPoolLayer(size=2),                                       # [? 14 14 16]
-            ConvLayer(in_channels=16, out_channels=32, kernel_size=3),  # [? 14 14 32]
+            Conv2dLayer(in_channels=16, out_channels=32, kernel_size=3),  # [? 14 14 32]
             MaxPoolLayer(size=2),                                       # [?  7  7 32]
             # ConvLayer(in_channels=32, out_channels=64, kernel_size=3),  # [?  7  7 64]
             # MaxPoolLayer(size=2),

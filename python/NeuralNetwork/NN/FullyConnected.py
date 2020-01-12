@@ -12,11 +12,25 @@ class FullyConnectedLayer(Layer):
     W: ndarray  # Weights of the layer, dimensions: [IN x OUT]
     b: ndarray  # bias of the layer
 
-    def __init__(self, input_size, output_size, activation=None, dtype=np.float32):
-        self.W = np.random.rand(input_size, output_size).astype(dtype=dtype)
-        self.b = np.random.rand(output_size).astype(dtype=dtype)
+    def __init__(self, input_size, output_size, activation=None, dtype=np.float32, weights=None, bias=None):
+        self.input_size = input_size
+        self.output_size = output_size
         self.activation = activation
         self.dtype = dtype
+
+        if weights is None:
+            self.W = np.random.rand(input_size, output_size).astype(dtype=dtype)
+        else:
+            assert isinstance(weights, np.ndarray)
+            assert np.all(weights.shape == (input_size, output_size))
+            self.W = weights
+
+        if bias is None:
+            self.b = np.random.rand(output_size).astype(dtype=dtype)
+        else:
+            assert isinstance(weights, np.ndarray)
+            assert np.all(weights.shape == (input_size, output_size))
+            self.W = weights
 
     def __call__(self, *args, **kwargs):
         # use the '@' sign to refer to a tensor dot
@@ -41,5 +55,15 @@ class FullyConnectedLayer(Layer):
         return self.W.shape[1], -1
 
     def cast(self, new_dtype: np.dtype):
-        self.W = self.W.astype(dtype=new_dtype)
-        self.b = self.b.astype(dtype=new_dtype)
+        layer = self.__copy__()
+        layer.W = layer.W.astype(dtype=new_dtype)
+        layer.b = layer.b.astype(dtype=new_dtype)
+        return layer
+
+    def __copy__(self):
+        c = FullyConnectedLayer(input_size=self.input_size,
+                                output_size=self.output_size,
+                                dtype=self.dtype,
+                                weights=self.W.copy(),
+                                bias=self.b.copy())
+        return c

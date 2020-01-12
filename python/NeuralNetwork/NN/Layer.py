@@ -39,5 +39,30 @@ class Layer:
         """
         raise NotImplementedError()
 
-    def cast(self, new_dtype: np.dtype):
+    def cast(self, new_dtype):
+        """
+        Casts the layer to new datatype (no copy)
+        Args:
+            new_dtype: the new data type that should be casted to
+
+        Returns:
+            None
+        """
         pass
+
+    def __copy__(self):
+        """
+        Create a copy of the layer object and returns it
+        Returns:
+            A copy of the the layer
+        """
+        raise NotImplementedError()
+
+    def deepcopy(self):
+        """
+        Creates a deep copy of the layer
+        Returns:
+            A deep copy of the object
+
+        """
+        return self.__copy__()

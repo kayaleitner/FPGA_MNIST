@@ -4,9 +4,8 @@ from typing import Optional
 import numpy as np
 from numpy.core.multiarray import ndarray
 
-from NeuralNetwork.NN.Layer import Layer
 from NeuralNetwork.NN.Activations import relu
-from NeuralNetwork.Ext.NeuralNetworkExtension import conv2d as conv2d_ext
+from NeuralNetwork.NN.Layer import Layer
 
 
 def init_kernel(input_channels: int, out_channels: int = 3, kernel_size: int = 5, dtype=np.float32) -> ndarray:
@@ -119,20 +118,68 @@ def conv2d(data_in: ndarray, kernel: ndarray, stride: int = 1):
 
 
 def conv2d_fast(data_in, kernel, stride=1):
-    return conv2d_ext(data_in, kernel, stride)
+    """
+    Calculates a fast convolution using the C module
+    Args:
+        data_in: input tensor, should have the shape [BATCH, HEIGHT, WIDTH, CHANNELS]
+        kernel: kernel tensor, should have the shape [CHANNEL_OUT, CHANNEL_IN, K_HEIGHT, K_WIDTH]
+        stride: strides between the convolution operations, default is 1
+
+    Returns:
+        the convolution result
+    """
+    import NeuralNetwork.Ext.NeuralNetworkExtension as nnext
+    # ToDo: Find a way to move this type checking to the wrapper layer in C
+
+    if data_in.dtype == np.float32:
+        return nnext.conv2d_float(data_in=data_in, kernel=kernel, stride=stride)
+
+    elif data_in.dtype == np.float64:
+        return nnext.conv2d_double(data_in=data_in, kernel=kernel, stride=stride)
+
+    elif data_in.dtype == np.int8:
+        return nnext.conv2d_int8_t(data_in=data_in, kernel=kernel, stride=stride)
+
+    elif data_in.dtype == np.int16:
+        return nnext.conv2d_int16_t(data_in=data_in, kernel=kernel, stride=stride)
+
+    elif data_in.dtype == np.int32:
+        return nnext.conv2d_int32_t(data_in=data_in, kernel=kernel, stride=stride)
+
+    else:
+        # ToDo: Add missing types
+        raise NotImplementedError()
 
 
-class ConvLayer(Layer):
+class Conv2dLayer(Layer):
     activation: Optional[str]
     b: ndarray
     kernel: ndarray
-    dtype: np.dtype
 
-    def __init__(self, in_channels, out_channels, kernel_size, activation=None, dtype=np.float32):
-        self.kernel = init_kernel(in_channels, out_channels, kernel_size, dtype=dtype)
-        self.b = np.random.rand(out_channels).astype(dtype=dtype)
+    def __init__(self,
+                 in_channels,
+                 out_channels,
+                 kernel_size,
+                 activation=None,
+                 dtype=np.float32,
+                 kernel_init_weights=None,
+                 bias_init_weights=None):
+
+        self.in_channels = in_channels
+        self.out_channels = out_channels
+        self.kernel_size = kernel_size
         self.activation = activation
         self.dtype = dtype
+
+        if kernel_init_weights is None:
+            self.kernel = init_kernel(in_channels, out_channels, kernel_size, dtype=dtype)
+        else:
+            self.kernel = kernel_init_weights
+
+        if bias_init_weights is None:
+            self.b = np.random.rand(out_channels).astype(dtype=dtype)
+        else:
+            self.b = bias_init_weights
 
     def __call__(self, *args, **kwargs):
         if self.dtype == np.float32:
@@ -161,8 +208,20 @@ class ConvLayer(Layer):
         return -1, -1, -1, self.kernel.shape[3]
 
     def cast(self, new_dtype: np.dtype):
-        self.kernel = self.kernel.astype(dtype=new_dtype)
-        self.b = self.b.astype(dtype=new_dtype)
+        layer = self.__copy__()
+        layer.kernel = layer.kernel.astype(dtype=new_dtype)
+        layer.b = layer.b.astype(dtype=new_dtype)
+        return layer
+
+    def __copy__(self):
+        c = Conv2dLayer(in_channels=self.in_channels,
+                        out_channels=self.out_channels,
+                        kernel_size=self.kernel_size,
+                        activation=self.activation,
+                        dtype=self.dtype,
+                        kernel_init_weights=self.kernel.copy(),
+                        bias_init_weights=self.b.copy())
+        return c
 
 
 def pooling_max(data_in: ndarray, pool_size: int, stride=2):
@@ -222,7 +281,7 @@ def apply_pool(data_in: ndarray, pool_size: int, f, stride=2):
     return pool_out
 
 
-class MaxPoolLayer(Layer):
+class MaxPool2dLayer(Layer):
     PoolSize: int
 
     def __init__(self, size=2):
@@ -243,8 +302,11 @@ class MaxPoolLayer(Layer):
         out_h = math.ceil(in_h / self.PoolSize)
         return -1, out_w, out_h, -1
 
+    def __copy__(self):
+        return MaxPool2dLayer(size=self.PoolSize)
 
-class AveragePoolLayer(Layer):
+
+class AveragePool2dLayer(Layer):
     PoolSize: int
 
     def __init__(self, size=2):
@@ -264,3 +326,6 @@ class AveragePoolLayer(Layer):
         out_w = math.ceil(in_w / self.PoolSize)
         out_h = math.ceil(in_h / self.PoolSize)
         return -1, out_w, out_h, -1
+
+    def __copy__(self):
+        return AveragePool2dLayer(size=self.PoolSize)
