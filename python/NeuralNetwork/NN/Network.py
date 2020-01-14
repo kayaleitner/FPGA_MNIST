@@ -75,6 +75,66 @@ class Network:
             deltas.append(delta)
             l.update_weights(delta)
 
+    def __copy__(self):
+        net = Network(list_of_layers=[layer.deepcopy() for layer in self.layers])
+        return net
+
+    def cast(self, new_dtype: np.dtype):
+
+        # Only cast to other floating point types
+        if not (new_dtype in (np.float, np.float32, np.float16)):
+            # for integer types take special considerations
+            return self.quantize_network(network=self, target_dype=new_dtype)
+        else:
+            layers = [layer.deepcopy() for layer in self.layers]
+
+            for layer in layers:
+                layer.cast(new_dtype)
+
+            net = Network(list_of_layers=layers)
+            return net
+
+    def quantize_network(self, new_dtype, max_value, min_value,
+                         full_layer_quant_type=QuantFullyConnectedType.FULL_LAYER,
+                         conv_layer_quant_type=QuantConvLayerType.PER_CHANNEL):
+        """
+        Quantizes the weights and activations of the network and returns a copy
+
+        A Survey on Methods and Theories of Quantized Neural Networks,
+        Yunhui Guo
+        University of California, San Diego,
+        arXiv:1808.04752v2, 2018
+
+        Args:
+            min_value:
+            max_value:
+            target_dype:
+            full_layer_quant_type:
+            conv_layer_quant_type:
+
+        Returns:
+
+        """
+
+        layers_copy = [layer.deepcopy() for layer in self.layers]
+        for layer in layers_copy:
+            layer.quantize_layer(target_type=new_dtype, max_value=max_value, min_value=min_value)
+        net = Network(list_of_layers=layers_copy)
+        return net
+
+    def get_network_weights(self):
+        weights_dict = {}
+
+        for i, layer in enumerate(self.layers):
+            if isinstance(layer, FullyConnectedLayer):
+                weights_dict["{}:FC:W".format(i)] = layer.weights
+                weights_dict["{}:FC:b".format(i)] = layer.bias
+            elif isinstance(layer, Conv2dLayer):
+                weights_dict["{}:Conv2D:kernel".format(i)] = layer.weights
+                weights_dict["{}:Conv2D:b".format(i)] = layer.bias
+
+        return weights_dict
+
 
 class LeNet(Network):
     """
@@ -169,63 +229,3 @@ class LeNet(Network):
 
                 weight_loaded = np.loadtxt(weight_file)
                 # ToDo: Finish this up by mapping the weights to the right layer
-
-    def __copy__(self):
-        net = Network(list_of_layers=[layer.deepcopy() for layer in self.layers])
-        return net
-
-    def cast(self, new_dtype: np.dtype):
-
-        # Only cast to other floating point types
-        if not (new_dtype in (np.float, np.float32, np.float16)):
-            # for integer types take special considerations
-            return self.quantize_network(network=self, target_dype=new_dtype)
-        else:
-            layers = [layer.deepcopy() for layer in self.layers]
-
-            for layer in layers:
-                layer.cast(new_dtype)
-
-            net = Network(list_of_layers=layers)
-            return net
-
-    def get_network_weights(self):
-        weights_dict = {}
-
-        for i, layer in enumerate(self.layers):
-            if isinstance(layer, FullyConnectedLayer):
-                weights_dict["{}:FC:W".format(i)] = layer.weights
-                weights_dict["{}:FC:b".format(i)] = layer.bias
-            elif isinstance(layer, Conv2dLayer):
-                weights_dict["{}:Conv2D:kernel".format(i)] = layer.weights
-                weights_dict["{}:Conv2D:b".format(i)] = layer.bias
-
-        return weights_dict
-
-    @staticmethod
-    def quantize_network(network: Network, target_dype=np.int16,
-                         full_layer_quant_type=QuantFullyConnectedType.FULL_LAYER,
-                         conv_layer_quant_type=QuantConvLayerType.PER_CHANNEL):
-        """
-        Quantizes the weights and activations of the network and returns a copy
-
-        A Survey on Methods and Theories of Quantized Neural Networks,
-        Yunhui Guo
-        University of California, San Diego,
-        arXiv:1808.04752v2, 2018
-
-        Args:
-            network: the network that should be quantized
-            target_dype:
-            full_layer_quant_type:
-            conv_layer_quant_type:
-
-        Returns:
-
-        """
-
-        layers_copy = [layer.deepcopy() for layer in network.layers]
-        for layer in layers_copy:
-            layer.quantize_layer(target_type=target_dype, max_value=16, min_value=-16)
-        net = Network(list_of_layers=layers_copy)
-        return net

@@ -78,24 +78,11 @@ def np_quant(x, target_dtype=np.int16, max_value=inf, min_value=-inf):
     limit_lower + np.round(x / val_range)
 
 
-def dequantize_vector(x, bits, max_value, min_value, signed=True):
-    lsb = (max_value - min_value) / (2 ** bits)
+def dequantize_vector(x, max_value, min_value):
+    ncodes = np_ncodes(x.dtype)
+    lsb = (max_value - min_value) / ncodes
+    return x * lsb
 
-    if signed:
-        # apply shift to 0x00 up to 0xFF
-        xnorm = x + 2 ** (bits - 1)
-
-    xnorm * lsb + min_value
-    return x * lsb + min_value
-
-    if signed:
-        # Normalize between -1 and 1
-        xnorm = 2 * (x + 2 ** (bits - 1)) / (2 ** bits - 1) - 1
-        return xnorm * (max_value - min_value) + min_value
-    else:
-        # Normalize between 0 and 1
-        xnorm = x / (2 ** bits - 1)
-        return xnorm * (max_value - min_value) + min_value
 
 
 def quantize_vector(x, target_type, signed=True, max_value=inf, min_value=-inf) -> np.ndarray:
@@ -130,7 +117,6 @@ def quantize_vector(x, target_type, signed=True, max_value=inf, min_value=-inf) 
     y = np.round(xc / lsb - 0.5).astype(dtype=target_type)
     yq = np.clip(y, a_min=min_code, a_max=max_code)
     return yq
-
 
 def cluster_quantization(w, n_centroids):
     """

@@ -1,13 +1,32 @@
 import json
 import os
+import platform
 
 import numpy as np
 import matplotlib
-matplotlib.use('TkAgg')
+# matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
 
-os.environ["KERAS_BACKEND"] = "plaidml.keras.backend"
-import keras
+# Check if the code runs on Mac (which almost all modern ones have AMD GPUs)
+if platform.system() == 'Darwin':
+    USE_AMD_GPU = False
+else:
+    USE_AMD_GPU = False
+
+if USE_AMD_GPU:
+    # Switch the backend
+    # Be sure to install 'plaidml-keras'
+    # and run the 'plaidml-setup'
+    #
+    # https://www.varokas.com/keras-with-gpu-on-plaidml/
+    os.environ["KERAS_BACKEND"] = "plaidml.keras.backend"
+    import keras
+    from keras.models import Sequential
+    from keras.layers import Dense, Conv2D, Flatten, MaxPooling2D, Reshape, Dropout, BatchNormalization, ReLU
+else:
+    import tensorflow.keras as keras
+    from tensorflow.keras.models import Sequential
+    from tensorflow.keras.layers import Dense, Conv2D, Flatten, MaxPooling2D, Reshape, Dropout, BatchNormalization, ReLU
 
 checkpoint_path = "training_1/cp.ckpt"
 checkpoint_dir = os.path.dirname(checkpoint_path)
