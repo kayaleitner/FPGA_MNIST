@@ -84,6 +84,6 @@ begin
 		wait until rising_edge(s_Clk_i);
 		wait until rising_edge(s_Clk_i);
 		report "Output from uit: " & integer'image(to_integer(s_Y_o));
-		assert to_integer(s_Y_o) /= result report "Actual and expected output does not match up!" severity error;
+		assert to_integer(s_Y_o) = result report "Actual and expected output does not match up!" severity error;
 	end process;
 end beh;

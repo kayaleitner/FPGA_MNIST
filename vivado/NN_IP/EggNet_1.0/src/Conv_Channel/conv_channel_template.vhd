@@ -34,7 +34,8 @@ architecture beh of ConvChannel is
 	type kernel_array_t is array (0 to N-1) of weight_array_t;
 	constant DEFAULT_KERNELS : kernel_array_t :=
 		((90,80,70,60,50,40,30,20,10),
-		 (10,20,30,40,50,60,70,80,90));
+		 (10,20,30,40,50,60,70,80,90),
+		 (15,25,35,45,55,45,35,25,15));
 		 
 	--This is replaced by a script:
 	--constant KERNELS : kernel_array_t :=
@@ -45,11 +46,11 @@ architecture beh of ConvChannel is
 		input_term_vector   : term_vector_t
 	)
 	return signed is
-		constant    N                           : natural                       := input_term_vector'length;
-		constant    term_vector                 : term_vector_t(0 to (N - 1))   := input_term_vector;
-		constant    LEFT_TREE_N                 : natural                       := ((N + 2) / 3);
-		constant    MIDDLE_TREE_N               : natural                       := (((N - LEFT_TREE_N) + 1) / 2);
-		constant    RIGHT_TREE_N                : natural                       := (N - LEFT_TREE_N - MIDDLE_TREE_N);
+		constant    N_t                     	: natural                       := input_term_vector'length;
+		constant    term_vector                 : term_vector_t(0 to (N_t - 1))	:= input_term_vector;
+		constant    LEFT_TREE_N                 : natural                       := ((N_t + 2) / 3);
+		constant    MIDDLE_TREE_N               : natural                       := (((N_t - LEFT_TREE_N) + 1) / 2);
+		constant    RIGHT_TREE_N                : natural                       := (N_t - LEFT_TREE_N - MIDDLE_TREE_N);
 		constant    LEFT_TREE_LOW_INDEX         : natural                       := 0;
 		constant    LEFT_TREE_HIGH_INDEX        : natural                       := (LEFT_TREE_LOW_INDEX + LEFT_TREE_N - 1);
 		constant    MIDDLE_TREE_LOW_INDEX       : natural                       := (LEFT_TREE_HIGH_INDEX + 1);
@@ -57,9 +58,9 @@ architecture beh of ConvChannel is
 		constant    RIGHT_TREE_LOW_INDEX        : natural                       := (MIDDLE_TREE_HIGH_INDEX + 1);
 		constant    RIGHT_TREE_HIGH_INDEX       : natural                       := (RIGHT_TREE_LOW_INDEX + RIGHT_TREE_N - 1);
     begin
-		if (N = 1) then
+		if (N_t = 1) then
 			return term_vector(0);
-		elsif (N = 2) then
+		elsif (N_t = 2) then
 			report integer'image(SUM_WIDTH);
 			report integer'image(to_integer(term_vector(0)));
 			report integer'image(to_integer(term_vector(1)));
