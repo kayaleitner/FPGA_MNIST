@@ -6,22 +6,17 @@ import numpy as np
 
 class Fp:
 
-    def asfloat(self):
-        raise NotImplementedError()
-
-
-class Fp8(Fp):
-
-    def asfloat(self):
-        pass
-
-    def __init__(self, value, bits, min_value, max_value, signed=True):
+    def __init__(self, value: float, bits, min_value, max_value, signed=True):
         self.value = value
         self.bits = bits
         self.min_value = min_value
         self.max_value = max_value
         self.signed = signed
         self.qvalue = quantize_vector(value, bits=bits, min_value=min_value, max_value=max_value, signed=signed)
+
+    def asfloat(self):
+        return dequantize_vector(x=self.qvalue, bits=self.bits, max_value=self.max_value, min_value=self.min_value,
+                                 signed=self.signed)
 
 
 class QuantConvLayerType(Enum):
@@ -84,32 +79,32 @@ def np_quant(x, target_dtype=np.int16, max_value=inf, min_value=-inf):
 
 
 def dequantize_vector(x, bits, max_value, min_value, signed=True):
-    lsb = (max_value-min_value) / (2**bits)
+    lsb = (max_value - min_value) / (2 ** bits)
 
     if signed:
         # apply shift to 0x00 up to 0xFF
-        xnorm = x + 2**(bits-1)
+        xnorm = x + 2 ** (bits - 1)
 
     xnorm * lsb + min_value
     return x * lsb + min_value
 
     if signed:
         # Normalize between -1 and 1
-        xnorm = 2*(x + 2**(bits-1)) / (2**bits-1) - 1
-        return xnorm * (max_value-min_value) + min_value
+        xnorm = 2 * (x + 2 ** (bits - 1)) / (2 ** bits - 1) - 1
+        return xnorm * (max_value - min_value) + min_value
     else:
         # Normalize between 0 and 1
         xnorm = x / (2 ** bits - 1)
-        return xnorm * (max_value-min_value) + min_value
+        return xnorm * (max_value - min_value) + min_value
 
 
-def quantize_vector(x, bits=8, signed=True, max_value=inf, min_value=-inf) -> np.ndarray:
+def quantize_vector(x, target_type, signed=True, max_value=inf, min_value=-inf) -> np.ndarray:
     """
     Performs deterministic rounding quantization to a vector
 
     Args:
         x:
-        bits:
+        target_type:
         signed:
         max_value:
         min_value:
@@ -123,21 +118,17 @@ def quantize_vector(x, bits=8, signed=True, max_value=inf, min_value=-inf) -> np
     if min_value == -inf:
         min_value = np.min(x)
 
-    n_codes = 2 ** bits
+    n_codes = np_ncodes(dtype=target_type)
+    (min_code, max_code) = np_limits(dtype=target_type)
 
-    if signed:
-        min_code = -n_codes // 2
-        max_code = n_codes // 2 - 1
-        offset_shift = n_codes // 2
+    if max_value == min_value == 0:
+        lsb = 1
     else:
-        min_code = 0
-        max_code = n_codes - 1
-        offset_shift = 0
+        lsb = (max_value - min_value) / n_codes
 
-    lsb = (max_value - min_value) / n_codes
     xc = np.clip(x, a_min=min_value, a_max=max_value)
-    y = np.round(xc / lsb - 0.5).astype(np.int)
-    yq = np.clip(y, a_min=min_code, a_max=max_code) + offset_shift
+    y = np.round(xc / lsb - 0.5).astype(dtype=target_type)
+    yq = np.clip(y, a_min=min_code, a_max=max_code)
     return yq
 
 

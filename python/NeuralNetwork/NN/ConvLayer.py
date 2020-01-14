@@ -6,6 +6,7 @@ from numpy.core.multiarray import ndarray
 
 from NeuralNetwork.NN.Activations import relu
 from NeuralNetwork.NN.Layer import Layer
+from NeuralNetwork.NN.Quant import quantize_vector
 
 
 def init_kernel(input_channels: int, out_channels: int = 3, kernel_size: int = 5, dtype=np.float32) -> ndarray:
@@ -99,6 +100,7 @@ def conv2d(data_in: ndarray, kernel: ndarray, stride: int = 1):
     # output[b, i, j, k] =
     #     sum_{di, dj, q} input[b, strides[1] * i + di, strides[2] * j + dj, q] *
     #                     filter[di, dj, q, k]
+
     for b in range(batch):
         for k in range(kout_ch):
             # k = kernel[:, :, q, k]  # 2d kernel
@@ -108,8 +110,16 @@ def conv2d(data_in: ndarray, kernel: ndarray, stride: int = 1):
             for i in range(0, in_h, stride):
                 for j in range(0, in_w, stride):
                     patch = in_padded[b, i:i + fh, j:j + fw, :]  # 3d tensor 3x3x16
+                    # patch_sum is always int64
                     patch_sum = np.sum(patch * kernel[:, :, :, k], axis=(0, 1, 2))  # sum along all axis
-                    out[b, i_out, j_out, k] = patch_sum
+
+                    if kernel.dtype.kind in 'ui':  # check if datatype is unsigned or integer
+                        min_value = np.iinfo(kernel.dtype).min
+                        max_value = np.iinfo(kernel.dtype).max
+                        out[b, i_out, j_out, k] = np.clip(patch_sum, a_min=min_value, a_max=max_value).astype(
+                            kernel.dtype)
+                    else:
+                        out[b, i_out, j_out, k] = patch_sum
                     j_out += 1
                 j_out = 0
                 i_out += 1
@@ -181,9 +191,36 @@ class Conv2dLayer(Layer):
         else:
             self.b = bias_init_weights
 
+    @property
+    def weights(self):
+        return self.kernel
+
+    @weights.setter
+    def weights(self, value):
+        assert isinstance(value, np.ndarray)
+        self.kernel = value
+
+    @property
+    def bias(self):
+        return self.b
+
+    @bias.setter
+    def bias(self, value):
+        assert isinstance(value, np.ndarray)
+        self.b = value
+
+    @property
+    def activation_func(self):
+        return self.activation
+
+    @activation_func.setter
+    def activation_func(self, value):
+        assert value in ('relu', 'softmax', None)
+        self.activation = value
+
     def __call__(self, *args, **kwargs):
-        if self.dtype == np.float32:
-            z = conv2d_fast(args[0].astype(np.float32), self.kernel.astype(np.float32), stride=1) + self.b
+        if self.dtype in (np.float32, np.float64):
+            z = conv2d_fast(args[0], self.kernel, stride=1) + self.b
         else:
             z = conv2d(args[0], self.kernel, stride=1) + self.b
 
@@ -208,10 +245,9 @@ class Conv2dLayer(Layer):
         return -1, -1, -1, self.kernel.shape[3]
 
     def cast(self, new_dtype: np.dtype):
-        layer = self.__copy__()
-        layer.kernel = layer.kernel.astype(dtype=new_dtype)
-        layer.b = layer.b.astype(dtype=new_dtype)
-        return layer
+        self.dtype = new_dtype
+        self.kernel = self.kernel.astype(dtype=new_dtype)
+        self.b = self.b.astype(dtype=new_dtype)
 
     def __copy__(self):
         c = Conv2dLayer(in_channels=self.in_channels,
@@ -222,6 +258,11 @@ class Conv2dLayer(Layer):
                         kernel_init_weights=self.kernel.copy(),
                         bias_init_weights=self.b.copy())
         return c
+
+    def quantize_layer(self, target_type, max_value, min_value):
+        self.dtype = target_type
+        self.kernel = quantize_vector(self.kernel, target_type=target_type, max_value=max_value, min_value=min_value)
+        self.b = quantize_vector(self.b, target_type=target_type, max_value=max_value, min_value=min_value)
 
 
 def pooling_max(data_in: ndarray, pool_size: int, stride=2):

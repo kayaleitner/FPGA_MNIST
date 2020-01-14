@@ -90,9 +90,9 @@ class LeNet(Network):
         r1 = ReshapeLayer(newshape=[-1, 28, 28, 1])
         cn1 = Conv2dLayer(in_channels=1, out_channels=16, kernel_size=3, activation='relu',
                           dtype=np.float32)  # [? 28 28 16]
-        mp1 = MaxPoolLayer(size=2)  # [? 14 14 16]
+        mp1 = MaxPool2dLayer(size=2)  # [? 14 14 16]
         cn2 = Conv2dLayer(in_channels=16, out_channels=32, kernel_size=3, activation='relu')  # [? 14 14 32]
-        mp2 = MaxPoolLayer(size=2)  # [?  7  7 32]
+        mp2 = MaxPool2dLayer(size=2)  # [?  7  7 32]
         r2 = ReshapeLayer(newshape=[-1, 32 * 7 * 7])
         fc1 = FullyConnectedLayer(input_size=32 * 7 * 7, output_size=32, activation='relu', dtype=np.float32)
         fc2 = FullyConnectedLayer(input_size=32, output_size=10, activation='softmax')
@@ -171,21 +171,36 @@ class LeNet(Network):
                 # ToDo: Finish this up by mapping the weights to the right layer
 
     def __copy__(self):
-        net = Network(list_of_layers=self.layers.copy())
+        net = Network(list_of_layers=[layer.deepcopy() for layer in self.layers])
         return net
-
 
     def cast(self, new_dtype: np.dtype):
 
         # Only cast to other floating point types
-        if False and not (new_dtype in (np.float, np.float32, np.float16)):
+        if not (new_dtype in (np.float, np.float32, np.float16)):
             # for integer types take special considerations
-            return self.quantize_network()
+            return self.quantize_network(network=self, target_dype=new_dtype)
         else:
-            net = self.__copy__()
-            for layer in net.layers:
-                layer.cast(new_dtype=new_dtype)
+            layers = [layer.deepcopy() for layer in self.layers]
+
+            for layer in layers:
+                layer.cast(new_dtype)
+
+            net = Network(list_of_layers=layers)
             return net
+
+    def get_network_weights(self):
+        weights_dict = {}
+
+        for i, layer in enumerate(self.layers):
+            if isinstance(layer, FullyConnectedLayer):
+                weights_dict["{}:FC:W".format(i)] = layer.weights
+                weights_dict["{}:FC:b".format(i)] = layer.bias
+            elif isinstance(layer, Conv2dLayer):
+                weights_dict["{}:Conv2D:kernel".format(i)] = layer.weights
+                weights_dict["{}:Conv2D:b".format(i)] = layer.bias
+
+        return weights_dict
 
     @staticmethod
     def quantize_network(network: Network, target_dype=np.int16,
@@ -209,11 +224,8 @@ class LeNet(Network):
 
         """
 
-        quantize_vector(x, bits=8, max_value=1, min_value=-1)
-
-        # Step 1: Copy network and layers
         layers_copy = [layer.deepcopy() for layer in network.layers]
-
-        [layer.cast(new_dtype=np.int32) for layer in network.layers]
-
-        pass
+        for layer in layers_copy:
+            layer.quantize_layer(target_type=target_dype, max_value=16, min_value=-16)
+        net = Network(list_of_layers=layers_copy)
+        return net

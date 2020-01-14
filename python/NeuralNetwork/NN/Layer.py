@@ -1,4 +1,3 @@
-import numpy as np
 from numpy.core.multiarray import ndarray
 
 
@@ -53,10 +52,11 @@ class Layer:
     def __copy__(self):
         """
         Create a copy of the layer object and returns it
+        If not implemented this returns a copy to self
         Returns:
             A copy of the the layer
         """
-        raise NotImplementedError()
+        return self
 
     def deepcopy(self):
         """
@@ -66,3 +66,6 @@ class Layer:
 
         """
         return self.__copy__()
+
+    def quantize_layer(self, target_type, max_value, min_value):
+        pass

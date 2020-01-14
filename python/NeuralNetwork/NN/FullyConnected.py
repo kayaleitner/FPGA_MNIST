@@ -5,12 +5,40 @@ from numpy.core.multiarray import ndarray
 
 from NeuralNetwork.NN.Layer import Layer
 from NeuralNetwork.NN.Activations import relu, softmax
+from NeuralNetwork.NN.Quant import quantize_vector
 
 
 class FullyConnectedLayer(Layer):
     activation: Optional[str]
     W: ndarray  # Weights of the layer, dimensions: [IN x OUT]
     b: ndarray  # bias of the layer
+
+    @property
+    def weights(self):
+        return self.W
+
+    @weights.setter
+    def weights(self, value):
+        assert isinstance(value, np.ndarray)
+        self.W = value
+
+    @property
+    def bias(self):
+        return self.b
+
+    @bias.setter
+    def bias(self, value):
+        assert isinstance(value, np.ndarray)
+        self.b = value
+
+    @property
+    def activation_func(self):
+        return self.activation
+
+    @activation_func.setter
+    def activation_func(self, value):
+        assert value in ('relu', 'softmax', None)
+        self.activation = value
 
     def __init__(self, input_size, output_size, activation=None, dtype=np.float32, weights=None, bias=None):
         self.input_size = input_size
@@ -28,9 +56,8 @@ class FullyConnectedLayer(Layer):
         if bias is None:
             self.b = np.random.rand(output_size).astype(dtype=dtype)
         else:
-            assert isinstance(weights, np.ndarray)
-            assert np.all(weights.shape == (input_size, output_size))
-            self.W = weights
+            assert isinstance(bias, np.ndarray)
+            self.b = bias
 
     def __call__(self, *args, **kwargs):
         # use the '@' sign to refer to a tensor dot
@@ -55,10 +82,9 @@ class FullyConnectedLayer(Layer):
         return self.W.shape[1], -1
 
     def cast(self, new_dtype: np.dtype):
-        layer = self.__copy__()
-        layer.W = layer.W.astype(dtype=new_dtype)
-        layer.b = layer.b.astype(dtype=new_dtype)
-        return layer
+        self.dtype = new_dtype
+        self.W = self.W.astype(dtype=new_dtype)
+        self.b = self.b.astype(dtype=new_dtype)
 
     def __copy__(self):
         c = FullyConnectedLayer(input_size=self.input_size,
@@ -67,3 +93,8 @@ class FullyConnectedLayer(Layer):
                                 weights=self.W.copy(),
                                 bias=self.b.copy())
         return c
+
+    def quantize_layer(self, target_type, max_value, min_value):
+        self.dtype = target_type
+        self.W = quantize_vector(self.W, target_type=target_type, max_value=max_value, min_value=min_value)
+        self.b = quantize_vector(self.b, target_type=target_type, max_value=max_value, min_value=min_value)

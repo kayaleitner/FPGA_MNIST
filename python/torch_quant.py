@@ -1,21 +1,21 @@
 """
 This scripts shall observe the influence of accuracy on different quantization strategies
 """
+from __future__ import absolute_import, print_function, division
+
 import os
+
 import numpy as np
-
-import NeuralNetwork.Util
-import NeuralNetwork.NN as NN
-import NeuralNetwork.Ext as Ext
-import NeuralNetwork.Reader as Reader
-
-import torch
-import torch.nn.modules as modules
-
-import tensorflow as tf
 import tensorflow.keras as keras
-from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, Conv2D, Flatten, MaxPooling2D, Reshape, Dropout
+from tensorflow.keras.models import Sequential
+from matplotlib import pyplot as plt
+
+import NeuralNetwork.NN as NN
+import NeuralNetwork.Reader as Reader
+import NeuralNetwork.Util
+import NeuralNetwork.NN.Quant as nnquant
+from NeuralNetwork.Util import plot_network_parameter_histogram
 
 
 def train_keras(save_dir, IMG_HEIGHT=28, IMG_WIDTH=28):
@@ -95,18 +95,34 @@ if __name__ == '__main__':
     nn_lenet_i8 = nn_lenet_f64.cast(new_dtype=np.int8)
 
     # Compare results
-    (lbls, imgs) = next(reader.get_next(batch_size=10))
+    (lbls, imgs) = next(reader.get_next(batch_size=1))
     imgs_float = imgs.astype(dtype=np.float) / 256
     lbls_keras = keras_lenet(inputs=imgs_float)
 
+    imgs_i8 = nnquant.quantize_vector(imgs_float, target_type=np.int8, max_value=16, min_value=-16, signed=False)
+    imgs_i16 = nnquant.quantize_vector(imgs_float, target_type=np.int16, max_value=16, min_value=-16, signed=False)
+    imgs_i32 = nnquant.quantize_vector(imgs_float, target_type=np.int32, max_value=16, min_value=-16, signed=False)
+
     lbls_keras = lbls_keras.numpy().argmax(axis=1)
-    lbls_nn_f64 = nn_lenet_f64.forward(x=imgs_float).argmax(axis=1)
+
+    # lbls_nn_f64 = nn_lenet_f64.forward(x=imgs_float).argmax(axis=1)
+    lbls_nn_f64, nn64_activations = nn_lenet_f64.forward_intermediate(imgs_float)
+    nn_weights = nn_lenet_f64.get_network_weights()
+
+    # Plot Network Weights
+    # plot_network_parameter_histogram(weights=nn_weights, bins=32)
+    # Plot Network Activations
+    # plot_network_parameter_histogram(weights=nn64_activations, bins=32)
+    # plt.show()
+
     lbls_nn_f32 = nn_lenet_f32.forward(x=imgs_float).argmax(axis=1)
     lbls_nn_f16 = nn_lenet_f16.forward(x=imgs_float).argmax(axis=1)
-    lbls_nn_i32 = nn_lenet_i32.forward(x=imgs_float).argmax(axis=1)
-    lbls_nn_i16 = nn_lenet_i16.forward(x=imgs_float).argmax(axis=1)
-    lbls_nn_i8 = nn_lenet_i8.forward(x=imgs_float).argmax(axis=1)
 
+    lbls_nn_i8 = nn_lenet_i8.forward(x=imgs_i8)
+    lbls_nn_i16 = nn_lenet_i16.forward(x=imgs_i16)
+    lbls_nn_i32, nn32_activations = nn_lenet_i32.forward_intermediate(x=imgs_i32)
 
-
+    lbls_nn_i8 = lbls_nn_i8.argmax(axis=1)
+    lbls_nn_i16 = lbls_nn_i16.argmax(axis=1)
+    lbls_nn_i32 = lbls_nn_i32.argmax(axis=1)
 

@@ -7,18 +7,16 @@ import os
 import platform
 import time
 import matplotlib
-matplotlib.use('TkAgg') # to get rid of runtime error
+
+matplotlib.use('TkAgg')  # to get rid of runtime error
 import matplotlib.pyplot as plt
 import numpy as np
 
-
 # Check if the code runs on Mac (which almost all modern ones have AMD GPUs)
 if platform.system() == 'Darwin':
-    USE_AMD_GPU = True
+    USE_AMD_GPU = False
 else:
     USE_AMD_GPU = False
-
-
 
 if USE_AMD_GPU:
     # Switch the backend
@@ -29,12 +27,11 @@ if USE_AMD_GPU:
     os.environ["KERAS_BACKEND"] = "plaidml.keras.backend"
     import keras
     from keras.models import Sequential
-    from keras.layers import Dense, Conv2D, Flatten, MaxPooling2D, Reshape, Dropout
+    from keras.layers import Dense, Conv2D, Flatten, MaxPooling2D, Reshape, Dropout, BatchNormalization, ReLU
 else:
     import tensorflow.keras as keras
     from tensorflow.keras.models import Sequential
-    from tensorflow.keras.layers import Dense, Conv2D, Flatten, MaxPooling2D, Reshape, Dropout
-
+    from tensorflow.keras.layers import Dense, Conv2D, Flatten, MaxPooling2D, Reshape, Dropout, BatchNormalization, ReLU
 
 """
 Tensorflow example for creating a MNIST image classification model with Keras
@@ -45,8 +42,6 @@ See: https://www.tensorflow.org/guide/keras/save_and_serialize
 ToDo: Extract the weights and store them in a non-binary format
 """
 
-
-
 IMG_HEIGHT = 28
 IMG_WIDTH = 28
 
@@ -54,17 +49,21 @@ IMG_WIDTH = 28
 x_train, x_test = x_train / 255.0, x_test / 255.0
 
 model = keras.models.Sequential([
-    Reshape((IMG_HEIGHT, IMG_WIDTH, 1), input_shape=(IMG_HEIGHT, IMG_WIDTH)),
-    Conv2D(16, 5, padding='same', activation='relu', use_bias=True),  # 3x3x4 filter
+    BatchNormalization(axis=[-1, -2], input_shape=(IMG_HEIGHT, IMG_WIDTH)),
+    Reshape((IMG_HEIGHT, IMG_WIDTH, 1)),
+    Conv2D(16, 5, padding='same', activation='linear', use_bias=True),  # 3x3x4 filter
+    BatchNormalization(axis=-1),
+    ReLU(),
     Dropout(0.2),
     MaxPooling2D(),
-    Conv2D(32, 5, padding='same', activation='relu', use_bias=True),  # 3x3x8 filter
+    Conv2D(32, 5, padding='same', activation='linear', use_bias=True),  # 3x3x8 filter
+    BatchNormalization(axis=-1),
+    ReLU(),
     Dropout(0.2),
     MaxPooling2D(),
-    Conv2D(64, 5, padding='valid', activation='relu', use_bias=True),  # 3x3x8 filter
-    Dropout(0.2),
     Flatten(),
-    Dense(32, activation='relu'),
+    Dense(32, activation='linear'),
+    BatchNormalization(axis=-1),
     Dropout(0.2),
     Dense(10, activation='softmax')
 ])
@@ -78,7 +77,7 @@ model = keras.models.Sequential([
 model.compile(optimizer='adam',
               loss='sparse_categorical_crossentropy',
               metrics=['accuracy'])
-
+model.build()
 # Display the model's architecture
 model.summary()
 checkpoint_path = "training_1/cp.ckpt"
@@ -88,6 +87,7 @@ checkpoint_dir = os.path.dirname(checkpoint_path)
 cp_callback = keras.callbacks.ModelCheckpoint(filepath=checkpoint_path,
                                               save_weights_only=True,
                                               verbose=1)
+
 
 class TimeHistory(keras.callbacks.Callback):
     def on_train_begin(self, logs={}):
@@ -99,14 +99,14 @@ class TimeHistory(keras.callbacks.Callback):
     def on_epoch_end(self, batch, logs={}):
         self.times.append(time.time() - self.epoch_time_start)
 
+
 time_callback = TimeHistory()
 
 # For higher GPU Utilization it is useful to increase batch_size but this can slow down training
-history = model.fit(x_train, y_train, epochs=10, batch_size=5000, validation_split=0.1, callbacks=[time_callback])
-
+history = model.fit(x_train, y_train, epochs=3, batch_size=50, validation_split=0.1, callbacks=[time_callback])
 
 times = time_callback.times
-print('\nEpoch Time '.join(map(str,times)))
+print('\nEpoch Time '.join(map(str, times)))
 print('Average: ', np.mean(times))
 
 # With AMD RADEON 550 PRO GPU
@@ -123,15 +123,16 @@ print('Average: ', np.mean(times))
 # Average:  23.461165857315063
 
 # Plot training & validation accuracy values
-plt.plot(history.history['acc'])
-plt.plot(history.history['val_acc'])
+plt.figure()
+plt.plot(history.history['accuracy'])
+plt.plot(history.history['val_accuracy'])
 plt.title('Model accuracy')
 plt.ylabel('Accuracy')
 plt.xlabel('Epoch')
 plt.legend(['Train', 'Test'], loc='upper left')
-plt.show()
 
 # Plot training & validation loss values
+plt.figure()
 plt.plot(history.history['loss'])
 plt.plot(history.history['val_loss'])
 plt.title('Model loss')
@@ -139,7 +140,6 @@ plt.ylabel('Loss')
 plt.xlabel('Epoch')
 plt.legend(['Train', 'Test'], loc='upper left')
 plt.show()
-
 
 # Save JSON config to disk
 json_config = model.to_json()
