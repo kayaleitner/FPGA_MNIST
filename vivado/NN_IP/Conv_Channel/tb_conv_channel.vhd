@@ -46,7 +46,7 @@ begin
 	reset : process
 	begin -- process reset
 		s_n_Res_i <= '0';
-		wait for 125 ns;
+		wait for 55 ns;
 		s_n_Res_i <= '1';
 		wait;
 	end process; 
