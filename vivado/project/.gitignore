@@ -1,6 +1,7 @@
 
 # Ignore everything
 *
+*.*
 
 # But do not ignore following files:
 !cleanup.sh
