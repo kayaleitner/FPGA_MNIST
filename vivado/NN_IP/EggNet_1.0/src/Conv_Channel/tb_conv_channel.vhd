@@ -12,7 +12,7 @@ architecture beh of tb_conv_channel is
 	constant KERNEL_WIDTH_OUT : integer := 16;
 	constant BIT_WIDTH_OUT : integer := 8;
 	constant CLK_PERIOD : time := 10 ns; -- 100MHz
-	constant N : integer := 2;
+	constant N : integer := 3;
 	
 	signal s_Clk_i, s_n_Res_i, s_Valid_i : std_logic;
 	signal s_X_i : std_logic_vector(BIT_WIDTH_IN*N*KERNEL_SIZE - 1 downto 0);
