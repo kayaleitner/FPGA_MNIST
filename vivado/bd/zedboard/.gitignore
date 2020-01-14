@@ -1,3 +1,2 @@
-*.xci
-*.xml
-*.ui
+ui/
+ip/

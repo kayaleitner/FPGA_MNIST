@@ -1204,6 +1204,8 @@
       <spirit:file>
         <spirit:name>sim/MemCtrl/tb_memctrl.vhd</spirit:name>
         <spirit:fileType>vhdlSource</spirit:fileType>
+        <spirit:userFileType>USED_IN_simulation</spirit:userFileType>
+        <spirit:userFileType>USED_IN_testbench</spirit:userFileType>
       </spirit:file>
     </spirit:fileSet>
   </spirit:fileSets>
@@ -1306,13 +1308,27 @@
       </xilinx:taxonomies>
       <xilinx:displayName>EggNet_v1.0</xilinx:displayName>
       <xilinx:coreRevision>8</xilinx:coreRevision>
-      <xilinx:coreCreationDateTime>2020-01-05T14:49:13Z</xilinx:coreCreationDateTime>
+      <xilinx:coreCreationDateTime>2020-01-14T14:44:05Z</xilinx:coreCreationDateTime>
       <xilinx:tags>
         <xilinx:tag xilinx:name="xilinx.com:user:EggNet:1.0_ARCHIVE_LOCATION">c:/Users/lukas/Documents/SoC_Lab/FPGA_MNIST/vivado/NN_IP/EggNet_1.0</xilinx:tag>
+        <xilinx:tag xilinx:name="ui.data.coregen.dd@4d655f4d_ARCHIVE_LOCATION">c:/Users/Stefan Marschner/Documents/FPGA_MNIST/vivado/NN_IP/EggNet_1.0</xilinx:tag>
+        <xilinx:tag xilinx:name="ui.data.coregen.dd@7e4e97e8_ARCHIVE_LOCATION">c:/Users/Stefan Marschner/Documents/FPGA_MNIST/vivado/NN_IP/EggNet_1.0</xilinx:tag>
+        <xilinx:tag xilinx:name="ui.data.coregen.dd@61d9261b_ARCHIVE_LOCATION">c:/Users/Stefan Marschner/Documents/FPGA_MNIST/vivado/NN_IP/EggNet_1.0</xilinx:tag>
+        <xilinx:tag xilinx:name="ui.data.coregen.dd@4cdd6f30_ARCHIVE_LOCATION">c:/Users/Stefan Marschner/Documents/FPGA_MNIST/vivado/NN_IP/EggNet_1.0</xilinx:tag>
+        <xilinx:tag xilinx:name="ui.data.coregen.dd@9293498_ARCHIVE_LOCATION">c:/Users/Stefan Marschner/Documents/FPGA_MNIST/vivado/NN_IP/EggNet_1.0</xilinx:tag>
+        <xilinx:tag xilinx:name="ui.data.coregen.dd@6e699bd5_ARCHIVE_LOCATION">c:/Users/Stefan Marschner/Documents/FPGA_MNIST/vivado/NN_IP/EggNet_1.0</xilinx:tag>
+        <xilinx:tag xilinx:name="ui.data.coregen.dd@5fc14fce_ARCHIVE_LOCATION">c:/Users/Stefan Marschner/Documents/FPGA_MNIST/vivado/NN_IP/EggNet_1.0</xilinx:tag>
+        <xilinx:tag xilinx:name="ui.data.coregen.dd@40319ec2_ARCHIVE_LOCATION">c:/Users/Stefan Marschner/Documents/FPGA_MNIST/vivado/NN_IP/EggNet_1.0</xilinx:tag>
+        <xilinx:tag xilinx:name="ui.data.coregen.dd@7cbc9a68_ARCHIVE_LOCATION">c:/Users/Stefan Marschner/Documents/FPGA_MNIST/vivado/NN_IP/EggNet_1.0</xilinx:tag>
+        <xilinx:tag xilinx:name="ui.data.coregen.dd@64eadda_ARCHIVE_LOCATION">c:/Users/Stefan Marschner/Documents/FPGA_MNIST/vivado/NN_IP/EggNet_1.0</xilinx:tag>
+        <xilinx:tag xilinx:name="ui.data.coregen.dd@379c1b05_ARCHIVE_LOCATION">c:/Users/Stefan Marschner/Documents/FPGA_MNIST/vivado/NN_IP/EggNet_1.0</xilinx:tag>
+        <xilinx:tag xilinx:name="ui.data.coregen.dd@a1c517f_ARCHIVE_LOCATION">c:/Users/Stefan Marschner/Documents/FPGA_MNIST/vivado/NN_IP/EggNet_1.0</xilinx:tag>
+        <xilinx:tag xilinx:name="ui.data.coregen.dd@7527760f_ARCHIVE_LOCATION">c:/Users/Stefan Marschner/Documents/FPGA_MNIST/vivado/NN_IP/EggNet_1.0</xilinx:tag>
+        <xilinx:tag xilinx:name="ui.data.coregen.dd@44116cf7_ARCHIVE_LOCATION">c:/Users/Stefan Marschner/Documents/FPGA_MNIST/vivado/NN_IP/EggNet_1.0</xilinx:tag>
       </xilinx:tags>
     </xilinx:coreExtensions>
     <xilinx:packagingInfo>
-      <xilinx:xilinxVersion>2017.4</xilinx:xilinxVersion>
+      <xilinx:xilinxVersion>2019.1</xilinx:xilinxVersion>
       <xilinx:checksum xilinx:scope="busInterfaces" xilinx:value="f5048d5b"/>
       <xilinx:checksum xilinx:scope="memoryMaps" xilinx:value="ed1368d5"/>
       <xilinx:checksum xilinx:scope="fileGroups" xilinx:value="affda6b0"/>

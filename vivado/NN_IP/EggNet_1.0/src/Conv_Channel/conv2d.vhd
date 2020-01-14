@@ -8,7 +8,7 @@ entity Conv2D is
 		BIT_WIDTH_IN : integer := 8;
 		BIT_WIDTH_OUT : integer := 8;
 		INPUT_CHANNELS : integer := 2;
-		OUTPUT_CHANNELS : integer := 2;
+		OUTPUT_CHANNELS : integer := 2
 	);
 	port(
 		Clk_i : in std_logic;
@@ -24,8 +24,8 @@ end Conv2D;
 
 architecture ConvLayer_1 of Conv2D is
 begin
-end beh;
+end ConvLayer_1;
 
 architecture ConvLayer_2 of Conv2D is
 begin
-end beh;
+end ConvLayer_2;
