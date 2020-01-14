@@ -27,6 +27,7 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install -r python/requirements.txt
+        pip install pytest tox
 
     - name: Install SWIG
       run: sudo apt-get install swig
@@ -41,4 +42,5 @@ jobs:
     - name: Test
       run: |
         cd python
-        python setup.py test
+        tox
+        
