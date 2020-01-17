@@ -385,6 +385,11 @@ begin
 
 	-- Add user logic here
 
+-- reg0 CPU -> (8) WR_nRD ,AXI MemCtrlAddr(7 downto 0) | (7 downot 0) MEMCTRL_STATUS 0 RUNNING, 1 DEBUG or ERROR if it should not be in debug mode  
+-- reg1 CPU -> BRAMDATA(31 downto 0) | AXI -> CPU BRAMDATA(31 downto 0)
+-- reg2 CPU -> AXI BRAMADDR(24 downto 0) BRAM32BITADDR(7 downto 0), | AXI -> CPU BRAM32BITADDR(7 downto 0), AXI BRAMADDR(24 downto 0)
+-- reg4 AXI -> CPU progress (how many images are already completed) 
+
 	-- User logic ends
 
 end arch_imp;

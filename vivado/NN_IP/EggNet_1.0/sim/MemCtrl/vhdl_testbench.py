@@ -203,48 +203,32 @@ def get_vectors_from_data(test_data,img_width,img_hight,blocknumber,kernel_size=
         Vector to compare with the output of the memory controller 
 
     """
-    vector_number_per_block = (img_width+(kernel_size-1))*(img_hight+kernel_size-1)
+    vector_number_per_block = (img_width*img_hight)
     vectors = np.zeros((blocknumber,vector_number_per_block,kernel_size),dtype=dtype)
     for i in range(blocknumber):
         vector_cnt = 0
-        for j in range(img_width*(img_hight+2)):
-            if j % img_width == 0 and j != 0:
-                for k in range((kernel_size-1)):
-                    vectors[i,vector_cnt,0] = 0
-                    vectors[i,vector_cnt,1] = 0
-                    vectors[i,vector_cnt,2] = 0
-                    vector_cnt += 1
+        for j in range(img_width*img_hight):
                     
             if j < img_width:  
                 vectors[i,vector_cnt,0] = 0
-                vectors[i,vector_cnt,1] = 0
-                vectors[i,vector_cnt,2] = test_data[i,j]
+                vectors[i,vector_cnt,1] = test_data[i,j]
+                vectors[i,vector_cnt,2] = test_data[i,j+img_width]
                 vector_cnt += 1
-            elif j < img_width*2:  
-                vectors[i,vector_cnt,0] = 0
-                vectors[i,vector_cnt,1] = test_data[i,j-img_width]
-                vectors[i,vector_cnt,2] = test_data[i,j]   
-                vector_cnt += 1
-            elif j >= (img_width*(img_hight+1)):
-                vectors[i,vector_cnt,0] = test_data[i,j-2*img_width]
-                vectors[i,vector_cnt,1] = 0
-                vectors[i,vector_cnt,2] = 0      
-                vector_cnt += 1
-            elif j >= (img_width*img_hight):    
+            elif j >= (img_width*(img_hight-1)):    
                 #print(j)
-                vectors[i,vector_cnt,0] = test_data[i,j-2*img_width]
+                vectors[i,vector_cnt,0] = test_data[i,j-img_width]
                 vectors[i,vector_cnt,1] = test_data[i,j-img_width]
                 vectors[i,vector_cnt,2] = 0  
                 vector_cnt += 1
             else:  
-                vectors[i,vector_cnt,0] = test_data[i,j-2*img_width]
-                vectors[i,vector_cnt,1] = test_data[i,j-img_width]
-                vectors[i,vector_cnt,2] = test_data[i,j]   
+                vectors[i,vector_cnt,0] = test_data[i,j-img_width]
+                vectors[i,vector_cnt,1] = test_data[i,j]
+                vectors[i,vector_cnt,2] = test_data[i,j+img_width]   
                 vector_cnt += 1
                 
     return vectors
 
-def get_Kernels(test_vectors):
+def get_Kernels(test_vectors,img_width):
     """
     Creates 3x3 kernel which is operated by the conv2d
 
@@ -252,7 +236,8 @@ def get_Kernels(test_vectors):
     ----------
     test_vectors : numpy array
         Generated test vectors 3x1.
-
+    img_width : integer
+        with of test matrix.
     Returns
     -------
     Kernel : numpy array
@@ -261,11 +246,23 @@ def get_Kernels(test_vectors):
     """
     kernels = np.zeros((test_vectors.shape[0],test_vectors.shape[1],test_vectors.shape[2],test_vectors.shape[2]),dtype=np.uint8)
     for i in range(test_vectors.shape[0]):
-        kernels[i,0,:,2] = test_vectors[i,0,:]
-        for j in range(test_vectors.shape[1]-1):
-            kernels[i,j+1,:,0] = kernels[i,j,:,1]
-            kernels[i,j+1,:,1] = kernels[i,j,:,2]
-            kernels[i,j+1,:,2] = test_vectors[i,j+1,:]
+        kernels[i,0,:,2] = test_vectors[i,1,:]
+        kernels[i,0,:,1] = test_vectors[i,0,:]
+        for j in range(test_vectors.shape[1]-2):
+            if j%img_width == 0:
+                kernels[i,j+1,:,0] = 0
+                kernels[i,j+1,:,1] = test_vectors[i,j,:]
+                kernels[i,j+1,:,2] = test_vectors[i,j+1,:]                
+                
+            elif j%img_width == img_width-1:    
+                kernels[i,j+1,:,0] = test_vectors[i,j-1,:]
+                kernels[i,j+1,:,1] = test_vectors[i,j,:]
+                kernels[i,j+1,:,2] = 0                  
+            else:    
+                kernels[i,j+1,:,0] = test_vectors[i,j-1,:]
+                kernels[i,j+1,:,1] = test_vectors[i,j,:]
+                kernels[i,j+1,:,2] = test_vectors[i,j+1,:]
+       
     return kernels
 
 def conv_2d(kernels,weights):

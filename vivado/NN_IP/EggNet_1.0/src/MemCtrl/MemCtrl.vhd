@@ -35,6 +35,7 @@ entity MemCtrl_3x3 is
     M_layer_tdata_2_o : out std_logic_vector((DATA_WIDTH*IN_CHANNEL_NUMBER)-1 downto 0); --  Output vector element 2 |Vector: trans(1,2,3)
     M_layer_tdata_3_o : out std_logic_vector((DATA_WIDTH*IN_CHANNEL_NUMBER)-1 downto 0); --  Output vector element 3 |Vector: trans(1,2,3)
     M_layer_tkeep_o   : out std_logic_vector(((DATA_WIDTH*IN_CHANNEL_NUMBER)*3/8)-1 downto 0); --only used if next layer is AXI-stream interface (default open)
+    M_layer_tnewrow_o : out std_logic;
     M_layer_tlast_o   : out std_logic;
     M_layer_tready_i  : in std_logic;
 
@@ -74,7 +75,7 @@ constant DBG_BRAM_ADDRESS_WIDTH     : integer := 24;
 constant DBG_MAX_REA                : integer := BRAM_DATA_WIDTH/C_S00_AXI_DATA_WIDTH;
 constant KERNEL_SIZE                : integer := 3;
 
-type RD_STATES is (START,MOVE_RIGHT, WAIT_CY, PADDING);
+type RD_STATES is (START,MOVE_RIGHT, WAIT_CY, STOP);
 type WR_STATES is (START,MOVE); 
 type WR_BL_STATES is (IDLE,BLOCK0,BLOCK1); 
 type RD_BL_STATES is (IDLE,BLOCK0,BLOCK1); 
@@ -132,6 +133,7 @@ signal wr_bl_state      :WR_BL_STATES;
 
 signal mem_rd_addr      :std_logic_vector(BRAM_ADDR_WIDTH-1 downto 0);
 signal m_layer_tvalid   :std_logic; 
+signal m_newrow         :std_logic; 
 
 signal dbg_active       :std_logic;
 signal dbg_memctrl_addr :std_logic_vector(DBG_MEM_CTRL_ADDR_WIDTH-1 downto 0); 
@@ -253,6 +255,8 @@ begin
     M_layer_tdata_1_o <= (others => '0');
     M_layer_tdata_2_o <= (others => '0');
     M_layer_tdata_3_o <= (others => '0');
+    M_layer_tnewrow_o <= '0';
+    m_newrow <= '0';
     
     rd_state <= START;
     rd_block_done <= '1'; -- indicate if block is 
@@ -268,6 +272,7 @@ begin
     
   elsif rising_edge(Layer_clk_i) then   
     case rd_state is 
+    
       when START => -- If data is available transfer starts and reset fifo 
         if next_block_read(0) = '1' then 
           position := to_unsigned(0, position'length);
@@ -283,6 +288,7 @@ begin
         state_cnt := 0;
         rd_pixel_row_cnt := 0;
         m_layer_tvalid <= '0';
+        M_layer_tnewrow_o <= '0';
         M_layer_tlast_o <= '0';
         M_layer_fifo_srst <= '1'; 
         M_layer_fifo_wr <= '0';
@@ -298,16 +304,21 @@ begin
         else 
           state_cnt := state_cnt+1;
         end if;
-      when MOVE_RIGHT => 
-        m_layer_tvalid <= '1';    
+        
+      when MOVE_RIGHT =>            
         -- Upper Padding 
         if rd_pixel_row_cnt = 0 then
             M_layer_fifo_in((2*BRAM_DATA_WIDTH)-1 downto BRAM_DATA_WIDTH) <= (others => '0');
             M_layer_fifo_in(BRAM_DATA_WIDTH-1 downto 0) <= Bram_pb_data_rd_i;
             M_layer_tdata_1_o <= (others => '0');
             M_layer_tdata_2_o <= (others => '0');
-            M_layer_tdata_3_o <= Bram_pb_data_rd_i; 
-            M_layer_fifo_rd <= '0';
+            M_layer_tdata_3_o <= Bram_pb_data_rd_i;            
+            m_layer_tvalid <= '0'; 
+            if state_cnt < LAYER_WIDTH-2 then 
+              M_layer_fifo_rd <= '0';
+            else 
+              M_layer_fifo_rd <= '1';
+            end if;
         -- Lower Padding 
         elsif rd_pixel_row_cnt > (LAYER_HIGHT-1) then
             M_layer_fifo_in((2*BRAM_DATA_WIDTH)-1 downto BRAM_DATA_WIDTH) <= M_layer_fifo_out(BRAM_DATA_WIDTH-1 downto 0);
@@ -316,7 +327,7 @@ begin
             M_layer_tdata_1_o <= M_layer_fifo_out((2*BRAM_DATA_WIDTH)-1 downto BRAM_DATA_WIDTH);
             M_layer_tdata_2_o <= M_layer_fifo_out(BRAM_DATA_WIDTH-1 downto 0);
             M_layer_tdata_3_o <= (others => '0');            
-            
+            m_layer_tvalid <= '1'; 
             
         -- Default Vector
         else
@@ -325,63 +336,47 @@ begin
             M_layer_fifo_rd <= '1'; -- overwritten if M_layer_tready_i = '0' (More readable like this) 
             M_layer_tdata_1_o <= M_layer_fifo_out((2*BRAM_DATA_WIDTH)-1 downto BRAM_DATA_WIDTH);
             M_layer_tdata_2_o <= M_layer_fifo_out(BRAM_DATA_WIDTH-1 downto 0);
-            M_layer_tdata_3_o <= Bram_pb_data_rd_i;             
+            M_layer_tdata_3_o <= Bram_pb_data_rd_i;    
+            m_layer_tvalid <= '1';             
         end if;  
         -- Positon count 
         if M_layer_tready_i = '1' then -- Wait till slave is ready
-          if state_cnt < LAYER_WIDTH-2 then  
-            state_cnt := state_cnt +1;            
-            if position < 2*BRAM_ADDR_BLOCK_WIDTH-1 then
-              position := position+1;             
-            end if;
-            mem_rd_addr <= std_logic_vector(position);
-          elsif state_cnt < LAYER_WIDTH-1 then -- necassary because BRAM read takes 2 cycles 
-            state_cnt := state_cnt +1;
-            M_layer_fifo_rd <= '0';
-          else   
-            rd_state <= PADDING;
-            M_layer_fifo_rd <= '0';
+          if state_cnt < LAYER_WIDTH-1 then  
+            state_cnt := state_cnt +1;  
+            m_newrow <= '0';
+          else     
+            m_newrow <= '1';
             rd_pixel_row_cnt := rd_pixel_row_cnt +1;
+            if rd_pixel_row_cnt = (LAYER_HIGHT-2+KERNEL_SIZE) then 
+              rd_state <= STOP;  
+            end if;            
             state_cnt := 0;  
-          end if;       
-          M_layer_fifo_wr <= '1';          
+          end if;                  
+          if position < 2*BRAM_ADDR_BLOCK_WIDTH-1 then
+            position := position+1;             
+          end if;
+          mem_rd_addr <= std_logic_vector(position);
+          M_layer_fifo_wr <= '1';
         else 
           M_layer_fifo_wr <= '0';
           M_layer_fifo_rd <= '0';
         end if;
         
-      when PADDING =>  -- set output vector to 0 for KERNEL_SIZE-1 cycles       
+      when STOP =>  -- set output vector to 0 for KERNEL_SIZE-1 cycles       
         m_layer_tvalid <= '1';
         M_layer_fifo_wr <= '0'; 
         M_layer_fifo_rd <= '0';
         M_layer_tdata_1_o <= (others => '0');
         M_layer_tdata_2_o <= (others => '0');
-        M_layer_tdata_3_o <= (others => '0');
-        
-        if M_layer_tready_i = '1' then -- Wait till slave is ready
-          if position < 2*BRAM_ADDR_BLOCK_WIDTH-1 then
-            position := position+1;             
-          end if;         
-          mem_rd_addr <= std_logic_vector(position);       
-          M_layer_fifo_rd <= '1';
-          if state_cnt = KERNEL_SIZE-2 then -- state_cnt = 1 
-            if rd_pixel_row_cnt = (LAYER_HIGHT-1+KERNEL_SIZE) then 
-              rd_state <= START;  
-              rd_block_done <= '1';
-              M_layer_tlast_o <= '1'; 
-              M_layer_fifo_rd <= '0';
-            else
-              rd_state <= MOVE_RIGHT;
-            end if;
-            state_cnt := 0;
-          else 
-            state_cnt := state_cnt +1;
-          end if;
-        end if;   
+        M_layer_tdata_3_o <= (others => '0');        
+        rd_state <= START;  
+        rd_block_done <= '1';
+        M_layer_tlast_o <= '1'; 
         
       when others => 
         wr_state <= START;
     end case;
+    M_layer_tnewrow_o <= m_newrow;
   end if;
 end process;
 

@@ -21,8 +21,6 @@ architecture tb of tb_memctrl is
   constant S_LAYER_DATA_WIDTH		    : integer := 32; 
   constant LAYER_HIGHT            : integer := 28;
   constant LAYER_WIDTH            : integer := 28;  
-  constant POOLING_FACTOR           : integer range 1 to 2    := 1; -- No pooling if POOLING_FACTOR = 1   
-  constant STEP_SIZE                : integer range 1 to 2    := 1;       
   constant AXI4_STREAM_INPUT        : integer := 1;  
   constant C_S_AXIS_TDATA_WIDTH	    : integer	:= 32;  
   constant C_S00_AXI_DATA_WIDTH	    : integer	:= 32;  
@@ -89,6 +87,7 @@ architecture tb of tb_memctrl is
       M_layer_tdata_2_o : out std_logic_vector((L1_DATA_WIDTH*L1_IN_CHANNEL_NUMBER)-1 downto 0); --  Output vector element 2 |Vector: trans(1,2,3)
       M_layer_tdata_3_o : out std_logic_vector((L1_DATA_WIDTH*L1_IN_CHANNEL_NUMBER)-1 downto 0); --  Output vector element 3 |Vector: trans(1,2,3)
       M_layer_tkeep_o   : out std_logic_vector(((L1_DATA_WIDTH*L1_IN_CHANNEL_NUMBER)*KERNEL_SIZE/8)-1 downto 0); --only used if next layer is AXI-stream interface (default open)
+      M_layer_tnewrow_o : out std_logic;
       M_layer_tlast_o   : out std_logic;
       M_layer_tready_i  : in std_logic;      
       -- M_layer FIFO
@@ -126,6 +125,7 @@ architecture tb of tb_memctrl is
       S_data_2_i      : in  STD_LOGIC_VECTOR((DATA_WIDTH - 1) downto 0); --  Input vector element 2 |Vector: trans(1,2,3)
       S_data_3_i      : in  STD_LOGIC_VECTOR((DATA_WIDTH - 1) downto 0); --  Input vector element 3 |Vector: trans(1,2,3)
       S_tvalid_i	    : in  STD_LOGIC; -- indicates if input data is valid 
+      S_tnewrow_i     : in  STD_LOGIC; -- indicates that a new row starts 
       S_tlast_i       : in  STD_LOGIC; -- indicates end of block 
       S_tready_o      : out STD_LOGIC; -- indicates if shiftregister is ready to for new data 
 
@@ -159,6 +159,7 @@ architecture tb of tb_memctrl is
   signal m_layer_tdata_3        : std_logic_vector((L1_DATA_WIDTH*L1_IN_CHANNEL_NUMBER)-1 downto 0);
   signal m_layer_tkeep          : std_logic_vector(((L1_DATA_WIDTH*L1_IN_CHANNEL_NUMBER)*KERNEL_SIZE/8)-1 downto 0);
   signal m_layer_tlast          : std_logic;
+  signal m_layer_tnewrow        : std_logic;   
   signal m_layer_tready         : std_logic;   
   signal m_layer_fifo_srst      : std_logic;
   signal m_layer_fifo_in        : std_logic_vector(((L1_DATA_WIDTH*L1_IN_CHANNEL_NUMBER)*2)-1 downto 0);
@@ -256,6 +257,7 @@ begin
     M_layer_tdata_2_o       => m_layer_tdata_2      ,
     M_layer_tdata_3_o       => m_layer_tdata_3      ,
     M_layer_tkeep_o         => m_layer_tkeep        ,
+    M_layer_tnewrow_o       => m_layer_tnewrow      ,
     M_layer_tlast_o         => m_layer_tlast        ,
     M_layer_tready_i        => m_layer_tready       ,
     M_layer_fifo_srst       => m_layer_fifo_srst    ,
@@ -313,6 +315,7 @@ begin
       S_data_2_i  => m_layer_tdata_2, 
       S_data_3_i  => m_layer_tdata_3, 
       S_tvalid_i  => m_layer_tvalid,
+      S_tnewrow_i => m_layer_tnewrow,
       S_tlast_i   => m_layer_tlast, 
       S_tready_o  => m_layer_tready, 
       M_data_1_o  => shiftreg_data_1, 
@@ -404,6 +407,7 @@ begin
         s_layer_tlast <= '0';
       elsif data_counter >= BLOCK_LENGTH*block_counter-4 then 
         package_active := '0';
+        data_counter := 0;
         s_layer_tlast <= '1';
       else 
         s_layer_tlast <= '0';

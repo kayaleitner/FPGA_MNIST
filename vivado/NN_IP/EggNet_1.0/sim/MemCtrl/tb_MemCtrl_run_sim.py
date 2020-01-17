@@ -42,7 +42,7 @@ test_vectors = tb.get_vectors_from_data(image_data,IMG_WIDTH,IMG_HIGTH,NUMBER_OF
 
 # %% generate test kernels 
 test_kernels = tb.get_Kernels(test_vectors)
-
+test = test_kernels[0,:,:,:]
 # %% calculate Layer output as new memory controller input 
 weights_L1 = np.ones((CO_L1,CI_L1,KERNEL_SIZE,KERNEL_SIZE),dtype=np.int8)
 weights_L1[:,:,1,:] = 0
