@@ -10,6 +10,8 @@ import os
 import numpy as np
 import random
 
+
+
 def run_ghdl_linux(filenames,tb_entity,vcd_name="output.vcd"):
    """
     runs the testbench using ghdl and saves the output of ghdl in tmp/ghdl.log
@@ -137,10 +139,10 @@ def run_vivado_sim_win():
     simulate = "xsim tb_memctrl -key {Behavioral:sim_1:Functional:tb_memctrl} -tclbatch cmd.tcl -log simulate.log"            
 
 
-    subprocess.call(compile_vlog,shell=True)
-    subprocess.call(compile_vhdl,shell=True)
-    subprocess.call(elaborate,shell=True)
-    subprocess.call(simulate,shell=True)
+    print(subprocess.call(compile_vlog,shell=True))
+    print(subprocess.call(compile_vhdl,shell=True))
+    print(subprocess.call(elaborate,shell=True))
+    print(subprocess.call(simulate,shell=True))
     os.chdir('..')
     print(os.getcwd())
     print("End simulation")
@@ -217,7 +219,7 @@ def get_vectors_from_data(test_data,img_width,img_hight,blocknumber,kernel_size=
             elif j >= (img_width*(img_hight-1)):    
                 #print(j)
                 vectors[i,vector_cnt,0] = test_data[i,j-img_width]
-                vectors[i,vector_cnt,1] = test_data[i,j-img_width]
+                vectors[i,vector_cnt,1] = test_data[i,j]
                 vectors[i,vector_cnt,2] = 0  
                 vector_cnt += 1
             else:  
@@ -244,26 +246,81 @@ def get_Kernels(test_vectors,img_width):
         Kernel to compare with the output of the shiftregister
 
     """
-    kernels = np.zeros((test_vectors.shape[0],test_vectors.shape[1],test_vectors.shape[2],test_vectors.shape[2]),dtype=np.uint8)
+    kernels = np.zeros((test_vectors.shape[0],test_vectors.shape[1],test_vectors.shape[2],test_vectors.shape[2],1),dtype=np.uint8)
     for i in range(test_vectors.shape[0]):
-        kernels[i,0,:,2] = test_vectors[i,1,:]
-        kernels[i,0,:,1] = test_vectors[i,0,:]
-        for j in range(test_vectors.shape[1]-2):
+        for j in range(test_vectors.shape[1]):
             if j%img_width == 0:
-                kernels[i,j+1,:,0] = 0
-                kernels[i,j+1,:,1] = test_vectors[i,j,:]
-                kernels[i,j+1,:,2] = test_vectors[i,j+1,:]                
+                kernels[i,j,:,0,0] = 0
+                kernels[i,j,:,1,0] = test_vectors[i,j,:]
+                kernels[i,j,:,2,0] = test_vectors[i,j+1,:]                
                 
             elif j%img_width == img_width-1:    
-                kernels[i,j+1,:,0] = test_vectors[i,j-1,:]
-                kernels[i,j+1,:,1] = test_vectors[i,j,:]
-                kernels[i,j+1,:,2] = 0                  
+                kernels[i,j,:,0,0] = test_vectors[i,j-1,:]
+                kernels[i,j,:,1,0] = test_vectors[i,j,:]
+                kernels[i,j,:,2,0] = 0                  
             else:    
-                kernels[i,j+1,:,0] = test_vectors[i,j-1,:]
-                kernels[i,j+1,:,1] = test_vectors[i,j,:]
-                kernels[i,j+1,:,2] = test_vectors[i,j+1,:]
+                kernels[i,j,:,0,0] = test_vectors[i,j-1,:]
+                kernels[i,j,:,1,0] = test_vectors[i,j,:]
+                kernels[i,j,:,2,0] = test_vectors[i,j+1,:]
        
     return kernels
+
+class FIFO:
+    """
+    Creates a FIFO 
+    size: size of fifo
+    wrte(data) : writes data into fifo 
+    read(): reads data from fifo
+    """
+    def __init__(self, size):
+        self.content = np.zeros(int(size))
+        self.size = size
+        self.rd_pointer = 0
+        self.wr_pointer = 0
+    def write(self,data):
+        wr_pointer = self.wr_pointer + 1
+        if wr_pointer >= self.size:
+            wr_pointer = 0
+        if wr_pointer == self.rd_pointer:
+            print("FIFO FULL",data,wr_pointer)
+        else:    
+            self.wr_pointer = wr_pointer    
+            self.content[wr_pointer] = data            
+    def read(self):        
+        if self.rd_pointer == self.wr_pointer:
+            print("FIFO empty")
+        else: 
+            data = self.content[self.rd_pointer]
+            self.rd_pointer -= 1
+            if self.rd_pointer < 0:
+                self.rd_pointer = self.size -1    
+            return data
+
+class MovingAverageFilter:
+    """
+    Moving average filter 
+    size: window size 
+    do_filter(data) : return the new filter value 
+    """
+    def __init__(self, size):
+        self.FIFO = FIFO(size)
+        self.size = size
+        self.counter = 0
+        self.sum = 0
+        
+    def do_filter(self,data):
+        self.counter += 1
+        self.sum += data
+        if self.counter >= self.size:
+            self.sum -= self.FIFO.read()
+            self.counter -= 1
+        
+        self.FIFO.write(data)
+        return self.sum/self.size   
+            
+                 
+        
+        
 
 def conv_2d(kernels,weights):
     """
@@ -294,15 +351,17 @@ def conv_2d(kernels,weights):
         
         8 bit output Matrix
     """
-    features = np.zeros(kernels.shape[0],kernels.shape[1],weights.shape[0])
+    features = np.zeros((kernels.shape[0],kernels.shape[1],weights.shape[0]),dtype=np.int16)
+    mav_filter = [ MovingAverageFilter(32) for i in range(weights.shape[0])]
     for i in range(kernels.shape[0]):
         for j in range(kernels.shape[1]): 
             for k in range (weights.shape[0]): 
-                features[i,j,k] = conv_channel(kernels,weights[k,:,:,:])
+                features[i,j,k] = conv_channel(kernels[i,j,:,:,:],weights[k,:,:,:],mav_filter[k])
     return features  
 
 
-def conv_channel(kernels,weights):
+
+def conv_channel(kernels,weights,mav_filter):
     """
     Emulates the operation carried out by the conv_channel module in the FPGA
 
@@ -320,6 +379,8 @@ def conv_channel(kernels,weights):
         Kh.. Kernel hight
         Kw .. Kernel with
         Weigth matrix for each kernel 
+    mav_filter : MovingAverageFilter class 
+        Moving average filter to normalize conv_channel output        
 
     Returns
     -------
@@ -329,12 +390,16 @@ def conv_channel(kernels,weights):
         
         8 bit output Matrix
     """
-    feature = np.zeros(kernels.shape[0],kernels.shape[1])
-    for i in range(kernels.shape[0]):
-        for j in range(kernels.shape[1]): 
-            for k in range (kernels.shape[4]): 
-                feature[i,j] += kernel_3x3(kernels[i,j,:,:,k],weights[k,:,:])
-    return feature                
+    feature = np.int16(0)
+    for k in range (weights.shape[0]): 
+        feature+= kernel_3x3(kernels[:,:,k],weights[k,:,:])
+    
+    feature -= np.int16(mav_filter.do_filter(feature))
+    
+    feature = np.int16(int("0x00FF",16)) & feature   
+    return feature    
+
+         
 
 def kernel_3x3(kernel,weights):
     """
@@ -342,9 +407,7 @@ def kernel_3x3(kernel,weights):
 
     Parameters
     ----------
-    kernels : numpy array [B,W*H,Kh,Kw]
-        B.. Batch size
-        W*H.. Image width times hight
+    kernel : numpy array [Kh,Kw]
         Kh.. Kernel hight
         Kw.. Kernel width 
         Input kernels 
@@ -355,15 +418,9 @@ def kernel_3x3(kernel,weights):
 
     Returns
     -------
-    weighted_sum: [B,W*H]
-        B.. Batch size
-        W*H.. Image width times hight
-        
-        8 bit output Matrix
+    weighted_sum: np.int16       
+        16 bit output Matrix
     """    
-    weighted_sum = np.zeros(kernel.shape[0],kernel.shape[1])
-    for i in range(kernel.shape[0]):
-        for j in range(kernel.shape[1]):
-            weighted_sum[i,j] = np.sum(kernel[i,j,:,:] * weights)
+    weighted_sum = np.int16(np.sum(kernel * weights))
             
     return weighted_sum            

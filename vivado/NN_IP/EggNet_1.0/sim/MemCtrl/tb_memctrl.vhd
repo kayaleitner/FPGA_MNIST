@@ -364,7 +364,7 @@ begin
       start_package <= '0';
       wait for 100 us;
       -- EDIT Add stimuli here
-      wait for 100 * TbPeriod;
+      wait for 200 * TbPeriod;
 
       -- Stop the clock and hence terminate the simulation
       TbSimEnded <= '1';
@@ -502,7 +502,7 @@ begin
         shiftreg_buffer_1(data_counter) <= shiftreg_data_1;
         shiftreg_buffer_2(data_counter) <= shiftreg_data_2;
         shiftreg_buffer_3(data_counter) <= shiftreg_data_3;
-        shiftreg_buffer_3(data_counter) <= shiftreg_data_4;
+        shiftreg_buffer_4(data_counter) <= shiftreg_data_4;
         shiftreg_buffer_5(data_counter) <= shiftreg_data_5;
         shiftreg_buffer_6(data_counter) <= shiftreg_data_6;
         shiftreg_buffer_7(data_counter) <= shiftreg_data_7;
@@ -565,7 +565,7 @@ begin
       writeline(file_RESULTS, v_OLINE);
     end if;
     file_close(file_RESULTS);
-    report "Write bram done"; 
+    report "Write bram" & integer'image(block_cnt) & "  done"; 
     block_cnt := block_cnt+1;
   end process;
   
@@ -596,7 +596,7 @@ begin
       writeline(file_RESULTS, v_OLINE); 
     end loop;  
     file_close(file_RESULTS);    
-    report "Write m layer done"; 
+    report "Write m layer b" & integer'image(block_cnt) & " done"; 
     block_cnt := block_cnt+1;
   end process;  
 
@@ -674,7 +674,7 @@ begin
     
     
     
-    report "Write shift output done"; 
+    report "Write shift output b" & integer'image(block_cnt) & " done"; 
     block_cnt := block_cnt+1;
   end process;  
  

@@ -41,8 +41,7 @@ image_data = tb.gen_testdata(BLOCK_SIZE,NUMBER_OF_TEST_BLOCKS)
 test_vectors = tb.get_vectors_from_data(image_data,IMG_WIDTH,IMG_HIGTH,NUMBER_OF_TEST_BLOCKS)
 
 # %% generate test kernels 
-test_kernels = tb.get_Kernels(test_vectors)
-test = test_kernels[0,:,:,:]
+test_kernels = tb.get_Kernels(test_vectors,IMG_WIDTH)
 # %% calculate Layer output as new memory controller input 
 weights_L1 = np.ones((CO_L1,CI_L1,KERNEL_SIZE,KERNEL_SIZE),dtype=np.int8)
 weights_L1[:,:,1,:] = 0
@@ -137,15 +136,15 @@ for i in range(result_kernels.shape[0]):
             with open("tmp/shift_data{}".format(file_cnt) + "_b{}.txt".format(i),"r") as f:
                 for j in range(result_kernels.shape[1]):
                     result_kernels[i,j,h,k] = int(f.readline())
-                    if result_kernels[i,j,0,0] != test_kernels[i,j,0,0]:
-                        print("Error in shift_data1_b{}".format(i) + " in line {} ,".format(j) \
-                                    + "{}".format(result_kernels[i,j,0,0]) + " != {}".format(result_kernels[i,j,0,0]))
+                    if result_kernels[i,j,h,k] != test_kernels[i,j,h,k,0]:
+                        print("Error in shift_data{}".format(file_cnt) + "_b{}".format(i) + " in line {} ,".format(j) \
+                                    + "{}".format(result_kernels[i,j,h,k]) + " != {}".format(test_kernels[i,j,h,k,0]))
                         error_count_kernels += 1
     
-if error_count_vectors == 0:
+if error_count_kernels == 0:
     print("Received Kernel from shiftregister successfully!")
 else:
-    print("{} errors occured receiving image".format(error_count_vectors)) 
+    print("{} errors occured receiving image".format(error_count_kernels)) 
 
       
 # %% delete tmp folder 
