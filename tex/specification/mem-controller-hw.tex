@@ -6,7 +6,7 @@ The task of the memory controller is to provide valid data for the NN-layers. It
 \begin{itemize}
 	\item S\_LAYER: interface to previous layer
 	\item M\_LAYER: interface to next layer 
-	\item AXI_lite: interface to AXI lite bus, is used to read BRAM data directly from processor (slow)
+	\item AXI\_lite: interface to AXI lite bus, is used to read BRAM data directly from processor (slow)
 \end{itemize}
 \begin{tabular}{|l|l|l|l|l|}
 	
@@ -44,12 +44,12 @@ The task of the memory controller is to provide valid data for the NN-layers. It
 \subsubsection{Parameter}
 \begin{itemize}
 	\item PREVIOUS\_LAYER\_TYPE boolean: {TRUE: conv2d, FALSE: dense} % maybe some additional -> integer type
-	\item PREVIOUS\_LAYER\_WIDTH integer: {Row length of input matrix} \todo{use extra parameter for dense or simply use width or heigth, discuss!}
-	\item PREVIOUS\_LAYER\_HEIGTH integer: {Collum length of input matrix}
+	\item PREVIOUS\_LAYER\_WIDTH integer: {Row length of input matrix} \todo{use extra parameter for dense or simply use width or height, discuss!}
+	\item PREVIOUS\_LAYER\_HEIGTH integer: {Column length of input matrix}
 	\item PREVIOUS\_LAYER\_CHANNEL integer: {Row length of input matrix}
 	\item NEXT\_LAYER\_TYPE boolean: {TRUE: conv2d, FALSE: dense} % maybe some additional -> integer type
-	\item NEXT\_LAYER\_WIDTH integer: {Row length of input matrix} \todo{use extra parameter for dense or simply use width or heigth, discuss!}
-	\item NEXT\_LAYER\_HEIGTH integer: {Collum length of input matrix}
+	\item NEXT\_LAYER\_WIDTH integer: {Row length of input matrix} \todo{use extra parameter for dense or simply use width or height, discuss!}
+	\item NEXT\_LAYER\_HEIGTH integer: {Column length of input matrix}
 	\item NEXT\_LAYER\_CHANNEL integer: {Row length of input matrix}
 \end{itemize}
 
