@@ -19,16 +19,7 @@ DEFAULT_PLOT_HISTORY = False
 DEFAULT_EPOCHS = 2
 
 
-def main():
-    # Add argument parsing to start it from the command line
-    # parser = argparse.ArgumentParser()
-    # parser.add_argument("plot_history", help="Print the training history using matplotlib",
-    #                     default=PRINT_HISTORY_DEFAULT)
-    # parser.add_argument()
-    # args = parser.parse_args(args=sys.argv)
-    # plot_history = args.plot_history
-    plot_history = DEFAULT_PLOT_HISTORY
-    nepochs = DEFAULT_EPOCHS
+def train(nepochs=DEFAULT_EPOCHS, plot_history=DEFAULT_PLOT_HISTORY):
 
     (x_train, y_train), (x_test, y_test) = keras.datasets.mnist.load_data()
     x_train, x_test = x_train / 255.0, x_test / 255.0
@@ -44,9 +35,9 @@ def main():
     - Increased value of dropout layer to .5 in first fully connected layer 
     - Removed bias from conv layers
     """
-    model = keras.models.Sequential([
+    model = keras.models.Sequential(name="KerasEggNet", layers=[
         # Hack: Reshape the image to 1D to make the Keras BatchNorm layer work
-        Reshape(target_shape=(-1, IMG_HEIGHT * IMG_WIDTH), input_shape=(IMG_HEIGHT, IMG_WIDTH)),
+        Reshape(target_shape=(IMG_HEIGHT * IMG_WIDTH, 1), input_shape=(IMG_HEIGHT, IMG_WIDTH)),
         BatchNormalization(),
         Reshape((IMG_HEIGHT, IMG_WIDTH, 1)),  # Reshape to 3D input for the Conv layer
         Conv2D(16, 3, padding='same', activation='linear', use_bias=False, kernel_constraint=kernel_constraint),
@@ -126,4 +117,12 @@ def _plot_history(history):
 
 
 if __name__ == '__main__':
-    main()
+    # Add argument parsing to start it from the command line
+    # parser = argparse.ArgumentParser()
+    # parser.add_argument("plot_history", help="Print the training history using matplotlib",
+    #                     default=PRINT_HISTORY_DEFAULT)
+    # parser.add_argument()
+    # args = parser.parse_args(args=sys.argv)
+    # plot_history = args.plot_history
+
+    train()

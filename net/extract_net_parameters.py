@@ -21,12 +21,13 @@ TORCH_SAVE_FILE = os.path.join(TORCH_SAVE_DIR, 'LeNet.pth')
 TORCH_STATES_SAVE_FILE = os.path.join(TORCH_SAVE_DIR, 'LeNetStates.pth')
 
 
-def main():
+def extract(cleanup=True, extract_keras=EXTRACT_FROM_KERAS, extract_torch=EXTRACT_FROM_TROCH):
     # Clean up and create dirs
-    shutil.rmtree(EXPORT_DIR)
-    os.makedirs(EXPORT_DIR, exist_ok=True)
+    if cleanup:
+        shutil.rmtree(EXPORT_DIR)
+        os.makedirs(EXPORT_DIR, exist_ok=True)
 
-    if EXTRACT_FROM_KERAS:
+    if extract_keras:
         kmodel = load_keras()
         for l_ix, layer in enumerate(kmodel.layers):
             # print(layer.get_config(), layer.get_weights())
@@ -36,7 +37,7 @@ def main():
                 np.savetxt(os.path.join(EXPORT_DIR, 'k_{}_{}_{}.txt'.format(l_ix, layer.name, w_ix)), vals,
                            header=str(weight.shape))
 
-    if EXTRACT_FROM_TROCH:
+    if extract_torch:
         tmodel = load_torch()
         tmodel.eval()  # Put in eval mode
         for key, weights in tmodel.state_dict().items():
@@ -44,9 +45,6 @@ def main():
             vals = weights.flatten(order='C')
             np.savetxt(os.path.join(EXPORT_DIR, 't_{}.txt'.format(key)), vals,
                        header=str(weights.shape))
-
-
-
 
 
 def load_torch():
@@ -75,4 +73,4 @@ def load_keras() -> keras.Model:
 
 
 if __name__ == '__main__':
-    main()
+    extract()

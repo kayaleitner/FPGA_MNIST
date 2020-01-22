@@ -51,8 +51,7 @@ def get_lenet_model():
     return net
 
 
-def main():
-    nepochs = DEFAULT_EPOCHS
+def train(nepochs=DEFAULT_EPOCHS, plot_history=False):
 
     # See: https://pytorch.org/tutorials/intermediate/tensorboard_tutorial.html
     transforms = torchvision.transforms.Compose([
@@ -70,6 +69,7 @@ def main():
     criterion = nn.CrossEntropyLoss()
     optimizer = torch.optim.Adam(net.parameters(), lr=LEARNING_RATE)
 
+    history_accuracy = []
     running_loss = 0.0
     for epoch in range(nepochs):  # loop over the dataset multiple times
         for i, data in enumerate(trainloader):
@@ -78,6 +78,7 @@ def main():
             outputs = net(inputs)  # forward + backward + optimize
             pred = outputs.argmax(dim=1)  # get the index of the max log-probability
             accurracy = (pred == labels).sum() / float(len(labels))
+            history_accuracy.append(float(accurracy))
             loss = criterion(outputs, labels)
             loss.backward()
             optimizer.step()
@@ -111,6 +112,16 @@ def main():
     test_accuracy = np.mean(test_accuracies)
     print("Test accuracy: {:3.4}%".format(100 * test_accuracy))
 
+    if plot_history:
+        import matplotlib.pyplot as plt
+        # Plot training & validation accuracy values
+        plt.figure()
+        plt.plot(history_accuracy)
+        plt.title('Model accuracy')
+        plt.ylabel('Accuracy')
+        plt.xlabel('Epoch')
+        plt.show()
+
 
 class Flatten(nn.Module):
     """
@@ -122,4 +133,4 @@ class Flatten(nn.Module):
 
 
 if __name__ == '__main__':
-    main()
+    train()
