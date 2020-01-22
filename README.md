@@ -8,23 +8,23 @@ This is a university project at TU Vienna to create a neural network hardware ac
 
 ## Tasks
 
-[x] Train a Neural Network using Python
-[x] Verfiy all the calculations
-[x] Prepare Linux for the Zedboard
-[x] Write the basic Neural Network Operations in VHDL
-[ ] Write a custom driver for the FPGA
-[ ] Setup FPGA to communicate with PC or use embedded Linux
-[ ] Verfiy VHDL implementation
-[ ] Optimize Network: Fixed Point
-[ ] Optimize Network: Parallelization and Pipelining
-[ ] Install driver, python and setup software on the zedboard
+- [x] Train a Neural Network using Python
+- [x] Verfiy all the calculations
+- [x] Prepare Linux for the Zedboard
+- [x] Write the basic Neural Network Operations in VHDL
+- [ ] Write a custom driver for the FPGA
+- [ ] Setup FPGA to communicate with PC or use embedded Linux
+- [ ] Verfiy VHDL implementation
+- [ ] Optimize Network: Fixed Point
+- [ ] Optimize Network: Parallelization and Pipelining
+- [ ] Install driver, python and setup software on the zedboard
 
 ### Optional Tasks
 
-[ ] Webinterface for Easy Control
-[ ] Backpropagation on FPGA
-[ ] Custom Pytorch Extension to use the FPGA from within Torch
-[ ] CI Pipeline for VHDL/Vivado Build & Tests
+- [ ] Webinterface for Easy Control
+- [ ] Backpropagation on FPGA
+- [ ] Custom Pytorch Extension to use the FPGA from within Torch
+- [ ] CI Pipeline for VHDL/Vivado Build & Tests
 
 ## Top Level Overview
 
