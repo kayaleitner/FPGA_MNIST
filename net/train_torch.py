@@ -4,12 +4,13 @@ import os
 import numpy as np
 import torch
 import torch.nn as nn
-import torch.optim as optim
+import torch.optim
 import torchvision
 from torch.utils.data import DataLoader
 
 MODEL_SAVE_DIR = "torch"
-MODEL_SAVE_PATH = os.path.join(MODEL_SAVE_DIR, "LeNet.torch")
+MODEL_SAVE_PATH = os.path.join(MODEL_SAVE_DIR, "LeNet.pth")
+MODEL_STATE_SAVE_PATH = os.path.join(MODEL_SAVE_DIR, "LeNetStates.pth")
 MODEL_CKPT_PATH = os.path.join("torch", "cp.ckpt")
 MODEL_WGHTS_SAVE_PATH = os.path.join(MODEL_SAVE_DIR, 'weights.h5')
 MODEL_CONFIG_SAVE_PATH = os.path.join(MODEL_SAVE_DIR, 'model_config.json')
@@ -24,20 +25,12 @@ LEARNING_RATE = 0.001
 LOG_MINI_BATCH_INTERVAL = 50
 
 
-def main():
-    nepochs = DEFAULT_EPOCHS
+def get_lenet_model():
+    """
+    Creates a new model instance and returns it.
+    Returns:
 
-    # See: https://pytorch.org/tutorials/intermediate/tensorboard_tutorial.html
-    transforms = torchvision.transforms.Compose([
-        torchvision.transforms.ToTensor()
-    ])
-
-    # data sets & data loaders
-    trainset = torchvision.datasets.MNIST('./data', download=True, train=True, transform=transforms)
-    testset = torchvision.datasets.MNIST('./data', download=True, train=False, transform=transforms)
-    trainloader = DataLoader(trainset, batch_size=BATCH_SIZE, shuffle=True)
-    testloader = DataLoader(testset, batch_size=BATCH_SIZE, shuffle=False)
-
+    """
     # net = LeNet()
     net = nn.Sequential(
         nn.BatchNorm2d(num_features=1),
@@ -55,9 +48,27 @@ def main():
         nn.Dropout(p=0.5),
         nn.Linear(in_features=32, out_features=10)
     )
+    return net
+
+
+def main():
+    nepochs = DEFAULT_EPOCHS
+
+    # See: https://pytorch.org/tutorials/intermediate/tensorboard_tutorial.html
+    transforms = torchvision.transforms.Compose([
+        torchvision.transforms.ToTensor()
+    ])
+
+    # data sets & data loaders
+    trainset = torchvision.datasets.MNIST('./data', download=True, train=True, transform=transforms)
+    testset = torchvision.datasets.MNIST('./data', download=True, train=False, transform=transforms)
+    trainloader = DataLoader(trainset, batch_size=BATCH_SIZE, shuffle=True)
+    testloader = DataLoader(testset, batch_size=BATCH_SIZE, shuffle=False)
+
+    net = get_lenet_model()
 
     criterion = nn.CrossEntropyLoss()
-    optimizer = optim.Adam(net.parameters(), lr=LEARNING_RATE)
+    optimizer = torch.optim.Adam(net.parameters(), lr=LEARNING_RATE)
 
     running_loss = 0.0
     for epoch in range(nepochs):  # loop over the dataset multiple times
@@ -80,7 +91,14 @@ def main():
                 running_loss = 0.0
 
     print('Finished Training')
-    torch.save(net.state_dict(), MODEL_SAVE_PATH)
+
+    # Set the model in evaluation mode -> Removes Dropout Layers
+    net.eval()
+
+    # Save the model
+    torch.save(net, MODEL_SAVE_PATH)
+    torch.save(net.state_dict(), MODEL_STATE_SAVE_PATH)
+
 
     test_accuracies = []
     for i, data in enumerate(testloader):

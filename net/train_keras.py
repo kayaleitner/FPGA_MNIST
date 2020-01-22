@@ -18,6 +18,7 @@ IMG_WIDTH = 28
 DEFAULT_PLOT_HISTORY = False
 DEFAULT_EPOCHS = 2
 
+
 def main():
     # Add argument parsing to start it from the command line
     # parser = argparse.ArgumentParser()
@@ -32,6 +33,9 @@ def main():
     (x_train, y_train), (x_test, y_test) = keras.datasets.mnist.load_data()
     x_train, x_test = x_train / 255.0, x_test / 255.0
 
+    # Define Constriants (useful for quantization)
+    kernel_constraint = keras.constraints.max_norm(max_value=1)
+
     """
     Define the model here
     
@@ -41,24 +45,25 @@ def main():
     - Removed bias from conv layers
     """
     model = keras.models.Sequential([
-        BatchNormalization(input_shape=(IMG_HEIGHT, IMG_WIDTH)),
-        Reshape((IMG_HEIGHT, IMG_WIDTH, 1)),
-        Conv2D(16, 3, padding='same', activation='linear', use_bias=False),  # 3x3x4 filter
-        # BatchNormalization(),
+        # Hack: Reshape the image to 1D to make the Keras BatchNorm layer work
+        Reshape(target_shape=(-1, IMG_HEIGHT * IMG_WIDTH), input_shape=(IMG_HEIGHT, IMG_WIDTH)),
+        BatchNormalization(),
+        Reshape((IMG_HEIGHT, IMG_WIDTH, 1)),  # Reshape to 3D input for the Conv layer
+        Conv2D(16, 3, padding='same', activation='linear', use_bias=False, kernel_constraint=kernel_constraint),
+        BatchNormalization(axis=-1),  # Normalize along the channels (meaning last axis)
         ReLU(),
         Dropout(0.2),
         MaxPooling2D(),
-        Conv2D(32, 3, padding='same', activation='linear', use_bias=False),  # 3x3x8 filter
-        # BatchNormalization(),
+        Conv2D(32, 3, padding='same', activation='linear', use_bias=False, kernel_constraint=kernel_constraint),
+        BatchNormalization(axis=-1),  # Normalize along the channels (meaning last axis)
         ReLU(),
         Dropout(0.2),
         MaxPooling2D(),
         Flatten(),
-        Dense(32, activation='linear'),
-        # BatchNormalization(),
+        Dense(32, activation='linear', kernel_constraint=kernel_constraint),
         ReLU(),
         Dropout(0.5),
-        Dense(10, activation='softmax')
+        Dense(10, activation='softmax', kernel_constraint=kernel_constraint)
     ])
 
     # You must install pydot and graphviz for `pydotprint` to work.
