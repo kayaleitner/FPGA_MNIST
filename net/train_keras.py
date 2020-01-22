@@ -18,19 +18,14 @@ IMG_WIDTH = 28
 DEFAULT_PLOT_HISTORY = False
 DEFAULT_EPOCHS = 2
 
-def main():
-    # Add argument parsing to start it from the command line
-    # parser = argparse.ArgumentParser()
-    # parser.add_argument("plot_history", help="Print the training history using matplotlib",
-    #                     default=PRINT_HISTORY_DEFAULT)
-    # parser.add_argument()
-    # args = parser.parse_args(args=sys.argv)
-    # plot_history = args.plot_history
-    plot_history = DEFAULT_PLOT_HISTORY
-    nepochs = DEFAULT_EPOCHS
+
+def train(nepochs=DEFAULT_EPOCHS, plot_history=DEFAULT_PLOT_HISTORY):
 
     (x_train, y_train), (x_test, y_test) = keras.datasets.mnist.load_data()
     x_train, x_test = x_train / 255.0, x_test / 255.0
+
+    # Define Constriants (useful for quantization)
+    kernel_constraint = keras.constraints.max_norm(max_value=1)
 
     """
     Define the model here
@@ -40,25 +35,26 @@ def main():
     - Increased value of dropout layer to .5 in first fully connected layer 
     - Removed bias from conv layers
     """
-    model = keras.models.Sequential([
-        BatchNormalization(input_shape=(IMG_HEIGHT, IMG_WIDTH)),
-        Reshape((IMG_HEIGHT, IMG_WIDTH, 1)),
-        Conv2D(16, 3, padding='same', activation='linear', use_bias=False),  # 3x3x4 filter
-        # BatchNormalization(),
+    model = keras.models.Sequential(name="KerasEggNet", layers=[
+        # Hack: Reshape the image to 1D to make the Keras BatchNorm layer work
+        Reshape(target_shape=(IMG_HEIGHT * IMG_WIDTH, 1), input_shape=(IMG_HEIGHT, IMG_WIDTH)),
+        BatchNormalization(),
+        Reshape((IMG_HEIGHT, IMG_WIDTH, 1)),  # Reshape to 3D input for the Conv layer
+        Conv2D(16, 3, padding='same', activation='linear', use_bias=False, kernel_constraint=kernel_constraint),
+        BatchNormalization(axis=-1),  # Normalize along the channels (meaning last axis)
         ReLU(),
         Dropout(0.2),
         MaxPooling2D(),
-        Conv2D(32, 3, padding='same', activation='linear', use_bias=False),  # 3x3x8 filter
-        # BatchNormalization(),
+        Conv2D(32, 3, padding='same', activation='linear', use_bias=False, kernel_constraint=kernel_constraint),
+        BatchNormalization(axis=-1),  # Normalize along the channels (meaning last axis)
         ReLU(),
         Dropout(0.2),
         MaxPooling2D(),
         Flatten(),
-        Dense(32, activation='linear'),
-        # BatchNormalization(),
+        Dense(32, activation='linear', kernel_constraint=kernel_constraint),
         ReLU(),
         Dropout(0.5),
-        Dense(10, activation='softmax')
+        Dense(10, activation='softmax', kernel_constraint=kernel_constraint)
     ])
 
     # You must install pydot and graphviz for `pydotprint` to work.
@@ -121,4 +117,12 @@ def _plot_history(history):
 
 
 if __name__ == '__main__':
-    main()
+    # Add argument parsing to start it from the command line
+    # parser = argparse.ArgumentParser()
+    # parser.add_argument("plot_history", help="Print the training history using matplotlib",
+    #                     default=PRINT_HISTORY_DEFAULT)
+    # parser.add_argument()
+    # args = parser.parse_args(args=sys.argv)
+    # plot_history = args.plot_history
+
+    train()
