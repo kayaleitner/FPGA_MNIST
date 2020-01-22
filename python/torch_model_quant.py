@@ -14,6 +14,7 @@ from NeuralNetwork.Torch.models import LeNet
 from NeuralNetwork.Util.torch import MNIST_CLASSES
 import NeuralNetwork.Util.plot as util_plots
 
+
 def train_model(model, criterion, optimizer, scheduler, num_epochs=25, device='cpu'):
     """
   Support function for model training.
@@ -218,8 +219,6 @@ if __name__ == '__main__':
     # https://medium.com/@karanbirchahal/how-to-quantise-an-mnist-network-to-8-bits-in-pytorch-no-retraining-required-from-scratch-39f634ac8459
     # https://github.com/pytorch/glow/blob/master/docs/Quantization.md
 
-
-
     save_path = pathlib.Path('.') / 'models' / 'LeNet.torch'
     net = LeNet()
     state_dict = torch.load(save_path)
@@ -245,7 +244,7 @@ if __name__ == '__main__':
 
     test(model=net, device=device, test_loader=dataloaders['val'])
 
-    net.paramete
+    # net.parameters
     util_plots.plot_network_parameter_histogram(weights=list(net.parameters()))
 
     qnet = convert(net, inplace=False)
@@ -255,4 +254,3 @@ if __name__ == '__main__':
     plt.tight_layout()
     plt.show()
     print('Finished')
-

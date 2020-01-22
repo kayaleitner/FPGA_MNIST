@@ -10,3 +10,4 @@ flask
 torch
 torchvision
 keras
+# brevitas # install from github

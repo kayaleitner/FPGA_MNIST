@@ -3,9 +3,6 @@ from typing import Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import brevitas.nn as qnn
-from brevitas.core.quant import QuantType
-
 
 
 class SqueezeNet(nn.Module):
@@ -70,6 +67,8 @@ class QuantLeNet(nn.Module):
     """
 
     def __init__(self, bit_width=8, weight_bit_width=8):
+        import brevitas.nn as qnn
+        from brevitas.core.quant import QuantType
         super(QuantLeNet, self).__init__()
         self.conv1 = qnn.QuantConv2d(1, 6, 5,
                                      weight_quant_type=QuantType.INT,
@@ -90,8 +89,6 @@ class QuantLeNet(nn.Module):
         self.fc3 = qnn.QuantLinear(84, 10, bias=False,
                                    weight_quant_type=QuantType.INT,
                                    weight_bit_width=weight_bit_width)
-
-
 
     def forward(self, x):
         out = F.dropout(self.relu1(self.conv1(x)), p=0.2)

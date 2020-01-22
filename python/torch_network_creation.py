@@ -7,7 +7,8 @@ import torchvision
 import torchvision.transforms as transforms
 from torch.utils.tensorboard import SummaryWriter
 
-from NeuralNetwork.Torch.models import LeNet, QuantLeNet
+from NeuralNetwork.Torch.models import LeNet
+# from NeuralNetwork.Torch.models import QuantLeNet
 from NeuralNetwork.Util.torch import matplotlib_imshow, plot_classes_preds, select_n_random, MNIST_CLASSES
 
 if __name__ == '__main__':
@@ -25,7 +26,7 @@ if __name__ == '__main__':
     # constant for classes
     classes = MNIST_CLASSES
 
-    net = QuantLeNet()
+    net = LeNet()
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(net.parameters(), lr=0.001)
 
@@ -48,11 +49,12 @@ if __name__ == '__main__':
     # get the class labels for each image
     class_labels = [classes[lab] for lab in labels]
     # log embeddings
-    features = images.view(-1, 28 * 28)
-    writer.add_embedding(features,
-                         metadata=class_labels,
-                         label_img=images.unsqueeze(1))
-    writer.close()
+    # features = images.view(-1, 28 * 28)
+    # writer.add_embedding(features,
+    #                      metadata=class_labels,
+    #                      label_img=images.unsqueeze(1))
+    # writer.close()
+
 
     running_loss = 0.0
     for epoch in range(5):  # loop over the dataset multiple times
@@ -74,12 +76,11 @@ if __name__ == '__main__':
             loss.backward()
             optimizer.step()
 
-
             running_loss += loss.item()
             if (i + 1) % 500 == 0:  # every 1000 mini-batches...
                 step = epoch * len(trainloader) + i
 
-                print("Epoch: ", epoch, "  #MB: ", i, "     Acc [%]  ", float(accurracy)*100 , "%")
+                print("Epoch: ", epoch, "  #MB: ", i, "     Acc [%]  ", float(accurracy) * 100, "%")
                 # ...log the running loss
                 writer.add_scalar('Loss', running_loss / 1000, step)
                 writer.add_scalar('Accuracy', scalar_value=accurracy * 100, global_step=step)
@@ -92,11 +93,11 @@ if __name__ == '__main__':
 
                 # ...log a Matplotlib Figure showing the model's predictions on a
                 # random mini-batch
-                writer.add_figure(tag='predictions vs. actuals',
-                                  figure=plot_classes_preds(net, inputs, labels, MNIST_CLASSES),
-                                  global_step=epoch * len(trainloader) + i)
+                # writer.add_figure(tag='predictions vs. actuals',
+                #                   figure=plot_classes_preds(net, inputs, labels, MNIST_CLASSES),
+                #                   global_step=epoch * len(trainloader) + i)
                 running_loss = 0.0
     print('Finished Training')
     save_path = pathlib.Path('.') / 'models'
     save_path.mkdir(parents=True, exist_ok=True)
-    torch.save(net.state_dict(), save_path / 'QuantLeNet.torch')
+    torch.save(net.state_dict(), save_path / 'LeNet.torch')
