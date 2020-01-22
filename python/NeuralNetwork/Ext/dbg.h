@@ -52,10 +52,8 @@
  * \param M The message that should be printed in case of an error
  */
 #define CHECK(A, M, ...)                                                                           \
-    do                                                                                             \
-    {                                                                                              \
-        if (!(A))                                                                                  \
-        {                                                                                          \
+    do {                                                                                           \
+        if (!(A)) {                                                                                \
             log_err(M, ##__VA_ARGS__);                                                             \
             errno = 0;                                                                             \
             goto error;                                                                            \
@@ -80,10 +78,8 @@
  * \param M A message that should be printed
  */
 #define CHECK_AND_SET(A, var, val, M, ...)                                                         \
-    do                                                                                             \
-    {                                                                                              \
-        if (!(A))                                                                                  \
-        {                                                                                          \
+    do {                                                                                           \
+        if (!(A)) {                                                                                \
             var = val;                                                                             \
             log_err(M, ##__VA_ARGS__);                                                             \
             errno = 0;                                                                             \
@@ -110,10 +106,8 @@
  * The message that should be printed
  */
 #define CHECK_DEBUG(A, M, ...)                                                                     \
-    do                                                                                             \
-    {                                                                                              \
-        if (!(A))                                                                                  \
-        {                                                                                          \
+    do {                                                                                           \
+        if (!(A)) {                                                                                \
             debug(M, ##__VA_ARGS__);                                                               \
             errno = 0;                                                                             \
             goto error;                                                                            \

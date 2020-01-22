@@ -51,7 +51,7 @@ class MnistDataDownloader:
 
         # Check if folders exists
         if not os.path.exists(tmp_path):
-            os.makedirs(tmp_path)
+            os.makedirs(tmp_path, exist_ok=True)
 
         data = [
             (self.TRAIN_IMG_TMP_FILENAME, self.TRAIN_IMAGES_URL),
@@ -95,6 +95,8 @@ class MnistDataReader:
     def __init__(self, image_filename, label_filename):
         print("Init idx to numpy converter")
 
+        self.image_filename = image_filename
+        self.label_filename = label_filename
         self.f = gz.open(image_filename, 'rb')
         self.f_label = gz.open(label_filename, 'rb')
 
@@ -153,6 +155,9 @@ class MnistDataReader:
     def get_ActualImageNumber(self):
         return self.__actualImg
 
+    def get_iterator(self, batchsize=10):
+        return self.get_next(batch_size=batchsize)
+
     def get_next(self, batch_size=10):
         """
         Same as `get_Arrays` except by using the yield keyword it can be used in loop
@@ -188,3 +193,10 @@ class MnistDataReader:
         else:
             print("Image number exceeds file size")
             return None
+
+    def shuffle(self):
+        pass
+
+    def get_random(self, batch_size=10):
+        pass
+

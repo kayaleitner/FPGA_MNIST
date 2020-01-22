@@ -6,7 +6,7 @@ import numpy as np
 import tensorflow.keras.backend as K
 from tensorflow import keras
 
-from NeuralNetwork.NN.ConvLayer import ConvLayer, test_kernel_gauss, MaxPoolLayer
+from NeuralNetwork.NN.ConvLayer import Conv2dLayer, test_kernel_gauss, MaxPoolLayer
 from NeuralNetwork.NN.FullyConnected import FullyConnectedLayer
 from NeuralNetwork.NN.Network import Network
 from NeuralNetwork.NN.Util import ReshapeLayer, indices
@@ -17,7 +17,7 @@ class MnistConvTestCase(unittest.TestCase):
 
     def test_blur(self):
         k = test_kernel_gauss()
-        cl = ConvLayer(in_channels=1, out_channels=1, kernel_size=5)
+        cl = Conv2dLayer(in_channels=1, out_channels=1, kernel_size=5)
         loader = MnistDataDownloader("test/MNIST/")
         path_img, path_lbl = loader.get_path(DataSetType.TRAIN)
 
@@ -41,7 +41,7 @@ class MnistConvTestCase(unittest.TestCase):
 
     def test_tensorflow_parameter_0(self):
         r1 = ReshapeLayer(newshape=[-1, 28, 28, 1])
-        cn1 = ConvLayer(in_channels=1, out_channels=16, kernel_size=3, activation='relu')  # [? 28 28 16]
+        cn1 = Conv2dLayer(in_channels=1, out_channels=16, kernel_size=3, activation='relu')  # [? 28 28 16]
 
         checkpoint_path = "test/training_1/cp.ckpt"
         checkpoint_dir = os.path.abspath(os.path.dirname(checkpoint_path))
@@ -131,9 +131,9 @@ class MnistConvTestCase(unittest.TestCase):
 
     def test_tensorflow_parameter(self):
         r1 = ReshapeLayer(newshape=[-1, 28, 28, 1])
-        cn1 = ConvLayer(in_channels=1, out_channels=16, kernel_size=3, activation='relu')  # [? 28 28 16]
+        cn1 = Conv2dLayer(in_channels=1, out_channels=16, kernel_size=3, activation='relu')  # [? 28 28 16]
         mp1 = MaxPoolLayer(size=2)  # [? 14 14 16]
-        cn2 = ConvLayer(in_channels=16, out_channels=32, kernel_size=3, activation='relu')  # [? 14 14 32]
+        cn2 = Conv2dLayer(in_channels=16, out_channels=32, kernel_size=3, activation='relu')  # [? 14 14 32]
         mp2 = MaxPoolLayer(size=2)  # [?  7  7 32]
         r2 = ReshapeLayer(newshape=[-1, 32 * 7 * 7])
         fc1 = FullyConnectedLayer(input_size=32 * 7 * 7, output_size=64, activation='relu')

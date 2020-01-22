@@ -7,3 +7,7 @@ pyviz
 graphviz
 pydotplus
 flask
+torch
+torchvision
+keras
+# brevitas # install from github

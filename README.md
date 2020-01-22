@@ -6,19 +6,32 @@
 
 This is a university project at TU Vienna to create a neural network hardware accelerator with an FPGA.
 
-## Goals
+## Tasks
 
-- Setup FPGA to communicate with PC or use embedded Linux
-- Implement Forward & Backward Propagation in Python to ensure functionality
-- Create VHDL files for the various operations
-- Handle on board communication
-- Make all calculations efficient by using pipelined calculations
+[x] Train a Neural Network using Python
+[x] Verfiy all the calculations
+[x] Prepare Linux for the Zedboard
+[x] Write the basic Neural Network Operations in VHDL
+[ ] Write a custom driver for the FPGA
+[ ] Setup FPGA to communicate with PC or use embedded Linux
+[ ] Verfiy VHDL implementation
+[ ] Optimize Network: Fixed Point
+[ ] Optimize Network: Parallelization and Pipelining
+[ ] Install driver, python and setup software on the zedboard
+
+### Optional Tasks
+
+[ ] Webinterface for Easy Control
+[ ] Backpropagation on FPGA
+[ ] Custom Pytorch Extension to use the FPGA from within Torch
+[ ] CI Pipeline for VHDL/Vivado Build & Tests
 
 ## Top Level Overview
 
 ![System Overview](tex/specification/svg-extract/1-NN-concept_svg-tex.png "Top Level Overview")
 
 For more details see the [Specification Document](tex/specification/specification.pdf)
+
 
 ## Build
 
@@ -34,3 +47,5 @@ For a quickstart run the script `bootstrap.sh`.
 ### Python with SWIG Extension
 
 To accelerate certain neural network functions (conv2d, pool, etc.) those are reprogrammed in C and wrapped via SWIG. See `python/README.md` for more details on this topic.
+
+## Neural Network Architecture

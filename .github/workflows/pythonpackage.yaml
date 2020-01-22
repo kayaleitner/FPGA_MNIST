@@ -24,6 +24,7 @@ jobs:
         cd python
         python -m pip install --upgrade pip
         pip install -r requirements.txt
+        pip install pytest tox
     
     - name: Install SWIG (Linux)
       if: runner.os == 'Linux'
@@ -44,7 +45,7 @@ jobs:
         python setup.py build_ext --build-lib .
         python setup.py build
         python setup.py sdist bdist_wheel
-        python setup.py test
+        tox
     
     - name: Test with pytest (Windoof)
       if: runner.os == 'Windows'
@@ -54,7 +55,7 @@ jobs:
         python setup.py build_ext  --global-option --compiler=mingw32 --build-lib .
         python setup.py build
         python setup.py sdist bdist_wheel
-        python setup.py test
+        tox
 
     - name: Test Install
       run: |

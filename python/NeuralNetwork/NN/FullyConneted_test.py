@@ -25,7 +25,7 @@ class FullyConnectedLayerTestCase(unittest.TestCase):
         self.assertEqual(y.shape, (1, 10))
 
     def test_tf_compare(self):
-        x = np.random.rand(10, 1)  # create 4 test images
+        x = np.random.rand(10, 1) .astype(np.float32)  # create 4 test images
         fc = FullyConnectedLayer(input_size=1, output_size=10, activation='relu')
         y = fc(x)
 
