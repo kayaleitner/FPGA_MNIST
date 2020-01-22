@@ -1,0 +1,10 @@
+
+# Ignore everything
+*
+*.*
+
+# But do not ignore following files:
+!cleanup.sh
+!cleanup.cmd
+!create_project.tcl
+!release.py

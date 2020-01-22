@@ -1,4 +1,4 @@
--- (c) Copyright 1995-2019 Xilinx, Inc. All rights reserved.
+-- (c) Copyright 1995-2020 Xilinx, Inc. All rights reserved.
 -- 
 -- This file contains confidential and proprietary information
 -- of Xilinx, Inc. and is protected under U.S. and
@@ -59,11 +59,8 @@ COMPONENT blk_mem_gen_0
     addra : IN STD_LOGIC_VECTOR(10 DOWNTO 0);
     dina : IN STD_LOGIC_VECTOR(7 DOWNTO 0);
     clkb : IN STD_LOGIC;
-    rstb : IN STD_LOGIC;
     addrb : IN STD_LOGIC_VECTOR(10 DOWNTO 0);
-    doutb : OUT STD_LOGIC_VECTOR(7 DOWNTO 0);
-    rsta_busy : OUT STD_LOGIC;
-    rstb_busy : OUT STD_LOGIC
+    doutb : OUT STD_LOGIC_VECTOR(7 DOWNTO 0)
   );
 END COMPONENT;
 -- COMP_TAG_END ------ End COMPONENT Declaration ------------
@@ -79,11 +76,8 @@ your_instance_name : blk_mem_gen_0
     addra => addra,
     dina => dina,
     clkb => clkb,
-    rstb => rstb,
     addrb => addrb,
-    doutb => doutb,
-    rsta_busy => rsta_busy,
-    rstb_busy => rstb_busy
+    doutb => doutb
   );
 -- INST_TAG_END ------ End INSTANTIATION Template ---------
 

@@ -1,7 +1,7 @@
 // Copyright 1986-2017 Xilinx, Inc. All Rights Reserved.
 // --------------------------------------------------------------------------------
 // Tool Version: Vivado v.2017.4 (win64) Build 2086221 Fri Dec 15 20:55:39 MST 2017
-// Date        : Tue Dec 17 11:10:45 2019
+// Date        : Mon Jan  6 19:20:15 2020
 // Host        : DESKTOP-QIIVLD9 running 64-bit major release  (build 9200)
 // Command     : write_verilog -force -mode funcsim
 //               c:/Users/lukas/Documents/SoC_Lab/FPGA_MNIST/vivado/NN_IP/EggNet_1.0/src/blk_mem_gen_0/blk_mem_gen_0_sim_netlist.v
@@ -20,21 +20,15 @@ module blk_mem_gen_0
     addra,
     dina,
     clkb,
-    rstb,
     addrb,
-    doutb,
-    rsta_busy,
-    rstb_busy);
+    doutb);
   (* x_interface_info = "xilinx.com:interface:bram:1.0 BRAM_PORTA CLK" *) (* x_interface_parameter = "XIL_INTERFACENAME BRAM_PORTA, MEM_SIZE 8192, MEM_WIDTH 32, MEM_ECC NONE, MASTER_TYPE OTHER, READ_WRITE_MODE READ_WRITE" *) input clka;
   (* x_interface_info = "xilinx.com:interface:bram:1.0 BRAM_PORTA WE" *) input [0:0]wea;
   (* x_interface_info = "xilinx.com:interface:bram:1.0 BRAM_PORTA ADDR" *) input [10:0]addra;
   (* x_interface_info = "xilinx.com:interface:bram:1.0 BRAM_PORTA DIN" *) input [7:0]dina;
   (* x_interface_info = "xilinx.com:interface:bram:1.0 BRAM_PORTB CLK" *) (* x_interface_parameter = "XIL_INTERFACENAME BRAM_PORTB, MEM_SIZE 8192, MEM_WIDTH 32, MEM_ECC NONE, MASTER_TYPE OTHER, READ_WRITE_MODE READ_WRITE" *) input clkb;
-  (* x_interface_info = "xilinx.com:interface:bram:1.0 BRAM_PORTB RST" *) input rstb;
   (* x_interface_info = "xilinx.com:interface:bram:1.0 BRAM_PORTB ADDR" *) input [10:0]addrb;
   (* x_interface_info = "xilinx.com:interface:bram:1.0 BRAM_PORTB DOUT" *) output [7:0]doutb;
-  output rsta_busy;
-  output rstb_busy;
 
   wire [10:0]addra;
   wire [10:0]addrb;
@@ -42,11 +36,10 @@ module blk_mem_gen_0
   wire clkb;
   wire [7:0]dina;
   wire [7:0]doutb;
-  wire rsta_busy;
-  wire rstb;
-  wire rstb_busy;
   wire [0:0]wea;
   wire NLW_U0_dbiterr_UNCONNECTED;
+  wire NLW_U0_rsta_busy_UNCONNECTED;
+  wire NLW_U0_rstb_busy_UNCONNECTED;
   wire NLW_U0_s_axi_arready_UNCONNECTED;
   wire NLW_U0_s_axi_awready_UNCONNECTED;
   wire NLW_U0_s_axi_bvalid_UNCONNECTED;
@@ -85,10 +78,10 @@ module blk_mem_gen_0
   (* C_EN_ECC_PIPE = "0" *) 
   (* C_EN_RDADDRA_CHG = "0" *) 
   (* C_EN_RDADDRB_CHG = "0" *) 
-  (* C_EN_SAFETY_CKT = "1" *) 
+  (* C_EN_SAFETY_CKT = "0" *) 
   (* C_EN_SHUTDOWN_PIN = "0" *) 
   (* C_EN_SLEEP_PIN = "0" *) 
-  (* C_EST_POWER_SUMMARY = "Estimated Power for IP     :     2.64705 mW" *) 
+  (* C_EST_POWER_SUMMARY = "Estimated Power for IP     :     2.4513 mW" *) 
   (* C_FAMILY = "zynq" *) 
   (* C_HAS_AXI_ID = "0" *) 
   (* C_HAS_ENA = "0" *) 
@@ -101,7 +94,7 @@ module blk_mem_gen_0
   (* C_HAS_REGCEA = "0" *) 
   (* C_HAS_REGCEB = "0" *) 
   (* C_HAS_RSTA = "0" *) 
-  (* C_HAS_RSTB = "1" *) 
+  (* C_HAS_RSTB = "0" *) 
   (* C_HAS_SOFTECC_INPUT_REGS_A = "0" *) 
   (* C_HAS_SOFTECC_OUTPUT_REGS_B = "0" *) 
   (* C_INITA_VAL = "0" *) 
@@ -133,7 +126,7 @@ module blk_mem_gen_0
   (* C_WEB_WIDTH = "1" *) 
   (* C_WRITE_DEPTH_A = "1568" *) 
   (* C_WRITE_DEPTH_B = "1568" *) 
-  (* C_WRITE_MODE_A = "READ_FIRST" *) 
+  (* C_WRITE_MODE_A = "NO_CHANGE" *) 
   (* C_WRITE_MODE_B = "WRITE_FIRST" *) 
   (* C_WRITE_WIDTH_A = "8" *) 
   (* C_WRITE_WIDTH_B = "8" *) 
@@ -159,9 +152,9 @@ module blk_mem_gen_0
         .regcea(1'b0),
         .regceb(1'b0),
         .rsta(1'b0),
-        .rsta_busy(rsta_busy),
-        .rstb(rstb),
-        .rstb_busy(rstb_busy),
+        .rsta_busy(NLW_U0_rsta_busy_UNCONNECTED),
+        .rstb(1'b0),
+        .rstb_busy(NLW_U0_rstb_busy_UNCONNECTED),
         .s_aclk(1'b0),
         .s_aresetn(1'b0),
         .s_axi_araddr({1'b0,1'b0,1'b0,1'b0,1'b0,1'b0,1'b0,1'b0,1'b0,1'b0,1'b0,1'b0,1'b0,1'b0,1'b0,1'b0,1'b0,1'b0,1'b0,1'b0,1'b0,1'b0,1'b0,1'b0,1'b0,1'b0,1'b0,1'b0,1'b0,1'b0,1'b0,1'b0}),
@@ -208,25 +201,19 @@ endmodule
 (* ORIG_REF_NAME = "blk_mem_gen_generic_cstr" *) 
 module blk_mem_gen_0_blk_mem_gen_generic_cstr
    (doutb,
-    rsta_busy,
-    rstb_busy,
     clka,
     clkb,
+    wea,
     addra,
     addrb,
-    dina,
-    wea,
-    rstb);
+    dina);
   output [7:0]doutb;
-  output rsta_busy;
-  output rstb_busy;
   input clka;
   input clkb;
+  input [0:0]wea;
   input [10:0]addra;
   input [10:0]addrb;
   input [7:0]dina;
-  input [0:0]wea;
-  input rstb;
 
   wire [10:0]addra;
   wire [10:0]addrb;
@@ -234,9 +221,6 @@ module blk_mem_gen_0_blk_mem_gen_generic_cstr
   wire clkb;
   wire [7:0]dina;
   wire [7:0]doutb;
-  wire rsta_busy;
-  wire rstb;
-  wire rstb_busy;
   wire [0:0]wea;
 
   blk_mem_gen_0_blk_mem_gen_prim_width \ramloop[0].ram.r 
@@ -246,261 +230,68 @@ module blk_mem_gen_0_blk_mem_gen_generic_cstr
         .clkb(clkb),
         .dina(dina),
         .doutb(doutb),
-        .rsta_busy(rsta_busy),
-        .rstb(rstb),
-        .rstb_busy(rstb_busy),
         .wea(wea));
 endmodule
 
 (* ORIG_REF_NAME = "blk_mem_gen_prim_width" *) 
 module blk_mem_gen_0_blk_mem_gen_prim_width
    (doutb,
-    rsta_busy,
-    rstb_busy,
     clka,
     clkb,
+    wea,
     addra,
     addrb,
-    dina,
-    wea,
-    rstb);
+    dina);
   output [7:0]doutb;
-  output rsta_busy;
-  output rstb_busy;
   input clka;
   input clkb;
+  input [0:0]wea;
   input [10:0]addra;
   input [10:0]addrb;
   input [7:0]dina;
-  input [0:0]wea;
-  input rstb;
 
-  wire ENA_dly;
-  wire ENA_dly_D;
-  wire ENB_dly_reg;
-  wire ENB_dly_reg_D;
-  wire POR_A;
-  wire POR_B;
-  wire [4:0]RSTA_SHFT_REG;
-  wire [4:0]RSTB_SHFT_REG;
-  wire \SAFETY_CKT_GEN.RSTA_SHFT_REG_reg[3]_srl3_n_0 ;
-  wire \SAFETY_CKT_GEN.RSTB_SHFT_REG_reg[3]_srl3_n_0 ;
   wire [10:0]addra;
   wire [10:0]addrb;
   wire clka;
   wire clkb;
   wire [7:0]dina;
   wire [7:0]doutb;
-  wire p_1_out;
-  wire p_3_out;
-  wire ram_rstram_a_busy__0;
-  wire ram_rstreg_b;
-  wire ram_rstreg_b_busy__0;
-  wire rsta_busy;
-  wire rstb;
-  wire rstb_busy;
   wire [0:0]wea;
 
-  FDRE #(
-    .INIT(1'b0)) 
-    \SAFETY_CKT_GEN.ENA_NO_REG.ENA_dly_D_reg 
-       (.C(clka),
-        .CE(1'b1),
-        .D(ENA_dly),
-        .Q(ENA_dly_D),
-        .R(1'b0));
-  FDRE #(
-    .INIT(1'b0)) 
-    \SAFETY_CKT_GEN.ENA_NO_REG.ENA_dly_reg 
-       (.C(clka),
-        .CE(1'b1),
-        .D(POR_A),
-        .Q(ENA_dly),
-        .R(1'b0));
-  FDRE #(
-    .INIT(1'b0)) 
-    \SAFETY_CKT_GEN.ENB_WITH_REG.ENB_dly_reg_D_reg 
-       (.C(clkb),
-        .CE(1'b1),
-        .D(ENB_dly_reg),
-        .Q(ENB_dly_reg_D),
-        .R(1'b0));
-  FDRE #(
-    .INIT(1'b0)) 
-    \SAFETY_CKT_GEN.ENB_WITH_REG.ENB_dly_reg_reg 
-       (.C(clkb),
-        .CE(1'b1),
-        .D(ram_rstreg_b),
-        .Q(ENB_dly_reg),
-        .R(1'b0));
-  LUT2 #(
-    .INIT(4'h6)) 
-    \SAFETY_CKT_GEN.POR_A_i_1 
-       (.I0(RSTA_SHFT_REG[4]),
-        .I1(RSTA_SHFT_REG[0]),
-        .O(p_3_out));
-  FDRE #(
-    .INIT(1'b0)) 
-    \SAFETY_CKT_GEN.POR_A_reg 
-       (.C(clka),
-        .CE(1'b1),
-        .D(p_3_out),
-        .Q(POR_A),
-        .R(1'b0));
-  LUT2 #(
-    .INIT(4'h6)) 
-    \SAFETY_CKT_GEN.POR_B_i_1 
-       (.I0(RSTB_SHFT_REG[4]),
-        .I1(RSTB_SHFT_REG[0]),
-        .O(p_1_out));
-  FDRE #(
-    .INIT(1'b0)) 
-    \SAFETY_CKT_GEN.POR_B_reg 
-       (.C(clkb),
-        .CE(1'b1),
-        .D(p_1_out),
-        .Q(POR_B),
-        .R(1'b0));
-  FDRE \SAFETY_CKT_GEN.RSTA_BUSY_NO_REG.RSTA_BUSY_reg 
-       (.C(clka),
-        .CE(1'b1),
-        .D(ram_rstram_a_busy__0),
-        .Q(rsta_busy),
-        .R(1'b0));
-  FDRE #(
-    .INIT(1'b0)) 
-    \SAFETY_CKT_GEN.RSTA_SHFT_REG_reg[0] 
-       (.C(clka),
-        .CE(1'b1),
-        .D(1'b1),
-        .Q(RSTA_SHFT_REG[0]),
-        .R(1'b0));
-  (* srl_bus_name = "U0/\inst_blk_mem_gen/gnbram.gnativebmg.native_blk_mem_gen/valid.cstr/ramloop[0].ram.r/SAFETY_CKT_GEN.RSTA_SHFT_REG_reg " *) 
-  (* srl_name = "U0/\inst_blk_mem_gen/gnbram.gnativebmg.native_blk_mem_gen/valid.cstr/ramloop[0].ram.r/SAFETY_CKT_GEN.RSTA_SHFT_REG_reg[3]_srl3 " *) 
-  SRL16E #(
-    .INIT(16'h0000)) 
-    \SAFETY_CKT_GEN.RSTA_SHFT_REG_reg[3]_srl3 
-       (.A0(1'b0),
-        .A1(1'b1),
-        .A2(1'b0),
-        .A3(1'b0),
-        .CE(1'b1),
-        .CLK(clka),
-        .D(RSTA_SHFT_REG[0]),
-        .Q(\SAFETY_CKT_GEN.RSTA_SHFT_REG_reg[3]_srl3_n_0 ));
-  FDRE #(
-    .INIT(1'b0)) 
-    \SAFETY_CKT_GEN.RSTA_SHFT_REG_reg[4] 
-       (.C(clka),
-        .CE(1'b1),
-        .D(\SAFETY_CKT_GEN.RSTA_SHFT_REG_reg[3]_srl3_n_0 ),
-        .Q(RSTA_SHFT_REG[4]),
-        .R(1'b0));
-  FDRE #(
-    .INIT(1'b0)) 
-    \SAFETY_CKT_GEN.RSTB_SHFT_REG_reg[0] 
-       (.C(clkb),
-        .CE(1'b1),
-        .D(1'b1),
-        .Q(RSTB_SHFT_REG[0]),
-        .R(1'b0));
-  (* srl_bus_name = "U0/\inst_blk_mem_gen/gnbram.gnativebmg.native_blk_mem_gen/valid.cstr/ramloop[0].ram.r/SAFETY_CKT_GEN.RSTB_SHFT_REG_reg " *) 
-  (* srl_name = "U0/\inst_blk_mem_gen/gnbram.gnativebmg.native_blk_mem_gen/valid.cstr/ramloop[0].ram.r/SAFETY_CKT_GEN.RSTB_SHFT_REG_reg[3]_srl3 " *) 
-  SRL16E #(
-    .INIT(16'h0000)) 
-    \SAFETY_CKT_GEN.RSTB_SHFT_REG_reg[3]_srl3 
-       (.A0(1'b0),
-        .A1(1'b1),
-        .A2(1'b0),
-        .A3(1'b0),
-        .CE(1'b1),
-        .CLK(clkb),
-        .D(RSTB_SHFT_REG[0]),
-        .Q(\SAFETY_CKT_GEN.RSTB_SHFT_REG_reg[3]_srl3_n_0 ));
-  FDRE #(
-    .INIT(1'b0)) 
-    \SAFETY_CKT_GEN.RSTB_SHFT_REG_reg[4] 
-       (.C(clkb),
-        .CE(1'b1),
-        .D(\SAFETY_CKT_GEN.RSTB_SHFT_REG_reg[3]_srl3_n_0 ),
-        .Q(RSTB_SHFT_REG[4]),
-        .R(1'b0));
-  FDRE \SAFETY_CKT_GEN.nSPRAM_RST_BUSY.RSTB_BUSY_WITH_REG.RSTB_BUSY_reg 
-       (.C(clkb),
-        .CE(1'b1),
-        .D(ram_rstreg_b_busy__0),
-        .Q(rstb_busy),
-        .R(1'b0));
   blk_mem_gen_0_blk_mem_gen_prim_wrapper \prim_noinit.ram 
-       (.ENA_dly_D(ENA_dly_D),
-        .POR_A(POR_A),
-        .POR_B(POR_B),
-        .addra(addra),
+       (.addra(addra),
         .addrb(addrb),
         .clka(clka),
         .clkb(clkb),
         .dina(dina),
         .doutb(doutb),
-        .ram_rstreg_b(ram_rstreg_b),
-        .rstb(rstb),
         .wea(wea));
-  LUT3 #(
-    .INIT(8'hFE)) 
-    ram_rstram_a_busy
-       (.I0(ENA_dly_D),
-        .I1(POR_A),
-        .I2(ENA_dly),
-        .O(ram_rstram_a_busy__0));
-  LUT4 #(
-    .INIT(16'hFFFE)) 
-    ram_rstreg_b_busy
-       (.I0(ENB_dly_reg_D),
-        .I1(rstb),
-        .I2(POR_B),
-        .I3(ENB_dly_reg),
-        .O(ram_rstreg_b_busy__0));
 endmodule
 
 (* ORIG_REF_NAME = "blk_mem_gen_prim_wrapper" *) 
 module blk_mem_gen_0_blk_mem_gen_prim_wrapper
    (doutb,
-    ram_rstreg_b,
     clka,
     clkb,
-    POR_A,
-    POR_B,
+    wea,
     addra,
     addrb,
-    dina,
-    wea,
-    ENA_dly_D,
-    rstb);
+    dina);
   output [7:0]doutb;
-  output ram_rstreg_b;
   input clka;
   input clkb;
-  input POR_A;
-  input POR_B;
+  input [0:0]wea;
   input [10:0]addra;
   input [10:0]addrb;
   input [7:0]dina;
-  input [0:0]wea;
-  input ENA_dly_D;
-  input rstb;
 
   wire \DEVICE_7SERIES.NO_BMM_INFO.SDP.SIMPLE_PRIM18.ram_n_35 ;
-  wire ENA_I;
-  wire ENA_dly_D;
-  wire POR_A;
-  wire POR_B;
   wire [10:0]addra;
   wire [10:0]addrb;
   wire clka;
   wire clkb;
   wire [7:0]dina;
   wire [7:0]doutb;
-  wire ram_rstreg_b;
-  wire rstb;
   wire [0:0]wea;
   wire [15:0]\NLW_DEVICE_7SERIES.NO_BMM_INFO.SDP.SIMPLE_PRIM18.ram_DOADO_UNCONNECTED ;
   wire [15:8]\NLW_DEVICE_7SERIES.NO_BMM_INFO.SDP.SIMPLE_PRIM18.ram_DOBDO_UNCONNECTED ;
@@ -604,8 +395,8 @@ module blk_mem_gen_0_blk_mem_gen_prim_wrapper
     .SIM_DEVICE("7SERIES"),
     .SRVAL_A(18'h00000),
     .SRVAL_B(18'h00000),
-    .WRITE_MODE_A("READ_FIRST"),
-    .WRITE_MODE_B("READ_FIRST"),
+    .WRITE_MODE_A("NO_CHANGE"),
+    .WRITE_MODE_B("NO_CHANGE"),
     .WRITE_WIDTH_A(9),
     .WRITE_WIDTH_B(9)) 
     \DEVICE_7SERIES.NO_BMM_INFO.SDP.SIMPLE_PRIM18.ram 
@@ -621,52 +412,34 @@ module blk_mem_gen_0_blk_mem_gen_prim_wrapper
         .DOBDO({\NLW_DEVICE_7SERIES.NO_BMM_INFO.SDP.SIMPLE_PRIM18.ram_DOBDO_UNCONNECTED [15:8],doutb}),
         .DOPADOP(\NLW_DEVICE_7SERIES.NO_BMM_INFO.SDP.SIMPLE_PRIM18.ram_DOPADOP_UNCONNECTED [1:0]),
         .DOPBDOP({\NLW_DEVICE_7SERIES.NO_BMM_INFO.SDP.SIMPLE_PRIM18.ram_DOPBDOP_UNCONNECTED [1],\DEVICE_7SERIES.NO_BMM_INFO.SDP.SIMPLE_PRIM18.ram_n_35 }),
-        .ENARDEN(ENA_I),
+        .ENARDEN(wea),
         .ENBWREN(1'b1),
         .REGCEAREGCE(1'b0),
         .REGCEB(1'b1),
-        .RSTRAMARSTRAM(POR_A),
-        .RSTRAMB(POR_B),
+        .RSTRAMARSTRAM(1'b0),
+        .RSTRAMB(1'b0),
         .RSTREGARSTREG(1'b0),
-        .RSTREGB(ram_rstreg_b),
+        .RSTREGB(1'b0),
         .WEA({wea,wea}),
         .WEBWE({1'b0,1'b0,1'b0,1'b0}));
-  LUT2 #(
-    .INIT(4'hE)) 
-    \DEVICE_7SERIES.NO_BMM_INFO.SDP.SIMPLE_PRIM18.ram_i_1 
-       (.I0(ENA_dly_D),
-        .I1(wea),
-        .O(ENA_I));
-  LUT2 #(
-    .INIT(4'hE)) 
-    \DEVICE_7SERIES.NO_BMM_INFO.SDP.SIMPLE_PRIM18.ram_i_2 
-       (.I0(rstb),
-        .I1(POR_B),
-        .O(ram_rstreg_b));
 endmodule
 
 (* ORIG_REF_NAME = "blk_mem_gen_top" *) 
 module blk_mem_gen_0_blk_mem_gen_top
    (doutb,
-    rsta_busy,
-    rstb_busy,
     clka,
     clkb,
+    wea,
     addra,
     addrb,
-    dina,
-    wea,
-    rstb);
+    dina);
   output [7:0]doutb;
-  output rsta_busy;
-  output rstb_busy;
   input clka;
   input clkb;
+  input [0:0]wea;
   input [10:0]addra;
   input [10:0]addrb;
   input [7:0]dina;
-  input [0:0]wea;
-  input rstb;
 
   wire [10:0]addra;
   wire [10:0]addrb;
@@ -674,9 +447,6 @@ module blk_mem_gen_0_blk_mem_gen_top
   wire clkb;
   wire [7:0]dina;
   wire [7:0]doutb;
-  wire rsta_busy;
-  wire rstb;
-  wire rstb_busy;
   wire [0:0]wea;
 
   blk_mem_gen_0_blk_mem_gen_generic_cstr \valid.cstr 
@@ -686,9 +456,6 @@ module blk_mem_gen_0_blk_mem_gen_top
         .clkb(clkb),
         .dina(dina),
         .doutb(doutb),
-        .rsta_busy(rsta_busy),
-        .rstb(rstb),
-        .rstb_busy(rstb_busy),
         .wea(wea));
 endmodule
 
@@ -698,13 +465,13 @@ endmodule
 (* C_COUNT_36K_BRAM = "0" *) (* C_CTRL_ECC_ALGO = "NONE" *) (* C_DEFAULT_DATA = "0" *) 
 (* C_DISABLE_WARN_BHV_COLL = "0" *) (* C_DISABLE_WARN_BHV_RANGE = "0" *) (* C_ELABORATION_DIR = "./" *) 
 (* C_ENABLE_32BIT_ADDRESS = "0" *) (* C_EN_DEEPSLEEP_PIN = "0" *) (* C_EN_ECC_PIPE = "0" *) 
-(* C_EN_RDADDRA_CHG = "0" *) (* C_EN_RDADDRB_CHG = "0" *) (* C_EN_SAFETY_CKT = "1" *) 
-(* C_EN_SHUTDOWN_PIN = "0" *) (* C_EN_SLEEP_PIN = "0" *) (* C_EST_POWER_SUMMARY = "Estimated Power for IP     :     2.64705 mW" *) 
+(* C_EN_RDADDRA_CHG = "0" *) (* C_EN_RDADDRB_CHG = "0" *) (* C_EN_SAFETY_CKT = "0" *) 
+(* C_EN_SHUTDOWN_PIN = "0" *) (* C_EN_SLEEP_PIN = "0" *) (* C_EST_POWER_SUMMARY = "Estimated Power for IP     :     2.4513 mW" *) 
 (* C_FAMILY = "zynq" *) (* C_HAS_AXI_ID = "0" *) (* C_HAS_ENA = "0" *) 
 (* C_HAS_ENB = "0" *) (* C_HAS_INJECTERR = "0" *) (* C_HAS_MEM_OUTPUT_REGS_A = "0" *) 
 (* C_HAS_MEM_OUTPUT_REGS_B = "1" *) (* C_HAS_MUX_OUTPUT_REGS_A = "0" *) (* C_HAS_MUX_OUTPUT_REGS_B = "0" *) 
 (* C_HAS_REGCEA = "0" *) (* C_HAS_REGCEB = "0" *) (* C_HAS_RSTA = "0" *) 
-(* C_HAS_RSTB = "1" *) (* C_HAS_SOFTECC_INPUT_REGS_A = "0" *) (* C_HAS_SOFTECC_OUTPUT_REGS_B = "0" *) 
+(* C_HAS_RSTB = "0" *) (* C_HAS_SOFTECC_INPUT_REGS_A = "0" *) (* C_HAS_SOFTECC_OUTPUT_REGS_B = "0" *) 
 (* C_INITA_VAL = "0" *) (* C_INITB_VAL = "0" *) (* C_INIT_FILE = "blk_mem_gen_0.mem" *) 
 (* C_INIT_FILE_NAME = "no_coe_file_loaded" *) (* C_INTERFACE_TYPE = "0" *) (* C_LOAD_INIT_FILE = "0" *) 
 (* C_MEM_TYPE = "1" *) (* C_MUX_PIPELINE_STAGES = "0" *) (* C_PRIM_TYPE = "1" *) 
@@ -714,7 +481,7 @@ endmodule
 (* C_USE_BRAM_BLOCK = "0" *) (* C_USE_BYTE_WEA = "1" *) (* C_USE_BYTE_WEB = "1" *) 
 (* C_USE_DEFAULT_DATA = "0" *) (* C_USE_ECC = "0" *) (* C_USE_SOFTECC = "0" *) 
 (* C_USE_URAM = "0" *) (* C_WEA_WIDTH = "1" *) (* C_WEB_WIDTH = "1" *) 
-(* C_WRITE_DEPTH_A = "1568" *) (* C_WRITE_DEPTH_B = "1568" *) (* C_WRITE_MODE_A = "READ_FIRST" *) 
+(* C_WRITE_DEPTH_A = "1568" *) (* C_WRITE_DEPTH_B = "1568" *) (* C_WRITE_MODE_A = "NO_CHANGE" *) 
 (* C_WRITE_MODE_B = "WRITE_FIRST" *) (* C_WRITE_WIDTH_A = "8" *) (* C_WRITE_WIDTH_B = "8" *) 
 (* C_XDEVICEFAMILY = "zynq" *) (* ORIG_REF_NAME = "blk_mem_gen_v8_4_1" *) (* downgradeipidentifiedwarnings = "yes" *) 
 module blk_mem_gen_0_blk_mem_gen_v8_4_1
@@ -852,9 +619,6 @@ module blk_mem_gen_0_blk_mem_gen_v8_4_1
   wire clkb;
   wire [7:0]dina;
   wire [7:0]doutb;
-  wire rsta_busy;
-  wire rstb;
-  wire rstb_busy;
   wire [0:0]wea;
 
   assign dbiterr = \<const0> ;
@@ -877,6 +641,8 @@ module blk_mem_gen_0_blk_mem_gen_v8_4_1
   assign rdaddrecc[2] = \<const0> ;
   assign rdaddrecc[1] = \<const0> ;
   assign rdaddrecc[0] = \<const0> ;
+  assign rsta_busy = \<const0> ;
+  assign rstb_busy = \<const0> ;
   assign s_axi_arready = \<const0> ;
   assign s_axi_awready = \<const0> ;
   assign s_axi_bid[3] = \<const0> ;
@@ -926,34 +692,25 @@ module blk_mem_gen_0_blk_mem_gen_v8_4_1
         .clkb(clkb),
         .dina(dina),
         .doutb(doutb),
-        .rsta_busy(rsta_busy),
-        .rstb(rstb),
-        .rstb_busy(rstb_busy),
         .wea(wea));
 endmodule
 
 (* ORIG_REF_NAME = "blk_mem_gen_v8_4_1_synth" *) 
 module blk_mem_gen_0_blk_mem_gen_v8_4_1_synth
    (doutb,
-    rsta_busy,
-    rstb_busy,
     clka,
     clkb,
+    wea,
     addra,
     addrb,
-    dina,
-    wea,
-    rstb);
+    dina);
   output [7:0]doutb;
-  output rsta_busy;
-  output rstb_busy;
   input clka;
   input clkb;
+  input [0:0]wea;
   input [10:0]addra;
   input [10:0]addrb;
   input [7:0]dina;
-  input [0:0]wea;
-  input rstb;
 
   wire [10:0]addra;
   wire [10:0]addrb;
@@ -961,9 +718,6 @@ module blk_mem_gen_0_blk_mem_gen_v8_4_1_synth
   wire clkb;
   wire [7:0]dina;
   wire [7:0]doutb;
-  wire rsta_busy;
-  wire rstb;
-  wire rstb_busy;
   wire [0:0]wea;
 
   blk_mem_gen_0_blk_mem_gen_top \gnbram.gnativebmg.native_blk_mem_gen 
@@ -973,9 +727,6 @@ module blk_mem_gen_0_blk_mem_gen_v8_4_1_synth
         .clkb(clkb),
         .dina(dina),
         .doutb(doutb),
-        .rsta_busy(rsta_busy),
-        .rstb(rstb),
-        .rstb_busy(rstb_busy),
         .wea(wea));
 endmodule
 `ifndef GLBL

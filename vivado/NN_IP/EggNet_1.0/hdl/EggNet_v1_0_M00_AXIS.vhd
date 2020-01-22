@@ -5,7 +5,9 @@ use ieee.numeric_std.all;
 entity EggNet_v1_0_M00_AXIS is
 	generic (
 		-- Users to add parameters here
-
+    BRAM_ADDR_WIDTH		        : integer := 10;
+    BRAM_DATA_WIDTH		        : integer := 8;
+    BRAM_ADDR_BLOCK_WIDTH     : integer := 784;
 		-- User parameters ends
 		-- Do not modify the parameters beyond this line
 
@@ -16,8 +18,14 @@ entity EggNet_v1_0_M00_AXIS is
 	);
 	port (
 		-- Users to add ports here
-
-		-- User ports ends
+    -- BRAM
+    BRAM_addr_o         : out std_logic_vector(BRAM_ADDR_WIDTH-1 downto 0);
+    BRAM_clk_o          : out std_logic;
+    BRAM_dout_o         : out std_logic_vector(BRAM_DATA_WIDTH-1 downto 0);
+    BRAM_wea_o          : out std_logic_vector((BRAM_DATA_WIDTH/8)-1  downto 0);
+		-- Status
+    Invalid_block_o     : out std_logic;
+    -- User ports ends
 		-- Do not modify the ports beyond this line
 
 		-- Global ports
@@ -102,7 +110,14 @@ architecture implementation of EggNet_v1_0_M00_AXIS is
 	signal tx_en	: std_logic;
 	--The master has issued all the streaming data stored in FIFO
 	signal tx_done	: std_logic;
-
+  
+  -- user constatns
+  
+  -- user signals
+  signal block_select : std_logic; -- 0 select mem block 0, 1 select block 1 
+  signal bram_byte_counter : std_logic_vector(1 downto 0); -- used to tranfrom 8 bit to 32 bit
+  
+  
 
 begin
 	-- I/O Connections assignments
