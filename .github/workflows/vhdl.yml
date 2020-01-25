@@ -1,0 +1,35 @@
+name: CI
+
+on: [push, pull_request]
+
+jobs:
+  python_unit_test:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v1
+    
+    - name: Set up Python 3.7
+      uses: actions/setup-python@v1
+      with:
+        python-version: 3.7
+
+    - uses: actions/cache@v1
+      # Use Cache, see: https://github.com/actions/cache
+      if: startsWith(runner.os, 'Linux')
+      id: cache
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+
+    - name: Install GHDL and Python Dependencies
+      run: |
+        sudo apt-get install ghdl
+        python -m pip install --upgrade pip
+        pip install -r vivado/requirements.txt
+
+    - name: Test
+      run: |
+        cd vivado/NN_IP/EggNet_1.0/sim/MemCtrl/xsim
+        python tb_MemCtrl_run_sim.py

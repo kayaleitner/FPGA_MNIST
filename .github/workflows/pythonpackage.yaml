@@ -1,4 +1,4 @@
-name: Python package
+name: Python
 
 on: [push]
 
@@ -38,7 +38,7 @@ jobs:
       if: runner.os == 'Windows'
       run: choco install swig
 
-    - name: Test with pytest
+    - name: Build & Test with Pytest
       if: runner.os != 'Windows'
       run: |
         cd python
