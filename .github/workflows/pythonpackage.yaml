@@ -36,6 +36,7 @@ jobs:
         tar -xf swig-4.0.1.tar.gz
         cd swig-4.0.1
         ./configure
+        make
         sudo make install
         
     
