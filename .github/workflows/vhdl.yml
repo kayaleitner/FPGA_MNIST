@@ -1,4 +1,4 @@
-name: CI
+name: VHDL Testbenches
 
 on: [push, pull_request]
 
@@ -25,7 +25,9 @@ jobs:
 
     - name: Install GHDL and Python Dependencies
       run: |
-        sudo apt-get install ghdl
+        wget https://github.com/tgingold/ghdl/releases/download/v0.33/ghdl_0.33-1ubuntu1_amd64.deb
+        sudo dpkg --install ghdl_0.33-1ubuntu1_amd64.deb
+        # sudo apt-get install ghdl
         python -m pip install --upgrade pip
         pip install -r vivado/requirements.txt
 
