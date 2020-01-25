@@ -3,7 +3,7 @@ name: VHDL Testbenches
 on: [push, pull_request]
 
 jobs:
-  python_unit_test:
+  vhdl_testbenches:
     runs-on: ubuntu-16.04
     steps:
     - uses: actions/checkout@v1
