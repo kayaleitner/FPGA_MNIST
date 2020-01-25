@@ -1,4 +1,4 @@
-\documentclass[a4paper,]{article}
+\documentclass[a4paper]{article}
 \usepackage{libertine}
 \usepackage[T1]{fontenc}
 \usepackage[utf8]{inputenc}
@@ -11,18 +11,27 @@
 }
 \usepackage{setspace}
 \setstretch{1}
-
+\usepackage{amsmath}
+\usepackage{amssymb}
 \usepackage[nolist]{acronym}
 \usepackage{commath}
 \usepackage{verbatim}
+\usepackage{booktabs}
 \usepackage{listings}
 \usepackage{enumitem}
 \usepackage{graphicx,color,psfrag}
 \usepackage{subfigure}
+\usepackage{wrapfig}
 \usepackage{svg}
 \usepackage{svg-extract}
 \usepackage{todonotes}
 \usepackage[acronym,nonumberlist,nowarn,style=long]{glossaries}
+\usepackage{color}
+\usepackage{tikz}
+\usepackage{pgf-umlsd}
+\usepackage{ifthen}
+\usepackage{hyperref}
+
 
 \newacronym{acr:FPGA}{FPGA}{field programmable gate array}
 \newacronym{acr:IP}{IP}{intellectual property}
@@ -34,6 +43,10 @@
 \newacronym{acr:BRAM}{BRAM}{block-RAM}
 
 \begin{document}
+% This is used to limit the number of authors
+% Unfortunatly only working on IEEE
+% \bstctlcite{IEEEexample:BSTcontrol}
+
 \begin{titlepage}
 	
 	\begin{flushright}
@@ -45,7 +58,8 @@
 		Yellow Of The Egg\\
 		\large
 		Lukas Baischer	\\
-		Add your names .. \\
+		Benjamin Kulnik	\\
+		Add your names ... \\
 		
 	\end{flushright}
 	
@@ -58,9 +72,7 @@
 		
 		{\Huge MNIST-FPGA\\[.5em]
 		\huge Specification}\\[10em]
-	\end{center}
-	
-	
+	\end{center}
 \end{titlepage}
 
 
@@ -76,6 +88,7 @@
 
 \section{Software}
 
+\input{nntraining}
 \input{host-sw.tex}
 \input{arm-top-sw.tex}
 \input{driver-space-sw.tex}
@@ -88,5 +101,16 @@
 \input{conv-channel-hw.tex}
 \input{kernel-3x3-hw.tex}
 \input{dense-hw.tex}
+
+
+
+\section*{Appendix}
+\input{nnmath}
+\input{matrixcalculus}
+\input{source}
+\input{other}
+
+\bibliographystyle{apalike}
+\bibliography{bibhelper,references}
 
 \end{document}
