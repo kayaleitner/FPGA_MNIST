@@ -25,6 +25,8 @@ jobs:
 
     - name: Install GHDL and Python Dependencies
       run: |
+        sudo apt update
+        sudo apt install -y git make gnat zlib1g-dev
         wget https://github.com/tgingold/ghdl/releases/download/v0.33/ghdl_0.33-1ubuntu1_amd64.deb
         sudo dpkg --install ghdl_0.33-1ubuntu1_amd64.deb
         # sudo apt-get install ghdl
