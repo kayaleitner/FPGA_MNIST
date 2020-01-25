@@ -35,9 +35,9 @@ jobs:
         tar -xf ghdl-0.36-ubuntu14-llvm-3.8.tgz
         # Find better way to install
         chmod +x bin/*
-        mv bin/* /usr/local/bin
-        mv lib/* /usr/local/lib
-        mv include/* /usr/local/include
+        sudo mv bin/* /usr/local/bin
+        sudo mv lib/* /usr/local/lib
+        sudo mv include/* /usr/local/include
         
         # sudo dpkg --install ghdl_0.33-1ubuntu1_amd64.deb
         # sudo apt-get install ghdl
