@@ -51,5 +51,5 @@ jobs:
     - name: Test
       run: |
         pwd
-        cd vivado/NN_IP/EggNet_1.0/sim/MemCtrl/xsim
+        cd vivado/NN_IP/EggNet_1.0/sim/MemCtrl/
         python tb_MemCtrl_run_sim.py
