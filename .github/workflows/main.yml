@@ -29,8 +29,18 @@ jobs:
         pip install -r python/requirements.txt
         pip install pytest tox
 
-    - name: Install SWIG
-      run: sudo apt-get install swig
+    - name: Install SWIG (Linux)
+      if: runner.os == 'Linux'
+      run: |
+        # sudo apt-get install swig
+        mkdir swig
+        cd swig
+        wget http://prdownloads.sourceforge.net/swig/swig-4.0.1.tar.gz
+        tar -xf swig-4.0.1.tar.gz
+        cd swig-4.0.1
+        ./configure
+        make
+        sudo make install
         
     - name: Try Build
       run: |
