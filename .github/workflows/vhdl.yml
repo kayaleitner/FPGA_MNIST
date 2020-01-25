@@ -4,7 +4,7 @@ on: [push, pull_request]
 
 jobs:
   python_unit_test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-16.04
     steps:
     - uses: actions/checkout@v1
     
@@ -26,7 +26,7 @@ jobs:
     - name: Install GHDL
       run: |
         sudo apt-get update
-        sudo apt-get install llvm libgnat libc6 # Used by 
+        sudo apt-get install llvm libgnat-6 libc6 # Used by 
         
         # Install GHDL
         mkdir ghdl
