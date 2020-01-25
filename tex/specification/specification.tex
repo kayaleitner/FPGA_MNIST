@@ -11,10 +11,8 @@
 }
 \usepackage{setspace}
 \setstretch{1}
-
 \usepackage{amsmath}
 \usepackage{amssymb}
-
 \usepackage[nolist]{acronym}
 \usepackage{commath}
 \usepackage{verbatim}
@@ -35,7 +33,6 @@
 \usepackage{hyperref}
 
 
-
 \newacronym{acr:FPGA}{FPGA}{field programmable gate array}
 \newacronym{acr:IP}{IP}{intellectual property}
 \newacronym{acr:ILA}{ILA}{integrated logic analyzer}
@@ -46,7 +43,9 @@
 \newacronym{acr:BRAM}{BRAM}{block-RAM}
 
 \begin{document}
-
+% This is used to limit the number of authors
+% Unfortunatly only working on IEEE
+% \bstctlcite{IEEEexample:BSTcontrol}
 
 \begin{titlepage}
 	
@@ -109,8 +108,9 @@
 \input{nnmath}
 \input{matrixcalculus}
 \input{source}
+\input{other}
 
-\bibliographystyle{IEEEtran}
-\bibliography{references}
+\bibliographystyle{apalike}
+\bibliography{bibhelper,references}
 
 \end{document}
