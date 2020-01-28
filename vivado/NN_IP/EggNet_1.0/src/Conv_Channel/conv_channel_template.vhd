@@ -3,10 +3,10 @@ use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 use work.kernel_pkg.all;
 use work.Kernel3x3;
-USE ieee.math_real.log2;
-USE ieee.math_real.ceil;
+use ieee.math_real.log2;
+use ieee.math_real.ceil;
 
-entity ConvChannel is
+entity ConvChannelTemplate is
 	generic(
 		BIT_WIDTH_IN : integer := 8;
 		KERNEL_WIDTH_OUT : integer := 16;
@@ -20,26 +20,20 @@ entity ConvChannel is
 		X_i : in std_logic_vector(N*BIT_WIDTH_IN*KERNEL_SIZE - 1 downto 0);
 		Y_o : out signed(BIT_WIDTH_OUT - 1 downto 0)
 	);
-end ConvChannel;
+end ConvChannelTemplate;
 
-architecture beh of ConvChannel is
+architecture beh of ConvChannelTemplate is
 	
 	constant SUM_WIDTH : integer := KERNEL_WIDTH_OUT + integer(ceil(log2(real(N))));
 	
+    signal s_add_out : signed(SUM_WIDTH-1 downto 0);
 	signal K_out : signed(N*KERNEL_WIDTH_OUT - 1 downto 0);
 	
 	type term_vector_t is array (integer range <>) of signed(SUM_WIDTH - 1 downto 0);
 	signal term_vector : term_vector_t(0 to N-1);
 	
 	type kernel_array_t is array (0 to N-1) of weight_array_t;
-	constant DEFAULT_KERNELS : kernel_array_t :=
-		((90,80,70,60,50,40,30,20,10),
-		 (10,20,30,40,50,60,70,80,90),
-		 (15,25,35,45,55,45,35,25,15));
-		 
-	--This is replaced by a script:
-	--constant KERNELS : kernel_array_t :=
-	--({kernel_array})
+	constant KERNELS : kernel_array_t := ((90,80,70,60,50,40,30,20,10), (10,20,30,40,50,60,70,80,90));
 	
 	function ternary_adder_tree
 	(
@@ -75,11 +69,11 @@ architecture beh of ConvChannel is
 	signal start_addition : std_logic := '0';
 
 begin
-	kernels : for I in 0 to N-1 generate
+	kernels_gen : for I in 0 to N-1 generate
 		krnl : entity Kernel3x3 generic map(
 			BIT_WIDTH_IN,
 			KERNEL_WIDTH_OUT,
-			DEFAULT_KERNELS(I)
+			KERNELS(I)
 		) port map(
 			Clk_i, 
 			n_Res_i, 
@@ -90,7 +84,9 @@ begin
 		term_vector(I) <= resize(K_out((I+1)*KERNEL_WIDTH_OUT - 1 downto I*KERNEL_WIDTH_OUT), SUM_WIDTH);
 	end generate;
 	
+	   
 	adder : process(Clk_i, n_Res_i)
+	    variable add_out : signed(SUM_WIDTH-1 downto 0);
 	begin
 		if n_Res_i = '0' then
 			Y_o <= (others => '0');
@@ -98,7 +94,9 @@ begin
 		elsif rising_edge(Clk_i) then
 			if start_addition = '1' then
 				start_addition <= '0';
-				Y_o <= ternary_adder_tree(term_vector)(SUM_WIDTH-1 downto SUM_WIDTH-BIT_WIDTH_OUT);
+				add_out := ternary_adder_tree(term_vector);
+				s_add_out <= add_out;
+				Y_o <= add_out(SUM_WIDTH-1 downto SUM_WIDTH-BIT_WIDTH_OUT);
 			end if;
 			if Valid_i = '1' then
 				start_addition <= '1';
