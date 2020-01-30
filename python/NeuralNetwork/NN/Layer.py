@@ -69,3 +69,10 @@ class Layer:
 
     def quantize_layer(self, target_type, max_value, min_value):
         pass
+
+
+class FunctionalLayer(Layer):
+    pass
+
+class ParameterizedLayer(Layer):
+    pass

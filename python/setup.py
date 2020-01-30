@@ -171,7 +171,9 @@ NN_ext_module = SwigExtension('NeuralNetwork/Ext/' + '_NeuralNetworkExtension',
                               include_dirs=include_dirs,
                               swig_opts=['-py3'],
                               extra_compile_args=extra_args,
-                              extra_link_args=extra_link_args)
+                              extra_link_args=extra_link_args,
+                              depends=['numpy'],
+                              optional=True)
 
 setup(name='NeuralNetwork',
       version='1.0',

@@ -182,7 +182,6 @@ class LeNet(Network):
         """
 
         model = LeNet()
-
         model.cn1.kernel = np.loadtxt(os.path.join(save_dir, 'w0.txt')).reshape(model.cn1.kernel.shape)
         model.cn1.b = np.loadtxt(os.path.join(save_dir, 'w1.txt')).reshape(model.cn1.b.shape)
         model.cn2.kernel = np.loadtxt(os.path.join(save_dir, 'w2.txt')).reshape(model.cn2.kernel.shape)
@@ -206,7 +205,7 @@ class LeNet(Network):
         """
         for root, dirs, files in os.walk(top=save_dir):
             txt_files = filter(lambda s: s.endswith('.txt'), files)
-            for i, weight_file in enumerate(files):
+            for i, weight_file in enumerate(txt_files):
 
                 # Get shape
                 with open(weight_file) as f:

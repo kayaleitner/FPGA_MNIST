@@ -110,15 +110,19 @@ def conv2d(data_in: ndarray, kernel: ndarray, stride: int = 1):
             for i in range(0, in_h, stride):
                 for j in range(0, in_w, stride):
                     patch = in_padded[b, i:i + fh, j:j + fw, :]  # 3d tensor 3x3x16
-                    # patch_sum is always int64
-                    patch_sum = np.sum(patch * kernel[:, :, :, k], axis=(0, 1, 2))  # sum along all axis
 
                     if kernel.dtype.kind in 'ui':  # check if datatype is unsigned or integer
+                        temp = patch * kernel[:, :, :, k]
+                        temp = temp.flatten().astype(np.int64)
+                        # patch_sum = np.sum(patch * kernel[:, :, :, k], axis=(0, 1, 2))  # sum along all axis
                         min_value = np.iinfo(kernel.dtype).min
                         max_value = np.iinfo(kernel.dtype).max
+                        patch_sum = np.sum(temp).clip(min=min_value, max=max_value).astype(kernel.dtype)
                         out[b, i_out, j_out, k] = np.clip(patch_sum, a_min=min_value, a_max=max_value).astype(
                             kernel.dtype)
                     else:
+                        # patch_sum is always int64
+                        patch_sum = np.sum(patch * kernel[:, :, :, k], axis=(0, 1, 2))  # sum along all axis
                         out[b, i_out, j_out, k] = patch_sum
                     j_out += 1
                 j_out = 0
@@ -220,7 +224,13 @@ class Conv2dLayer(Layer):
 
     def __call__(self, *args, **kwargs):
         if self.dtype in (np.float32, np.float64):
-            z = conv2d_fast(args[0], self.kernel, stride=1) + self.b
+            try:
+                z = conv2d_fast(args[0], self.kernel, stride=1) + self.b
+            except ImportError as imerror:
+                print("[ERROR]: The Fast C-Extension could not be loaded? Is it installed? Fallback to default python "
+                      "implementation")
+                z = conv2d(args[0], self.kernel, stride=1) + self.b
+
         else:
             z = conv2d(args[0], self.kernel, stride=1) + self.b
 

@@ -62,7 +62,7 @@ class FullyConnectedLayer(Layer):
     def __call__(self, *args, **kwargs):
         # use the '@' sign to refer to a tensor dot
         # calculate z = xW + b
-        z = args[0] @ self.W + self.b
+        z = np.matmul(args[0], self.W) + self.b
 
         if self.activation is None:
             return z
