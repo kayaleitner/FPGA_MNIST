@@ -14,6 +14,7 @@ entity Conv2DTemplate is
 		Clk_i : in std_logic;
 		n_Res_i : in std_logic;
 		Valid_i : in std_logic;
+		Valid_o : out std_logic;
 		X_i : in signed(INPUT_CHANNELS*BIT_WIDTH_IN*KERNEL_SIZE - 1 downto 0);
 		Y_o : out signed(OUTPUT_CHANNELS*BIT_WIDTH_OUT - 1 downto 0)
 	);

@@ -11,12 +11,14 @@ entity ConvChannelTemplate is
 		BIT_WIDTH_IN : integer := 8;
 		KERNEL_WIDTH_OUT : integer := 16;
 		BIT_WIDTH_OUT : integer := 8;
-		N : integer := 2
+		N : integer := 2;
+		OUTPUT_MSB : integer := 16
 	);
 	port(
 		Clk_i : in std_logic;
 		n_Res_i : in std_logic;
 		Valid_i : in std_logic;
+		Valid_o : out std_logic;
 		X_i : in std_logic_vector(N*BIT_WIDTH_IN*KERNEL_SIZE - 1 downto 0);
 		Y_o : out signed(BIT_WIDTH_OUT - 1 downto 0)
 	);
@@ -92,11 +94,13 @@ begin
 			Y_o <= (others => '0');
 			start_addition <= '0';
 		elsif rising_edge(Clk_i) then
+			Valid_o <= '0';
 			if start_addition = '1' then
 				start_addition <= '0';
 				add_out := ternary_adder_tree(term_vector);
 				s_add_out <= add_out;
-				Y_o <= add_out(SUM_WIDTH-1 downto SUM_WIDTH-BIT_WIDTH_OUT);
+				Y_o <= add_out(OUTPUT_MSB-1 downto OUTPUT_MSB-BIT_WIDTH_OUT);
+				Valid_o <= '1';
 			end if;
 			if Valid_i = '1' then
 				start_addition <= '1';
