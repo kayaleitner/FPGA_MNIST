@@ -2,7 +2,7 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 use work.kernel_pkg.all;
-use work.ConvChannel;
+use work.ConvChannelTemplate;
 
 entity tb_conv_channel is
 end tb_conv_channel;
@@ -12,14 +12,14 @@ architecture beh of tb_conv_channel is
 	constant KERNEL_WIDTH_OUT : integer := 16;
 	constant BIT_WIDTH_OUT : integer := 8;
 	constant CLK_PERIOD : time := 10 ns; -- 100MHz
-	constant N : integer := 4;
+	constant N : integer := 2;
 	
 	signal s_Clk_i, s_n_Res_i, s_Valid_i : std_logic;
 	signal s_X_i : std_logic_vector(BIT_WIDTH_IN*N*KERNEL_SIZE - 1 downto 0);
 	signal s_Y_o : signed(BIT_WIDTH_OUT - 1 downto 0);
 begin
   
-	uit : entity work.ConvChannel 
+	uit : entity work.ConvChannelTemplate
 	generic map(
 		BIT_WIDTH_IN,
 		KERNEL_WIDTH_OUT,

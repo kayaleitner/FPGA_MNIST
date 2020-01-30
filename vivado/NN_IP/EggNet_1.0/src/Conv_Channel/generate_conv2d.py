@@ -45,9 +45,10 @@ if __name__ == '__main__':
             channel_strings[i].append('')
             channel_strings[i][y] += '('
             for x in range(0, num_input_channels[i]):
+                channel_strings[i][y] += str(x) + " => "
                 channel_strings[i][y] += kernel_strings[i][x][y]
                 if x != num_input_channels[i] - 1:
-                    channel_strings[i][y] += ','
+                    channel_strings[i][y] += ', '
             channel_strings[i][y] += ')'
         file.close()
         
@@ -58,7 +59,7 @@ if __name__ == '__main__':
         for j in range(0,len(channel_strings[i])):
             tp_str_new = tp_str.replace("ConvChannelTemplate", "ConvChannel" + str(i_convchan))
             tp_str_new = re.sub("constant KERNELS : kernel_array_t :=[^\n]*\n", "constant KERNELS : kernel_array_t := " + channel_strings[i][j] + ";\n", tp_str_new)
-            tp_str_new = re.sub("N : integer :=[^\n]*\n", "N : integer := " + str(num_input_channels[i]) + "\n", tp_str_new)
+            tp_str_new = re.sub("N : integer :=[^\n]*\n", "N : integer := " + str(num_input_channels[i]) + ";\n", tp_str_new)
             tp_file_new = open("channels/convchannel" + str(i_convchan) + ".vhd", 'w')
             tp_file_new.write(tp_str_new)
             tp_file_new.close()
@@ -68,27 +69,35 @@ if __name__ == '__main__':
     tp_file = open('conv2d_template.vhd', 'r')
     tp_str = tp_file.read()
     entity_str = \
-"\tconvchan{I}" + " : entity " + " ConvChannel{I} " + "port map(\n\
-\t\tClk_i,\n\
-\t\tn_Res_i,\n\
-\t\tValid_i,\n\
-\t\tValid_o,\n\
+"\tconvchan{I}" + " : entity " + "ConvChannel{J} " + "port map(\n\
+\t\tClk_i, n_Res_i,\n\
+\t\tValid_i, Valid_o,\n\
 \t\tX_i,\n\
 \t\tY_o({I+1}*BIT_WIDTH_OUT - 1 downto {I}*BIT_WIDTH_OUT)\n\
 \t); \n\n"
+    i_convchan = 0
     for i in range(0, num_layers):
-            tp_str_new = tp_str.replace("Conv2DTemplate", "Conv2D_" + str(i))
-            tp_str_new = re.sub("INPUT_CHANNELS : integer := [^\n]*\n", "INPUT_CHANNELS : integer := " + str(num_input_channels[i]) + ";\n", tp_str_new)
-            tp_str_new = re.sub("OUTPUT_CHANNELS : integer := [^\n]*\n", "OUTPUT_CHANNELS : integer := " + str(num_output_channels[i]) + ";\n", tp_str_new)
-            tp_str_new += "\narchitecture beh of " + "Conv2D_" + str(i) + " is\n"
-            
-            for y in range(0, num_output_channels[i]):
-                entity_str_new = entity_str.replace("{I}", str(y))
-                entity_str_new = entity_str_new.replace("{I+1}", str(y+1))
-                tp_str_new += entity_str_new
-            
-            tp_str_new += "end beh;"
-            tp_file_new = open("conv2d_" + str(i) + ".vhd", 'w')
-            tp_file_new.write(tp_str_new)
-            tp_file_new.close()
+        use_str = ""
+        i_convchan_old = i_convchan
+        for y in range(0, num_output_channels[i]):
+            use_str += "use work.ConvChannel" + str(i_convchan) + ";\n"
+            i_convchan += 1
+        i_convchan = i_convchan_old
+        tp_str_new = tp_str.replace("use work.kernel_pkg;\n", "use work.kernel_pkg;\n" + use_str)
+        tp_str_new = tp_str_new.replace("Conv2DTemplate", "Conv2D_" + str(i))
+        tp_str_new = re.sub("INPUT_CHANNELS : integer := [^\n]*\n", "INPUT_CHANNELS : integer := " + str(num_input_channels[i]) + ";\n", tp_str_new)
+        tp_str_new = re.sub("OUTPUT_CHANNELS : integer := [^\n]*\n", "OUTPUT_CHANNELS : integer := " + str(num_output_channels[i]) + ";\n", tp_str_new)
+        tp_str_new += "\narchitecture beh of " + "Conv2D_" + str(i) + " is\n"
+        
+        for y in range(0, num_output_channels[i]):
+            entity_str_new = entity_str.replace("{J}", str(i_convchan))
+            entity_str_new = entity_str_new.replace("{I}", str(y))
+            entity_str_new = entity_str_new.replace("{I+1}", str(y+1))
+            tp_str_new += entity_str_new
+            i_convchan += 1
+        
+        tp_str_new += "end beh;"
+        tp_file_new = open("conv2d_" + str(i) + ".vhd", 'w')
+        tp_file_new.write(tp_str_new)
+        tp_file_new.close()
     tp_file.close();
