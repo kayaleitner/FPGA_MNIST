@@ -12,6 +12,7 @@ simulation test the module using ghdl
 import os 
 import shutil
 import numpy as np
+import matplotlib.pyplot as plt 
 
 # %% import custom modules
 import vhdl_testbench as tb 
@@ -43,21 +44,24 @@ test_vectors = tb.get_vectors_from_data(image_data,IMG_WIDTH,IMG_HIGTH,NUMBER_OF
 # %% generate test kernels 
 test_kernels = tb.get_Kernels(test_vectors,IMG_WIDTH)
 # %% calculate Layer output as new memory controller input 
-weights_L1 = np.ones((CO_L1,CI_L1,KERNEL_SIZE,KERNEL_SIZE),dtype=np.int8)
-weights_L1[:,:,1,:] = 0
-weights_L1[:,:,2,:] = -1
-features_L1 = tb.conv_2d(test_kernels,weights_L1)
+weights_L1 = np.int8(np.random.normal(0,0.3,size=(CO_L1,CI_L1,KERNEL_SIZE,KERNEL_SIZE))*128)
+msb = np.ones(CO_L1,dtype=np.int32)*8
+features_L1 = tb.conv_2d(test_kernels,weights_L1,msb)
+
+
+tb.write_features_to_file(features_L1,layernumber=2)
+
              
 # %% run ghdl 
 # Saving console ouput in log file is not working on windows            
-tb.run_vivado_sim_win()
+#tb.run_vivado_sim_win()
 
 
 # %% check results 
 error_count_rec_images = 0
 
 for i in range(NUMBER_OF_TEST_BLOCKS):
-    with open("tmp/bram{}.txt".format(i),"r") as f:
+    with open("tmp/l1_bram{}.txt".format(i),"r") as f:
         for j in range(2*BLOCK_SIZE):
             block_select = 1-(i+1)%2
             result_data = int(f.readline())
@@ -98,21 +102,21 @@ else:
 error_count_vectors = 0
 result_vectors = np.zeros((test_vectors.shape[0],test_vectors.shape[1],test_vectors.shape[2]),dtype=np.uint8)
 for i in range(NUMBER_OF_TEST_BLOCKS):
-    with open("tmp/m_layer_data1_b{}.txt".format(i),"r") as f:
+    with open("tmp/l1_inVector_1_b{}.txt".format(i),"r") as f:
         for j in range(test_vectors.shape[1]):
             result_vectors[i,j,0] = int(f.readline())
             if result_vectors[i,j,0] != test_vectors[i,j,0]:
                 print("Error in m_layer_data1_b{}".format(i) + " in line {} ,".format(j) \
                             + "{}".format(result_vectors[i,j,0]) + " != {}".format(test_vectors[i,j,0]))
                 error_count_vectors += 1
-    with open("tmp/m_layer_data2_b{}.txt".format(i),"r") as f:
+    with open("tmp/l1_inVector_2_b{}.txt".format(i),"r") as f:
         for j in range(test_vectors.shape[1]):
             result_vectors[i,j,1] = int(f.readline())
             if result_vectors[i,j,1] != test_vectors[i,j,1]:
                 print("Error in m_layer_data1_b{}".format(i) + " in line {} ,".format(j) \
                             + "{}".format(result_vectors[i,j,1]) + " != {}".format(test_vectors[i,j,1]))
                 error_count_vectors += 1        
-    with open("tmp/m_layer_data3_b{}.txt".format(i),"r") as f:
+    with open("tmp/l1_inVector_3_b{}.txt".format(i),"r") as f:
         for j in range(test_vectors.shape[1]):
             result_vectors[i,j,2] = int(f.readline())
             if result_vectors[i,j,2] != test_vectors[i,j,2]:
@@ -133,11 +137,11 @@ for i in range(result_kernels.shape[0]):
     for k in range(test_kernels.shape[2]):
         for h in range(test_kernels.shape[3]):
             file_cnt += 1
-            with open("tmp/shift_data{}".format(file_cnt) + "_b{}.txt".format(i),"r") as f:
+            with open("tmp/l1_inKernel_{}".format(file_cnt) + "_b{}.txt".format(i),"r") as f:
                 for j in range(result_kernels.shape[1]):
                     result_kernels[i,j,h,k] = int(f.readline())
                     if result_kernels[i,j,h,k] != test_kernels[i,j,h,k,0]:
-                        print("Error in shift_data{}".format(file_cnt) + "_b{}".format(i) + " in line {} ,".format(j) \
+                        print("Error in l1_inKernel_{}".format(file_cnt) + "_b{}".format(i) + " in line {} ,".format(j) \
                                     + "{}".format(result_kernels[i,j,h,k]) + " != {}".format(test_kernels[i,j,h,k,0]))
                         error_count_kernels += 1
     

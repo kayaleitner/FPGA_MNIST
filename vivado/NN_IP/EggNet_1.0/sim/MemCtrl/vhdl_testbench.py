@@ -6,12 +6,14 @@ Created on Sat Dec 21 14:41:54 2019
 """
 import subprocess
 import os
+from shutil import copytree
+
 
 import numpy as np
 import random
 
 
-
+# %% run simulation
 def run_ghdl_linux(filenames,tb_entity,vcd_name="output.vcd"):
    """
     runs the testbench using ghdl and saves the output of ghdl in tmp/ghdl.log
@@ -128,7 +130,9 @@ def run_vivado_sim_win():
        try : os.mkdir('tmp')
        except : print("Error creating tmp folder!")    
     
-    os.chdir('xsim')
+    copytree('xsim', 'tmp/xsim') # copy xsim folder to generate output products in tmp folder 
+
+    os.chdir('tmp/xsim')
     
     compile_vlog = "xvlog --relax -prj vlog.prj 2>&1 | tee compile.log"           
     compile_vhdl = "xvhdl --relax -prj vhdl.prj 2>&1 | tee compile.log"
@@ -139,15 +143,54 @@ def run_vivado_sim_win():
     simulate = "xsim tb_memctrl -key {Behavioral:sim_1:Functional:tb_memctrl} -tclbatch cmd.tcl -log simulate.log"            
 
 
-    print(subprocess.call(compile_vlog,shell=True))
-    print(subprocess.call(compile_vhdl,shell=True))
-    print(subprocess.call(elaborate,shell=True))
-    print(subprocess.call(simulate,shell=True))
-    os.chdir('..')
+    err_verilog = subprocess.Popen(compile_vlog,shell=True,stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    if err_verilog.poll() == None: 
+        print("Wait till process finished..")
+        err_verilog.wait(timeout=60.0)
+    
+    if err_verilog.returncode != 0:
+        out, err = err_verilog.communicate()
+        err_verilog.kill()
+        print(out)
+        print(err)
+    else:
+        print("compile verilog files done!")
+    
+    err_vhdl = subprocess.Popen(compile_vhdl,shell=True,stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    if err_vhdl.poll() == None: 
+        print("Wait till process finished..")
+        err_vhdl.wait(timeout=60.0)
+    
+    if err_vhdl.returncode != 0:
+        out, err = err_vhdl.communicate()
+        err_vhdl.kill()
+        print(out)
+        print(err)
+    else:
+        print("compile vhdl files done!")
+    
+    err_elaborate = subprocess.Popen(elaborate,shell=True,stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    if err_elaborate.poll() == None: 
+        print("Wait till process finished..")
+        err_elaborate.wait(timeout=60.0)
+    
+    if err_elaborate.returncode != 0:
+        out, err = err_elaborate.communicate()
+        err_elaborate.kill()
+        print(out)
+        print(err)
+    else:
+        print("elaborate design done!")
+        
+    subprocess.call(simulate,shell=True) # For some reason simulation doesn't work with Popen
+
+        
+    os.chdir('../..')
     print(os.getcwd())
     print("End simulation")
-             
-def gen_testdata(blocksize,blocknumber,filename="testdata.txt",drange=255,dtype=np.uint8):
+
+# %% wirte to file              
+def gen_testdata(blocksize,blocknumber,filename="testdata",drange=255,dtype=np.uint8):
     """
     Generates random testdata to be used in the testbench 
 
@@ -158,7 +201,7 @@ def gen_testdata(blocksize,blocknumber,filename="testdata.txt",drange=255,dtype=
     blocknumber : integer
         number of generated blocks.
     filename : string, optional
-        file name. The default is "testdata.txt".
+        file name. The default is "testdata".
     drange : integer, optional
         range of random numbers. The default is 255.
     dtype : numpy type, optional
@@ -171,12 +214,42 @@ def gen_testdata(blocksize,blocknumber,filename="testdata.txt",drange=255,dtype=
 
     """
     random_data = np.zeros((blocknumber,blocksize),dtype=dtype)
-    with open("tmp/"+filename,"a+") as f:
+    with open("tmp/"+ filename +".txt","a+") as f:
         for i in range(blocknumber):
             for j in range(blocksize):
                 random_data[i,j] = random.randrange(drange)
                 f.write("{}\n".format(random_data[i,j]))
     return random_data
+
+def write_features_to_file(features,filename="feature_map",layernumber=1):
+    """
+    
+
+    Parameters
+    ----------
+    features: numpy array [B,W*H,Co] dtype=np.uint8
+        B.. Batch size
+        W*H.. Image width times hight
+        Co.. output channel number
+        
+        feature matrix 
+        
+    filename : string, optional
+        file name. The default is "feature_map" 
+
+    Returns
+    -------
+    None.
+
+    """
+    for i in range(features.shape[2]):
+        with open("tmp/"+filename+"_L{}".format(layernumber) +"_c{}.txt".format(i),"a+") as f:
+            for j in range(features.shape[0]):
+                for k in range(features.shape[1]):
+                    f.write("{}\n".format(features[j,k,i]))
+                    
+
+# %% memory controller
 
 def get_vectors_from_data(test_data,img_width,img_hight,blocknumber,kernel_size=3,dtype=np.uint8):
     """
@@ -265,6 +338,121 @@ def get_Kernels(test_vectors,img_width):
        
     return kernels
 
+
+# %% convolutional layer
+
+def conv_2d(kernels,weights,msb):
+    """
+    Emulates the operation carried out by the conv2d module in the FPGA
+
+    Parameters
+    ----------
+    kernel : numpy array [B,W*H,Kh,Kw,Ci]
+        B.. Batch size
+        W*H.. Image width times hight
+        Kh.. Kernel hight
+        Kw.. Kernel width 
+        Ci.. channel number 
+        Input kernels 
+    weights : numpy array [Co,Ci,Kh,Kw]
+        Co.. output channel number
+        Ci.. input channel number
+        Kh.. Kernel hight
+        Kw .. Kernel with
+        Weigth matrix for each kernel 
+    msb : numpy array [Co,Ci]
+        Co.. output channel number
+        MSB values for quantization
+
+    Returns
+    -------
+    features: numpy array [B,W*H,Co] dtype=np.uint8
+        B.. Batch size
+        W*H.. Image width times hight
+        Co.. output channel number
+        
+        8 bit output Matrix
+    """
+    features = np.zeros((kernels.shape[0],kernels.shape[1],weights.shape[0]),dtype=np.uint8)
+    for i in range(kernels.shape[0]):
+        for j in range(kernels.shape[1]): 
+            for k in range (weights.shape[0]): 
+                features[i,j,k] = conv_channel(kernels[i,j,:,:,:],weights[k,:,:,:],msb[k])
+    return features  
+
+
+
+def conv_channel(kernels,weights,msb):
+    """
+    Emulates the operation carried out by the conv_channel module in the FPGA
+
+    Parameters
+    ----------
+    kernels : numpy array [B,W*H,Kh,Kw,Ci]
+        B.. Batch size
+        W*H.. Image width times hight
+        Kh.. Kernel hight
+        Kw.. Kernel width 
+        Ci.. channel number 
+        Input kernels 
+    weights : numpy array [Ci,Kh,Kw]
+        Ci.. input channel number
+        Kh.. Kernel hight
+        Kw .. Kernel with
+        Weigth matrix for each kernel 
+    msb : integer 
+        MSB postion for quantization  
+
+    Returns
+    -------
+    weighted_sum: np.uint8
+        B.. Batch size
+        W*H.. Image width times hight
+        
+        8 bit output Matrix
+    """
+    weighted_sum = np.int32(0)
+    for k in range (weights.shape[0]): 
+        weighted_sum+= kernel_3x3(kernels[:,:,k],weights[k,:,:])
+    
+    # Relu (Additional benefit np.int16(int("0x00FF",16)) & feature would not work for negative numbers because of 2's complement)
+    if weighted_sum < 0: 
+        weighted_sum = 0 
+    else: # Quantization 
+        weighted_sum >>= msb-8                   
+        if weighted_sum > 255: 
+            weighted_sum = 255 
+             
+    return np.uint8(weighted_sum) 
+
+         
+
+def kernel_3x3(kernel,weights):
+    """
+    Emulates the operation carried out by the 3x3_kernel module in the FPGA
+
+    Parameters
+    ----------
+    kernel : numpy array [Kh,Kw]
+        Kh.. Kernel hight
+        Kw.. Kernel width 
+        Input kernels 
+    weights : numpy array [Kh,Kw]
+        Kh.. Kernel hight
+        Kw .. Kernel with
+        Weigth matrix for each kernel 
+
+    Returns
+    -------
+    weighted_sum: np.int16       
+        16 bit output Matrix
+    """    
+    weighted_sum = np.int32(np.sum(kernel * weights))
+            
+    return weighted_sum            
+
+
+# %% Mov average attemption 
 class FIFO:
     """
     Creates a FIFO 
@@ -316,13 +504,51 @@ class MovingAverageFilter:
             self.counter -= 1
         
         self.FIFO.write(data)
+#        print(data,self.sum/self.size)
         return self.sum/self.size   
-            
-                 
+
+class Data_collector:
+    def __init__(self):
+        self.data = np.array(0)
+    def add(self,data):
+        self.data = np.append(self.data,data)
+    def get(self):
+        return self.data
+    
+    
+class Find_MSB:
+    """
+    Iterative MSB search 
+    """    
+    def __init__(self):
+        self.comparator = int(0b1)
+        self.MSB = 1
         
+    def do(self, data):
+        if data > self.comparator:
+            print("up ",self.comparator,data)
+            self.comparator <<= 1
+            self.MSB += 1
+        elif data < (self.comparator >> 1):
+            print("down ",self.comparator,data)
+            self.comparator >>= 1
+            self.MSB -= 1
+        return self.MSB
+                 
+class Counter:
+    def __init__(self):
+        self.underflow = 0
+        self.overflow = 0
+    def cnt_underflow(self):
+        self.underflow += 1
+    def cnt_overflow(self):
+        self.overflow += 1
+    def show(self):
+        print("Number of overlfows",self.overflow)
+        print("Number of underflow",self.underflow)
         
 
-def conv_2d(kernels,weights):
+def conv_2d_mov_av(kernels,weights,data_collecotr):
     """
     Emulates the operation carried out by the conv2d module in the FPGA
 
@@ -344,24 +570,27 @@ def conv_2d(kernels,weights):
 
     Returns
     -------
-    features: [B,W*H,Co]
+    features: numpy array [B,W*H,Co] dtype=np.uint8
         B.. Batch size
         W*H.. Image width times hight
         Co.. output channel number
         
         8 bit output Matrix
     """
-    features = np.zeros((kernels.shape[0],kernels.shape[1],weights.shape[0]),dtype=np.int16)
+    features = np.zeros((kernels.shape[0],kernels.shape[1],weights.shape[0]),dtype=np.uint8)
     mav_filter = [ MovingAverageFilter(32) for i in range(weights.shape[0])]
+    msb_detect = [ Find_MSB() for i in range(weights.shape[0])]
+    cnt = Counter()
     for i in range(kernels.shape[0]):
         for j in range(kernels.shape[1]): 
             for k in range (weights.shape[0]): 
-                features[i,j,k] = conv_channel(kernels[i,j,:,:,:],weights[k,:,:,:],mav_filter[k])
+                features[i,j,k] = conv_channel(kernels[i,j,:,:,:],weights[k,:,:,:],mav_filter[k],msb_detect[k],cnt,data_collecotr)
+    cnt.show()
     return features  
 
 
 
-def conv_channel(kernels,weights,mav_filter):
+def conv_channel_mov_av(kernels,weights,mav_filter,msb_detect,cnt,data_collecotr):
     """
     Emulates the operation carried out by the conv_channel module in the FPGA
 
@@ -380,28 +609,46 @@ def conv_channel(kernels,weights,mav_filter):
         Kw .. Kernel with
         Weigth matrix for each kernel 
     mav_filter : MovingAverageFilter class 
-        Moving average filter to normalize conv_channel output        
+        Moving average filter to normalize conv_channel output 
+    msb_detect : Find_MSB class
+        detects msb of average iterative 
 
     Returns
     -------
-    feature: [B,W*H]
+    weighted_sum: np.int16
         B.. Batch size
         W*H.. Image width times hight
         
         8 bit output Matrix
     """
-    feature = np.int16(0)
+    weighted_sum = np.int32(0)
     for k in range (weights.shape[0]): 
-        feature+= kernel_3x3(kernels[:,:,k],weights[k,:,:])
+        weighted_sum+= kernel_3x3(kernels[:,:,k],weights[k,:,:])
     
-    feature -= np.int16(mav_filter.do_filter(feature))
-    
-    feature = np.int16(int("0x00FF",16)) & feature   
-    return feature    
+    #weighted_sum -= np.int16(mav_filter.do_filter(np.abs(weighted_sum)))
+    data_collecotr.add(weighted_sum)
+    average = np.int32(mav_filter.do_filter(np.abs(weighted_sum)))
+    msb = msb_detect.do(average)
+    # Relu (Additional benefit np.int16(int("0x00FF",16)) & feature would not work for negative numbers because of 2's complement)
+    if weighted_sum < 0: 
+        weighted_sum = 0 
+    else:
+       if msb > 8:
+           #print(msb,msb-7,average,weighted_sum,weighted_sum>> msb-8)
+           weighted_sum >>= 7 #(msb-8)
+           
+        
+       if weighted_sum > 255: 
+           weighted_sum = 255
+           cnt.cnt_overflow()
+       elif weighted_sum == 0:
+           cnt.cnt_underflow()
+               
+    return np.uint8(weighted_sum) 
 
          
 
-def kernel_3x3(kernel,weights):
+def kernel_3x3_mov_av(kernel,weights):
     """
     Emulates the operation carried out by the 3x3_kernel module in the FPGA
 
@@ -421,6 +668,6 @@ def kernel_3x3(kernel,weights):
     weighted_sum: np.int16       
         16 bit output Matrix
     """    
-    weighted_sum = np.int16(np.sum(kernel * weights))
+    weighted_sum = np.int32(np.sum(kernel * weights))
             
     return weighted_sum            

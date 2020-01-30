@@ -374,7 +374,7 @@ begin
         M_layer_tlast_o <= '1'; 
         
       when others => 
-        wr_state <= START;
+        rd_state <= START;
     end case;
     M_layer_tnewrow_o <= m_newrow;
   end if;
@@ -403,17 +403,18 @@ DefaultWrite : if AXI4_STREAM_INPUT = 0 generate
       position := to_unsigned(0, position'length);
       state_cnt := 0;
       wr_pixel_row_cnt := 0;
+      S_layer_invalid_block_o <= '0';
       
     elsif rising_edge(Layer_clk_i) then  
       case wr_state is 
 
         when START => -- If data is available transfer starts 
-          if next_block_read(0) = '1' then 
+          if next_block_write(0) = '1' then 
             position := to_unsigned(0, position'length);
             Bram_pa_addr_o <= (others => '0');
             S_layer_tready_o <= '1';
             wr_state <= MOVE;
-          elsif next_block_read(1) = '1' then  
+          elsif next_block_write(1) = '1' then  
             position := to_unsigned(BRAM_ADDR_BLOCK_WIDTH,position'length);
             Bram_pa_addr_o <= std_logic_vector(position);
             S_layer_tready_o <= '1';
@@ -437,10 +438,12 @@ DefaultWrite : if AXI4_STREAM_INPUT = 0 generate
           else 
             Bram_pa_wea_o <= (others => '0');  
           end if;   
-          if state_cnt >= BRAM_ADDR_BLOCK_WIDTH-1 then 
+          if state_cnt >= BRAM_ADDR_BLOCK_WIDTH then 
             wr_state <= START;
             S_layer_tready_o <= '0';
             state_cnt := 0;
+            wr_block_done <= '1'; 
+            S_layer_invalid_block_o <= not S_layer_tlast_i;
           end if;
    
         when others => 

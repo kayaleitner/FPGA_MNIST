@@ -19,6 +19,60 @@ proc init_gui { IPINST } {
 
 }
 
+proc update_PARAM_VALUE.DATA_WIDTH { PARAM_VALUE.DATA_WIDTH } {
+	# Procedure called to update DATA_WIDTH when any of the dependent parameters in the arguments change
+}
+
+proc validate_PARAM_VALUE.DATA_WIDTH { PARAM_VALUE.DATA_WIDTH } {
+	# Procedure called to validate DATA_WIDTH
+	return true
+}
+
+proc update_PARAM_VALUE.L1_IN_CHANNEL_NUMBER { PARAM_VALUE.L1_IN_CHANNEL_NUMBER } {
+	# Procedure called to update L1_IN_CHANNEL_NUMBER when any of the dependent parameters in the arguments change
+}
+
+proc validate_PARAM_VALUE.L1_IN_CHANNEL_NUMBER { PARAM_VALUE.L1_IN_CHANNEL_NUMBER } {
+	# Procedure called to validate L1_IN_CHANNEL_NUMBER
+	return true
+}
+
+proc update_PARAM_VALUE.L2_IN_CHANNEL_NUMBER { PARAM_VALUE.L2_IN_CHANNEL_NUMBER } {
+	# Procedure called to update L2_IN_CHANNEL_NUMBER when any of the dependent parameters in the arguments change
+}
+
+proc validate_PARAM_VALUE.L2_IN_CHANNEL_NUMBER { PARAM_VALUE.L2_IN_CHANNEL_NUMBER } {
+	# Procedure called to validate L2_IN_CHANNEL_NUMBER
+	return true
+}
+
+proc update_PARAM_VALUE.L3_IN_CHANNEL_NUMBER { PARAM_VALUE.L3_IN_CHANNEL_NUMBER } {
+	# Procedure called to update L3_IN_CHANNEL_NUMBER when any of the dependent parameters in the arguments change
+}
+
+proc validate_PARAM_VALUE.L3_IN_CHANNEL_NUMBER { PARAM_VALUE.L3_IN_CHANNEL_NUMBER } {
+	# Procedure called to validate L3_IN_CHANNEL_NUMBER
+	return true
+}
+
+proc update_PARAM_VALUE.LAYER_HIGHT { PARAM_VALUE.LAYER_HIGHT } {
+	# Procedure called to update LAYER_HIGHT when any of the dependent parameters in the arguments change
+}
+
+proc validate_PARAM_VALUE.LAYER_HIGHT { PARAM_VALUE.LAYER_HIGHT } {
+	# Procedure called to validate LAYER_HIGHT
+	return true
+}
+
+proc update_PARAM_VALUE.LAYER_WIDTH { PARAM_VALUE.LAYER_WIDTH } {
+	# Procedure called to update LAYER_WIDTH when any of the dependent parameters in the arguments change
+}
+
+proc validate_PARAM_VALUE.LAYER_WIDTH { PARAM_VALUE.LAYER_WIDTH } {
+	# Procedure called to validate LAYER_WIDTH
+	return true
+}
+
 proc update_PARAM_VALUE.C_S00_AXIS_TDATA_WIDTH { PARAM_VALUE.C_S00_AXIS_TDATA_WIDTH } {
 	# Procedure called to update C_S00_AXIS_TDATA_WIDTH when any of the dependent parameters in the arguments change
 }
@@ -106,5 +160,35 @@ proc update_MODELPARAM_VALUE.C_M00_AXIS_TDATA_WIDTH { MODELPARAM_VALUE.C_M00_AXI
 proc update_MODELPARAM_VALUE.C_M00_AXIS_START_COUNT { MODELPARAM_VALUE.C_M00_AXIS_START_COUNT PARAM_VALUE.C_M00_AXIS_START_COUNT } {
 	# Procedure called to set VHDL generic/Verilog parameter value(s) based on TCL parameter value
 	set_property value [get_property value ${PARAM_VALUE.C_M00_AXIS_START_COUNT}] ${MODELPARAM_VALUE.C_M00_AXIS_START_COUNT}
+}
+
+proc update_MODELPARAM_VALUE.LAYER_HIGHT { MODELPARAM_VALUE.LAYER_HIGHT PARAM_VALUE.LAYER_HIGHT } {
+	# Procedure called to set VHDL generic/Verilog parameter value(s) based on TCL parameter value
+	set_property value [get_property value ${PARAM_VALUE.LAYER_HIGHT}] ${MODELPARAM_VALUE.LAYER_HIGHT}
+}
+
+proc update_MODELPARAM_VALUE.LAYER_WIDTH { MODELPARAM_VALUE.LAYER_WIDTH PARAM_VALUE.LAYER_WIDTH } {
+	# Procedure called to set VHDL generic/Verilog parameter value(s) based on TCL parameter value
+	set_property value [get_property value ${PARAM_VALUE.LAYER_WIDTH}] ${MODELPARAM_VALUE.LAYER_WIDTH}
+}
+
+proc update_MODELPARAM_VALUE.DATA_WIDTH { MODELPARAM_VALUE.DATA_WIDTH PARAM_VALUE.DATA_WIDTH } {
+	# Procedure called to set VHDL generic/Verilog parameter value(s) based on TCL parameter value
+	set_property value [get_property value ${PARAM_VALUE.DATA_WIDTH}] ${MODELPARAM_VALUE.DATA_WIDTH}
+}
+
+proc update_MODELPARAM_VALUE.L1_IN_CHANNEL_NUMBER { MODELPARAM_VALUE.L1_IN_CHANNEL_NUMBER PARAM_VALUE.L1_IN_CHANNEL_NUMBER } {
+	# Procedure called to set VHDL generic/Verilog parameter value(s) based on TCL parameter value
+	set_property value [get_property value ${PARAM_VALUE.L1_IN_CHANNEL_NUMBER}] ${MODELPARAM_VALUE.L1_IN_CHANNEL_NUMBER}
+}
+
+proc update_MODELPARAM_VALUE.L2_IN_CHANNEL_NUMBER { MODELPARAM_VALUE.L2_IN_CHANNEL_NUMBER PARAM_VALUE.L2_IN_CHANNEL_NUMBER } {
+	# Procedure called to set VHDL generic/Verilog parameter value(s) based on TCL parameter value
+	set_property value [get_property value ${PARAM_VALUE.L2_IN_CHANNEL_NUMBER}] ${MODELPARAM_VALUE.L2_IN_CHANNEL_NUMBER}
+}
+
+proc update_MODELPARAM_VALUE.L3_IN_CHANNEL_NUMBER { MODELPARAM_VALUE.L3_IN_CHANNEL_NUMBER PARAM_VALUE.L3_IN_CHANNEL_NUMBER } {
+	# Procedure called to set VHDL generic/Verilog parameter value(s) based on TCL parameter value
+	set_property value [get_property value ${PARAM_VALUE.L3_IN_CHANNEL_NUMBER}] ${MODELPARAM_VALUE.L3_IN_CHANNEL_NUMBER}
 }
 
