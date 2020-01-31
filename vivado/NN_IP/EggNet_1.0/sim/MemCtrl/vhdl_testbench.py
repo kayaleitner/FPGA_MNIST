@@ -34,14 +34,15 @@ def run_ghdl_linux(filenames,tb_entity,vcd_name="output.vcd"):
     None.
 
     """
-   if not os.path.isdir('tmp'):      
+
+   if not os.path.isdir('tmp'):
        try : os.mkdir('tmp')
        except : print("Error creating tmp folder!")
-    
-   command_s = "ghdl -s --workdir=tmp" 
-   command_a = "ghdl -a --workdir=tmp" 
+
+   command_s = "ghdl -s --workdir=tmp"
+   command_a = "ghdl -a --workdir=tmp"
    for i in filenames:
-       command_s = command_s + " " + i 
+       command_s = command_s + " " + i
        command_a = command_a + " " + i
 
    command_e = "ghdl -e --workdir=tmp " +  tb_entity
@@ -51,12 +52,12 @@ def run_ghdl_linux(filenames,tb_entity,vcd_name="output.vcd"):
    print(command_e)
    print(command_r)
 
-    
-   with open("tmp/ghdl.log","a+") as f:           
-       subprocess.run(command_s,shell=True, stdout=f, text=True, check=True)
-       subprocess.run(command_a,shell=True, stdout=f, text=True, check=True)
-       subprocess.run(command_e,shell=True, stdout=f, text=True, check=True)   
-       subprocess.run(command_r,shell=True, stdout=f, text=True, check=True)
+
+   with open("tmp/ghdl.log","a+") as f:
+       subprocess.run(command_s,shell=True, stdout=f, check=True)
+       subprocess.run(command_a,shell=True, stdout=f, check=True)
+       subprocess.run(command_e,shell=True, stdout=f, check=True)
+       subprocess.run(command_r,shell=True, stdout=f, check=True)
 
 def run_ghdl_win(filenames,tb_entity,vcd_name="output.vcd"):
     """
@@ -76,14 +77,14 @@ def run_ghdl_win(filenames,tb_entity,vcd_name="output.vcd"):
     None.
 
     """
-    if not os.path.isdir('tmp'):      
+    if not os.path.isdir('tmp'):
        try : os.mkdir('tmp')
        except : print("Error creating tmp folder!")
-    
-    command_s = "ghdl -s --workdir=tmp" 
-    command_a = "ghdl -a --workdir=tmp" 
+
+    command_s = "ghdl -s --workdir=tmp"
+    command_a = "ghdl -a --workdir=tmp"
     for i in filenames:
-       command_s = command_s + " " + i 
+       command_s = command_s + " " + i
        command_a = command_a + " " + i
 
     command_s = command_s + " > tmp\ghdl.log"
@@ -94,26 +95,26 @@ def run_ghdl_win(filenames,tb_entity,vcd_name="output.vcd"):
     print(command_a)
     print(command_e)
     print(command_r)
-    
+
     if not os.path.isfile("tmp\ghdl.log"):
         open("tmp\ghdl.log", 'w').close()
-       
+
     os.popen("cmd")
     subprocess.run(command_s,shell=True, check=True)
     subprocess.run(command_a,shell=True, check=True)
-    subprocess.run(command_e,shell=True, check=True)   
+    subprocess.run(command_e,shell=True, check=True)
     subprocess.run(command_r,shell=True, check=True)
-    #with open("tmp/ghdl.log","a+") as f:       
+    #with open("tmp/ghdl.log","a+") as f:
 
 def run_vivado_sim_win():
     """
-    runs the testbench using vivado and saves the output of vivado in 
+    runs the testbench using vivado and saves the output of vivado in
     tmp/sim.log
     This function is specially tailored for the tb_memctrl testbench.
-    If anything changes reexport the simulation in vivado. The shell commands 
+    If anything changes reexport the simulation in vivado. The shell commands
     can be found in tb_memctrl.sh and the path of the files in vlog.prj and in
-    vhdl.prj 
-    
+    vhdl.prj
+
 
     Parameters
     ----------
@@ -126,28 +127,28 @@ def run_vivado_sim_win():
     """
     print("Start simulation")
     print(os.getcwd())
-    if not os.path.isdir('tmp'):      
+    if not os.path.isdir('tmp'):
        try : os.mkdir('tmp')
-       except : print("Error creating tmp folder!")    
-    
-    copytree('xsim', 'tmp/xsim') # copy xsim folder to generate output products in tmp folder 
+       except : print("Error creating tmp folder!")
+
+    copytree('xsim', 'tmp/xsim') # copy xsim folder to generate output products in tmp folder
 
     os.chdir('tmp/xsim')
-    
-    compile_vlog = "xvlog --relax -prj vlog.prj 2>&1 | tee compile.log"           
+
+    compile_vlog = "xvlog --relax -prj vlog.prj 2>&1 | tee compile.log"
     compile_vhdl = "xvhdl --relax -prj vhdl.prj 2>&1 | tee compile.log"
     elaborate = 'xelab --relax --debug typical --mt auto -L blk_mem_gen_v8_4_1'\
         ' -L xil_defaultlib -L fifo_generator_v13_2_1 -L unisims_ver -L'\
         ' unimacro_ver -L secureip -L xpm --snapshot tb_memctrl'\
-        ' xil_defaultlib.tb_memctrl xil_defaultlib.glbl -log elaborate.log'       
-    simulate = "xsim tb_memctrl -key {Behavioral:sim_1:Functional:tb_memctrl} -tclbatch cmd.tcl -log simulate.log"            
+        ' xil_defaultlib.tb_memctrl xil_defaultlib.glbl -log elaborate.log'
+    simulate = "xsim tb_memctrl -key {Behavioral:sim_1:Functional:tb_memctrl} -tclbatch cmd.tcl -log simulate.log"
 
 
     err_verilog = subprocess.Popen(compile_vlog,shell=True,stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    if err_verilog.poll() == None: 
+    if err_verilog.poll() == None:
         print("Wait till process finished..")
         err_verilog.wait(timeout=60.0)
-    
+
     if err_verilog.returncode != 0:
         out, err = err_verilog.communicate()
         err_verilog.kill()
@@ -155,12 +156,12 @@ def run_vivado_sim_win():
         print(err)
     else:
         print("compile verilog files done!")
-    
+
     err_vhdl = subprocess.Popen(compile_vhdl,shell=True,stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    if err_vhdl.poll() == None: 
+    if err_vhdl.poll() == None:
         print("Wait till process finished..")
         err_vhdl.wait(timeout=60.0)
-    
+
     if err_vhdl.returncode != 0:
         out, err = err_vhdl.communicate()
         err_vhdl.kill()
@@ -168,12 +169,12 @@ def run_vivado_sim_win():
         print(err)
     else:
         print("compile vhdl files done!")
-    
+
     err_elaborate = subprocess.Popen(elaborate,shell=True,stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    if err_elaborate.poll() == None: 
+    if err_elaborate.poll() == None:
         print("Wait till process finished..")
         err_elaborate.wait(timeout=60.0)
-    
+
     if err_elaborate.returncode != 0:
         out, err = err_elaborate.communicate()
         err_elaborate.kill()
@@ -181,18 +182,18 @@ def run_vivado_sim_win():
         print(err)
     else:
         print("elaborate design done!")
-        
+
     subprocess.call(simulate,shell=True) # For some reason simulation doesn't work with Popen
 
-        
+
     os.chdir('../..')
     print(os.getcwd())
     print("End simulation")
 
-# %% wirte to file              
+# %% wirte to file
 def gen_testdata(blocksize,blocknumber,filename="testdata",drange=255,dtype=np.uint8):
     """
-    Generates random testdata to be used in the testbench 
+    Generates random testdata to be used in the testbench
 
     Parameters
     ----------
@@ -223,7 +224,7 @@ def gen_testdata(blocksize,blocknumber,filename="testdata",drange=255,dtype=np.u
 
 def write_features_to_file(features,filename="feature_map",layernumber=1):
     """
-    
+
 
     Parameters
     ----------
@@ -231,11 +232,11 @@ def write_features_to_file(features,filename="feature_map",layernumber=1):
         B.. Batch size
         W*H.. Image width times hight
         Co.. output channel number
-        
-        feature matrix 
-        
+
+        feature matrix
+
     filename : string, optional
-        file name. The default is "feature_map" 
+        file name. The default is "feature_map"
 
     Returns
     -------
@@ -247,13 +248,13 @@ def write_features_to_file(features,filename="feature_map",layernumber=1):
             for j in range(features.shape[0]):
                 for k in range(features.shape[1]):
                     f.write("{}\n".format(features[j,k,i]))
-                    
+
 
 # %% memory controller
 
 def get_vectors_from_data(test_data,img_width,img_hight,blocknumber,kernel_size=3,dtype=np.uint8):
     """
-    Generates 3x1 vectors from test data 
+    Generates 3x1 vectors from test data
 
     Parameters
     ----------
@@ -275,7 +276,7 @@ def get_vectors_from_data(test_data,img_width,img_hight,blocknumber,kernel_size=
     Returns
     -------
     vectors : numpy array
-        Vector to compare with the output of the memory controller 
+        Vector to compare with the output of the memory controller
 
     """
     vector_number_per_block = (img_width*img_hight)
@@ -283,24 +284,24 @@ def get_vectors_from_data(test_data,img_width,img_hight,blocknumber,kernel_size=
     for i in range(blocknumber):
         vector_cnt = 0
         for j in range(img_width*img_hight):
-                    
-            if j < img_width:  
+
+            if j < img_width:
                 vectors[i,vector_cnt,0] = 0
                 vectors[i,vector_cnt,1] = test_data[i,j]
                 vectors[i,vector_cnt,2] = test_data[i,j+img_width]
                 vector_cnt += 1
-            elif j >= (img_width*(img_hight-1)):    
+            elif j >= (img_width*(img_hight-1)):
                 #print(j)
                 vectors[i,vector_cnt,0] = test_data[i,j-img_width]
                 vectors[i,vector_cnt,1] = test_data[i,j]
-                vectors[i,vector_cnt,2] = 0  
+                vectors[i,vector_cnt,2] = 0
                 vector_cnt += 1
-            else:  
+            else:
                 vectors[i,vector_cnt,0] = test_data[i,j-img_width]
                 vectors[i,vector_cnt,1] = test_data[i,j]
-                vectors[i,vector_cnt,2] = test_data[i,j+img_width]   
+                vectors[i,vector_cnt,2] = test_data[i,j+img_width]
                 vector_cnt += 1
-                
+
     return vectors
 
 def get_Kernels(test_vectors,img_width):
@@ -325,17 +326,17 @@ def get_Kernels(test_vectors,img_width):
             if j%img_width == 0:
                 kernels[i,j,:,0,0] = 0
                 kernels[i,j,:,1,0] = test_vectors[i,j,:]
-                kernels[i,j,:,2,0] = test_vectors[i,j+1,:]                
-                
-            elif j%img_width == img_width-1:    
+                kernels[i,j,:,2,0] = test_vectors[i,j+1,:]
+
+            elif j%img_width == img_width-1:
                 kernels[i,j,:,0,0] = test_vectors[i,j-1,:]
                 kernels[i,j,:,1,0] = test_vectors[i,j,:]
-                kernels[i,j,:,2,0] = 0                  
-            else:    
+                kernels[i,j,:,2,0] = 0
+            else:
                 kernels[i,j,:,0,0] = test_vectors[i,j-1,:]
                 kernels[i,j,:,1,0] = test_vectors[i,j,:]
                 kernels[i,j,:,2,0] = test_vectors[i,j+1,:]
-       
+
     return kernels
 
 
@@ -351,15 +352,15 @@ def conv_2d(kernels,weights,msb):
         B.. Batch size
         W*H.. Image width times hight
         Kh.. Kernel hight
-        Kw.. Kernel width 
-        Ci.. channel number 
-        Input kernels 
+        Kw.. Kernel width
+        Ci.. channel number
+        Input kernels
     weights : numpy array [Co,Ci,Kh,Kw]
         Co.. output channel number
         Ci.. input channel number
         Kh.. Kernel hight
         Kw .. Kernel with
-        Weigth matrix for each kernel 
+        Weigth matrix for each kernel
     msb : numpy array [Co,Ci]
         Co.. output channel number
         MSB values for quantization
@@ -370,15 +371,15 @@ def conv_2d(kernels,weights,msb):
         B.. Batch size
         W*H.. Image width times hight
         Co.. output channel number
-        
+
         8 bit output Matrix
     """
     features = np.zeros((kernels.shape[0],kernels.shape[1],weights.shape[0]),dtype=np.uint8)
     for i in range(kernels.shape[0]):
-        for j in range(kernels.shape[1]): 
-            for k in range (weights.shape[0]): 
+        for j in range(kernels.shape[1]):
+            for k in range (weights.shape[0]):
                 features[i,j,k] = conv_channel(kernels[i,j,:,:,:],weights[k,:,:,:],msb[k])
-    return features  
+    return features
 
 
 
@@ -392,40 +393,40 @@ def conv_channel(kernels,weights,msb):
         B.. Batch size
         W*H.. Image width times hight
         Kh.. Kernel hight
-        Kw.. Kernel width 
-        Ci.. channel number 
-        Input kernels 
+        Kw.. Kernel width
+        Ci.. channel number
+        Input kernels
     weights : numpy array [Ci,Kh,Kw]
         Ci.. input channel number
         Kh.. Kernel hight
         Kw .. Kernel with
-        Weigth matrix for each kernel 
-    msb : integer 
-        MSB postion for quantization  
+        Weigth matrix for each kernel
+    msb : integer
+        MSB postion for quantization
 
     Returns
     -------
     weighted_sum: np.uint8
         B.. Batch size
         W*H.. Image width times hight
-        
+
         8 bit output Matrix
     """
     weighted_sum = np.int32(0)
-    for k in range (weights.shape[0]): 
+    for k in range (weights.shape[0]):
         weighted_sum+= kernel_3x3(kernels[:,:,k],weights[k,:,:])
-    
-    # Relu (Additional benefit np.int16(int("0x00FF",16)) & feature would not work for negative numbers because of 2's complement)
-    if weighted_sum < 0: 
-        weighted_sum = 0 
-    else: # Quantization 
-        weighted_sum >>= msb-8                   
-        if weighted_sum > 255: 
-            weighted_sum = 255 
-             
-    return np.uint8(weighted_sum) 
 
-         
+    # Relu (Additional benefit np.int16(int("0x00FF",16)) & feature would not work for negative numbers because of 2's complement)
+    if weighted_sum < 0:
+        weighted_sum = 0
+    else: # Quantization
+        weighted_sum >>= msb-8
+        if weighted_sum > 255:
+            weighted_sum = 255
+
+    return np.uint8(weighted_sum)
+
+
 
 def kernel_3x3(kernel,weights):
     """
@@ -435,29 +436,29 @@ def kernel_3x3(kernel,weights):
     ----------
     kernel : numpy array [Kh,Kw]
         Kh.. Kernel hight
-        Kw.. Kernel width 
-        Input kernels 
+        Kw.. Kernel width
+        Input kernels
     weights : numpy array [Kh,Kw]
         Kh.. Kernel hight
         Kw .. Kernel with
-        Weigth matrix for each kernel 
+        Weigth matrix for each kernel
 
     Returns
     -------
-    weighted_sum: np.int16       
+    weighted_sum: np.int16
         16 bit output Matrix
-    """    
+    """
     weighted_sum = np.int32(np.sum(kernel * weights))
-            
-    return weighted_sum            
+
+    return weighted_sum
 
 
-# %% Mov average attemption 
+# %% Mov average attemption
 class FIFO:
     """
-    Creates a FIFO 
+    Creates a FIFO
     size: size of fifo
-    wrte(data) : writes data into fifo 
+    wrte(data) : writes data into fifo
     read(): reads data from fifo
     """
     def __init__(self, size):
@@ -471,41 +472,41 @@ class FIFO:
             wr_pointer = 0
         if wr_pointer == self.rd_pointer:
             print("FIFO FULL",data,wr_pointer)
-        else:    
-            self.wr_pointer = wr_pointer    
-            self.content[wr_pointer] = data            
-    def read(self):        
+        else:
+            self.wr_pointer = wr_pointer
+            self.content[wr_pointer] = data
+    def read(self):
         if self.rd_pointer == self.wr_pointer:
             print("FIFO empty")
-        else: 
+        else:
             data = self.content[self.rd_pointer]
             self.rd_pointer -= 1
             if self.rd_pointer < 0:
-                self.rd_pointer = self.size -1    
+                self.rd_pointer = self.size -1
             return data
 
 class MovingAverageFilter:
     """
-    Moving average filter 
-    size: window size 
-    do_filter(data) : return the new filter value 
+    Moving average filter
+    size: window size
+    do_filter(data) : return the new filter value
     """
     def __init__(self, size):
         self.FIFO = FIFO(size)
         self.size = size
         self.counter = 0
         self.sum = 0
-        
+
     def do_filter(self,data):
         self.counter += 1
         self.sum += data
         if self.counter >= self.size:
             self.sum -= self.FIFO.read()
             self.counter -= 1
-        
+
         self.FIFO.write(data)
 #        print(data,self.sum/self.size)
-        return self.sum/self.size   
+        return self.sum/self.size
 
 class Data_collector:
     def __init__(self):
@@ -514,16 +515,16 @@ class Data_collector:
         self.data = np.append(self.data,data)
     def get(self):
         return self.data
-    
-    
+
+
 class Find_MSB:
     """
-    Iterative MSB search 
-    """    
+    Iterative MSB search
+    """
     def __init__(self):
         self.comparator = int(0b1)
         self.MSB = 1
-        
+
     def do(self, data):
         if data > self.comparator:
             print("up ",self.comparator,data)
@@ -534,7 +535,7 @@ class Find_MSB:
             self.comparator >>= 1
             self.MSB -= 1
         return self.MSB
-                 
+
 class Counter:
     def __init__(self):
         self.underflow = 0
@@ -546,7 +547,7 @@ class Counter:
     def show(self):
         print("Number of overlfows",self.overflow)
         print("Number of underflow",self.underflow)
-        
+
 
 def conv_2d_mov_av(kernels,weights,data_collecotr):
     """
@@ -558,15 +559,15 @@ def conv_2d_mov_av(kernels,weights,data_collecotr):
         B.. Batch size
         W*H.. Image width times hight
         Kh.. Kernel hight
-        Kw.. Kernel width 
-        Ci.. channel number 
-        Input kernels 
+        Kw.. Kernel width
+        Ci.. channel number
+        Input kernels
     weights : numpy array [Co,Ci,Kh,Kw]
         Co.. output channel number
         Ci.. input channel number
         Kh.. Kernel hight
         Kw .. Kernel with
-        Weigth matrix for each kernel 
+        Weigth matrix for each kernel
 
     Returns
     -------
@@ -574,7 +575,7 @@ def conv_2d_mov_av(kernels,weights,data_collecotr):
         B.. Batch size
         W*H.. Image width times hight
         Co.. output channel number
-        
+
         8 bit output Matrix
     """
     features = np.zeros((kernels.shape[0],kernels.shape[1],weights.shape[0]),dtype=np.uint8)
@@ -582,11 +583,11 @@ def conv_2d_mov_av(kernels,weights,data_collecotr):
     msb_detect = [ Find_MSB() for i in range(weights.shape[0])]
     cnt = Counter()
     for i in range(kernels.shape[0]):
-        for j in range(kernels.shape[1]): 
-            for k in range (weights.shape[0]): 
+        for j in range(kernels.shape[1]):
+            for k in range (weights.shape[0]):
                 features[i,j,k] = conv_channel(kernels[i,j,:,:,:],weights[k,:,:,:],mav_filter[k],msb_detect[k],cnt,data_collecotr)
     cnt.show()
-    return features  
+    return features
 
 
 
@@ -600,53 +601,53 @@ def conv_channel_mov_av(kernels,weights,mav_filter,msb_detect,cnt,data_collecotr
         B.. Batch size
         W*H.. Image width times hight
         Kh.. Kernel hight
-        Kw.. Kernel width 
-        Ci.. channel number 
-        Input kernels 
+        Kw.. Kernel width
+        Ci.. channel number
+        Input kernels
     weights : numpy array [Ci,Kh,Kw]
         Ci.. input channel number
         Kh.. Kernel hight
         Kw .. Kernel with
-        Weigth matrix for each kernel 
-    mav_filter : MovingAverageFilter class 
-        Moving average filter to normalize conv_channel output 
+        Weigth matrix for each kernel
+    mav_filter : MovingAverageFilter class
+        Moving average filter to normalize conv_channel output
     msb_detect : Find_MSB class
-        detects msb of average iterative 
+        detects msb of average iterative
 
     Returns
     -------
     weighted_sum: np.int16
         B.. Batch size
         W*H.. Image width times hight
-        
+
         8 bit output Matrix
     """
     weighted_sum = np.int32(0)
-    for k in range (weights.shape[0]): 
+    for k in range (weights.shape[0]):
         weighted_sum+= kernel_3x3(kernels[:,:,k],weights[k,:,:])
-    
+
     #weighted_sum -= np.int16(mav_filter.do_filter(np.abs(weighted_sum)))
     data_collecotr.add(weighted_sum)
     average = np.int32(mav_filter.do_filter(np.abs(weighted_sum)))
     msb = msb_detect.do(average)
     # Relu (Additional benefit np.int16(int("0x00FF",16)) & feature would not work for negative numbers because of 2's complement)
-    if weighted_sum < 0: 
-        weighted_sum = 0 
+    if weighted_sum < 0:
+        weighted_sum = 0
     else:
        if msb > 8:
            #print(msb,msb-7,average,weighted_sum,weighted_sum>> msb-8)
            weighted_sum >>= 7 #(msb-8)
-           
-        
-       if weighted_sum > 255: 
+
+
+       if weighted_sum > 255:
            weighted_sum = 255
            cnt.cnt_overflow()
        elif weighted_sum == 0:
            cnt.cnt_underflow()
-               
-    return np.uint8(weighted_sum) 
 
-         
+    return np.uint8(weighted_sum)
+
+
 
 def kernel_3x3_mov_av(kernel,weights):
     """
@@ -656,18 +657,18 @@ def kernel_3x3_mov_av(kernel,weights):
     ----------
     kernel : numpy array [Kh,Kw]
         Kh.. Kernel hight
-        Kw.. Kernel width 
-        Input kernels 
+        Kw.. Kernel width
+        Input kernels
     weights : numpy array [Kh,Kw]
         Kh.. Kernel hight
         Kw .. Kernel with
-        Weigth matrix for each kernel 
+        Weigth matrix for each kernel
 
     Returns
     -------
-    weighted_sum: np.int16       
+    weighted_sum: np.int16
         16 bit output Matrix
-    """    
+    """
     weighted_sum = np.int32(np.sum(kernel * weights))
-            
-    return weighted_sum            
+
+    return weighted_sum
