@@ -184,7 +184,6 @@ setup(name='NeuralNetwork',
       url='https://github.com/marbleton/FPGA_MNIST',
       long_description=readme(),
       long_description_content_type="text/markdown",
-      py_modules=["NeuralNetwork"],
       packages=find_packages(),
       package_data={
           # If any package contains *.txt or *.rst files, include them:

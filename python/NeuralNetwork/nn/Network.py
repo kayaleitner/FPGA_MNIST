@@ -3,12 +3,9 @@ from typing import List
 
 import numpy as np
 
-from NeuralNetwork.NN.ConvLayer import Conv2dLayer, MaxPool2dLayer
-from NeuralNetwork.NN.Costs import mean_squared_error
-from NeuralNetwork.NN.FullyConnected import FullyConnectedLayer
-from NeuralNetwork.NN.Layer import Layer
-from NeuralNetwork.NN.Quant import QuantConvLayerType, QuantFullyConnectedType, quantize_vector
-from NeuralNetwork.NN.Util import ReshapeLayer
+from NeuralNetwork.nn.core import mean_squared_error
+from NeuralNetwork.nn.Layer import Layer, FullyConnectedLayer, MaxPool2dLayer, Conv2dLayer, ReshapeLayer
+from NeuralNetwork.nn.quant import QuantConvLayerType, QuantFullyConnectedType, quantize_vector
 
 
 def check_layers(list_of_layers: List[Layer]):
@@ -38,6 +35,11 @@ def check_layers(list_of_layers: List[Layer]):
                 "Layer {} has dimensions [{}] but layer {} has [{}]".format(i, l1_shape_out, i + 1, l2_shape_in))
 
 
+def metric_accuracy(y1: np.ndarray, y2: np.ndarray, metric_state):
+    metric_state.append(np.sum(y1.argmax(-1) == y2.argmax(-1)))
+    return metric_state
+
+
 class Network:
     layers: List[Layer]
 
@@ -53,6 +55,21 @@ class Network:
     def __call__(self, *args, **kwargs):
         return self.forward(*args, **kwargs)
 
+    def eval(self, dataset, metric=metric_accuracy, metric_state=None):
+        if metric_state is None:
+            metric_state = []
+        for x, y in dataset:
+            y_ = self.forward(x)
+            metric(y, y_, metric_state)
+        return metric_state
+
+    def eval_accuracy(self, dataset):
+        hist = []
+        for x, y in dataset:
+            y_ = self.forward(x)
+            hist.append(np.sum(y_.argmax(-1) == y.argmax(-1)))
+        return np.mean(hist)
+
     def forward(self, x, *args, **kwargs):
         z, _ = self.forward_intermediate(x)
         return z
@@ -60,8 +77,8 @@ class Network:
     def forward_intermediate(self, x):
         z = x  # copy data
         zs = []
-        for l in self.layers:
-            z = l(z)
+        for layer in self.layers:
+            z = layer(z)
             zs.append(z)
         return z, zs
 
@@ -70,10 +87,10 @@ class Network:
         loss = mean_squared_error(y, y_)
         delta = y - y_
         deltas = []
-        for l in self.layers:
-            delta = l.backprop(delta)
+        for layer in self.layers:
+            delta = layer.backprop(delta)
             deltas.append(delta)
-            l.update_weights(delta)
+            layer.update_weights(delta)
 
     def __copy__(self):
         net = Network(list_of_layers=[layer.deepcopy() for layer in self.layers])

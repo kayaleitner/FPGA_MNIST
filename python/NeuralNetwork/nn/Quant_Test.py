@@ -6,7 +6,7 @@ class QuantTestCase(unittest.TestCase):
 
     def test_quant_vec(self):
         import numpy as np
-        from NeuralNetwork.NN.Quant import quantize_vector
+        from NeuralNetwork.nn.quant import quantize_vector
         test_vec = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7]
         exp_vec = np.array([0, 1, 2, 3, 4, 5, 6, 7], dtype=np.int)
         res = quantize_vector(x=test_vec, bits=3, signed=False)
@@ -15,7 +15,7 @@ class QuantTestCase(unittest.TestCase):
         self.assertTrue(np.allclose(exp_vec, res))
 
     def test_quant2(self):
-        from NeuralNetwork.NN.Quant import quantize_vector
+        from NeuralNetwork.nn.quant import quantize_vector
 
         test_vec = np.array([-1, -2, -3, 0, 1, 2, 10, 0.5], dtype=np.float32)
         res = quantize_vector(x=test_vec, bits=3, signed=False, min_value=-1, max_value=1)
@@ -25,9 +25,9 @@ class QuantTestCase(unittest.TestCase):
 class FPTestCase(unittest.TestCase):
 
     def test_default_fixed_point(self):
-        from NeuralNetwork.NN.Quant import fpi
+        from NeuralNetwork.nn.quant import Fpi
         x = 3.1415
-        fp_value = fpi(value=x, fraction_bits=16, target_type=np.int32, zero_point=0)
+        fp_value = Fpi(value=x, fraction_bits=16, target_type=np.int32, zero_point=0)
 
         lsb = fp_value.get_lsb()
 
@@ -35,15 +35,15 @@ class FPTestCase(unittest.TestCase):
         self.assertAlmostEqual(x, xfp, places=3)
 
     def test_numpy_quant(self):
-        from NeuralNetwork.NN.Quant import fpi
+        from NeuralNetwork.nn.quant import Fpi
 
-        a = np.array([fpi(1.0)], dtype=fpi)
-        b = np.array([fpi(2.0)], dtype=fpi)
+        a = np.array([Fpi(1.0)], dtype=Fpi)
+        b = np.array([Fpi(2.0)], dtype=Fpi)
 
         test_array = [1.0, 2.0, 3.0, 4.0, 5.0]
-        fpi_array = list(map(lambda x: fpi(value=x, input_is_float=True, fraction_bits=0), test_array))
+        fpi_array = list(map(lambda x: Fpi(value=x, input_is_float=True, fraction_bits=0), test_array))
 
-        d = np.array(fpi_array, dtype=fpi)
+        d = np.array(fpi_array, dtype=Fpi)
 
         e = d + 1
 
@@ -51,7 +51,7 @@ class FPTestCase(unittest.TestCase):
         print(c)
 
     def test_quant_1(self):
-        from NeuralNetwork.NN.Quant import to_fpi, from_fpi, to_fpi_object
+        from NeuralNetwork.nn.quant import to_fpi, from_fpi, to_fpi_object
         import random
 
         frac_dict = {
@@ -78,17 +78,17 @@ class FPTestCase(unittest.TestCase):
 
     def test_fix_point_overflow(self):
 
-        from NeuralNetwork.NN.Quant import fpi
+        from NeuralNetwork.nn.quant import Fpi
 
-        a = fpi(120, fraction_bits=1, target_type=np.int8, zero_point=0)
-        b = fpi(120, fraction_bits=1, target_type=np.int8, zero_point=0)
+        a = Fpi(120, fraction_bits=1, target_type=np.int8, zero_point=0)
+        b = Fpi(120, fraction_bits=1, target_type=np.int8, zero_point=0)
 
 
         c = a+b
 
     def test_fix_point_arithmetic_with_shift(self):
 
-        from NeuralNetwork.NN.Quant import to_fpi, from_fpi, fpi
+        from NeuralNetwork.nn.quant import to_fpi, from_fpi, Fpi
         import random
 
         frac_dict = {
@@ -120,8 +120,8 @@ class FPTestCase(unittest.TestCase):
             fresult = operation(value_a, value_b)
 
             # fpi1 = to_fpi_easy(value, fraction_bits=fraction_bits, target_dtype=target_dtype)
-            fpi_a = fpi(value_a, fraction_bits=fraction_bits_a, target_type=target_dtype)
-            fpi_b = fpi(value_b, fraction_bits=fraction_bits_b, target_type=target_dtype)
+            fpi_a = Fpi(value_a, fraction_bits=fraction_bits_a, target_type=target_dtype)
+            fpi_b = Fpi(value_b, fraction_bits=fraction_bits_b, target_type=target_dtype)
 
             fpi_result = operation(fpi_a, fpi_b)
 
@@ -137,7 +137,7 @@ class FPTestCase(unittest.TestCase):
 
     def test_fix_point_arithmetic(self):
 
-        from NeuralNetwork.NN.Quant import to_fpi, from_fpi, fpi
+        from NeuralNetwork.nn.quant import to_fpi, from_fpi, Fpi
         import random
 
         frac_dict = {
@@ -169,8 +169,8 @@ class FPTestCase(unittest.TestCase):
             fresult = operation(value_a, value_b)
 
             # fpi1 = to_fpi_easy(value, fraction_bits=fraction_bits, target_dtype=target_dtype)
-            fpi_a = fpi(value_a, fraction_bits=fraction_bits, target_type=target_dtype)
-            fpi_b = fpi(value_b, fraction_bits=fraction_bits, target_type=target_dtype)
+            fpi_a = Fpi(value_a, fraction_bits=fraction_bits, target_type=target_dtype)
+            fpi_b = Fpi(value_b, fraction_bits=fraction_bits, target_type=target_dtype)
 
             fpi_result = operation(fpi_a, fpi_b)
 
@@ -186,14 +186,14 @@ class FPTestCase(unittest.TestCase):
 
     def test_random_fpi(self):
         import random
-        from NeuralNetwork.NN.Quant import fpi
+        from NeuralNetwork.nn.quant import Fpi
 
         for i in range(1000):
             # bitsize = random.choice([8, 16, 32, 64])
             upper = 1.0
             lower = -1.0
             float_val = random.uniform(a=upper, b=lower)
-            fpi_val = fpi(value=float_val, input_is_float=True, fraction_bits=7, target_type=np.int8, zero_point=0)
+            fpi_val = Fpi(value=float_val, input_is_float=True, fraction_bits=7, target_type=np.int8, zero_point=0)
             self.assertTrue(abs(float_val - fpi_val.asfloat()) <= 0.5 * fpi_val.get_lsb())
             self.assertAlmostEqual(float_val, fpi_val.asfloat(), places=2)
 

@@ -10,9 +10,11 @@ import torchvision.transforms as transforms
 from torch import nn
 import torch.nn.functional as F
 from torch.quantization import convert
+
+import NeuralNetwork.nn.util
+import NeuralNetwork.nn.core
 from NeuralNetwork.Torch.models import LeNet
-from NeuralNetwork.Util.torch import MNIST_CLASSES
-import NeuralNetwork.Util.plot as util_plots
+from NeuralNetwork.nn.util import MNIST_CLASSES
 
 
 def train_model(model, criterion, optimizer, scheduler, num_epochs=25, device='cpu'):
@@ -101,7 +103,7 @@ def create_combined_model(model_fe):
         model_fe.quant,  # Quantize the input
         model_fe.conv1,
         model_fe.bn1,
-        model_fe.relu,
+        NeuralNetwork.NN.core.relu,
         model_fe.maxpool,
         model_fe.layer1,
         model_fe.layer2,
@@ -245,7 +247,7 @@ if __name__ == '__main__':
     test(model=net, device=device, test_loader=dataloaders['val'])
 
     # net.parameters
-    util_plots.plot_network_parameter_histogram(weights=list(net.parameters()))
+    NeuralNetwork.NN.Util.plot_network_parameter_histogram(weights=list(net.parameters()))
 
     qnet = convert(net, inplace=False)
     # qnet = torch.quantization.quantize(model=net, run_fn=train, run_args=())

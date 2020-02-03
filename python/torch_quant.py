@@ -11,11 +11,11 @@ from tensorflow.keras.layers import Dense, Conv2D, Flatten, MaxPooling2D, Reshap
 from tensorflow.keras.models import Sequential
 from matplotlib import pyplot as plt
 
-import NeuralNetwork.NN as NN
+import NeuralNetwork.nn as nn
 import NeuralNetwork.Reader as Reader
-import NeuralNetwork.Util
-import NeuralNetwork.NN.Quant as nnquant
-from NeuralNetwork.Util import plot_network_parameter_histogram
+import NeuralNetwork.nn.util
+import NeuralNetwork.nn.quant as nnquant
+from NeuralNetwork.nn.util import plot_network_parameter_histogram
 
 
 
@@ -44,8 +44,8 @@ path_img, path_lbl = data_loader.get_path(dataset_type=Reader.DataSetType.TRAIN)
 reader = Reader.MnistDataReader(image_filename=path_img, label_filename=path_lbl)
 
 # Load models
-keras_lenet = NeuralNetwork.Util.open_keras_model(save_dir=keras_save_dir)
-nn_lenet_f64 = NN.Network.LeNet.load_from_files(save_dir=nn_save_dir)
+keras_lenet = nn.util.open_keras_model(save_dir=keras_save_dir)
+nn_lenet_f64 = nn.Network.LeNet.load_from_files(save_dir=nn_save_dir)
 nn_lenet_f32 = nn_lenet_f64.cast(new_dtype=np.float32)
 nn_lenet_f16 = nn_lenet_f64.cast(new_dtype=np.float16)
 
@@ -58,12 +58,9 @@ nn_lenet_i8 = nn_lenet_f64.quantize_network(new_dtype=np.int8, min_value=-INT_MA
 imgs_float = imgs.astype(dtype=np.float) / 256
 lbls_keras = keras_lenet(inputs=imgs_float)
 
-imgs_i8 = nnquant.quantize_vector(imgs_float, target_type=np.int8, max_value=INT_MAX_VAL, min_value=-INT_MAX_VAL,
-                                  signed=False)
-imgs_i16 = nnquant.quantize_vector(imgs_float, target_type=np.int16, max_value=INT_MAX_VAL, min_value=-INT_MAX_VAL,
-                                   signed=False)
-imgs_i32 = nnquant.quantize_vector(imgs_float, target_type=np.int32, max_value=INT_MAX_VAL, min_value=-INT_MAX_VAL,
-                                   signed=False)
+imgs_i8 = nnquant.to_fpi_object(imgs_float, target_type=np.int8, fraction_bits=7)
+imgs_i16 = nnquant.to_fpi_object(imgs_float, target_type=np.int16, fraction_bits=15)
+imgs_i32 = nnquant.to_fpi_object(imgs_float, target_type=np.int32, fraction_bits=31)
 
 lbls_keras = lbls_keras.numpy().argmax(axis=1)
 

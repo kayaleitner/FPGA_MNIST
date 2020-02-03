@@ -195,8 +195,8 @@ class MnistDataReader:
             return None
 
     def shuffle(self):
-        pass
+        raise NotImplementedError()
 
     def get_random(self, batch_size=10):
-        pass
+        raise NotImplementedError()
 

@@ -1,12 +1,5 @@
-import math
-from typing import Optional
-
 import numpy as np
 from numpy.core.multiarray import ndarray
-
-from NeuralNetwork.NN.Activations import relu
-from NeuralNetwork.NN.Layer import Layer
-from NeuralNetwork.NN.Quant import quantize_vector
 
 
 def init_kernel(input_channels: int, out_channels: int = 3, kernel_size: int = 5, dtype=np.float32) -> ndarray:
@@ -165,116 +158,6 @@ def conv2d_fast(data_in, kernel, stride=1):
         raise NotImplementedError()
 
 
-class Conv2dLayer(Layer):
-    activation: Optional[str]
-    b: ndarray
-    kernel: ndarray
-
-    def __init__(self,
-                 in_channels,
-                 out_channels,
-                 kernel_size,
-                 activation=None,
-                 dtype=np.float32,
-                 kernel_init_weights=None,
-                 bias_init_weights=None):
-
-        self.in_channels = in_channels
-        self.out_channels = out_channels
-        self.kernel_size = kernel_size
-        self.activation = activation
-        self.dtype = dtype
-
-        if kernel_init_weights is None:
-            self.kernel = init_kernel(in_channels, out_channels, kernel_size, dtype=dtype)
-        else:
-            self.kernel = kernel_init_weights
-
-        if bias_init_weights is None:
-            self.b = np.random.rand(out_channels).astype(dtype=dtype)
-        else:
-            self.b = bias_init_weights
-
-    @property
-    def weights(self):
-        return self.kernel
-
-    @weights.setter
-    def weights(self, value):
-        assert isinstance(value, np.ndarray)
-        self.kernel = value
-
-    @property
-    def bias(self):
-        return self.b
-
-    @bias.setter
-    def bias(self, value):
-        assert isinstance(value, np.ndarray)
-        self.b = value
-
-    @property
-    def activation_func(self):
-        return self.activation
-
-    @activation_func.setter
-    def activation_func(self, value):
-        assert value in ('relu', 'softmax', None)
-        self.activation = value
-
-    def __call__(self, *args, **kwargs):
-        if self.dtype in (np.float32, np.float64):
-            try:
-                z = conv2d_fast(args[0], self.kernel, stride=1) + self.b
-            except ImportError as imerror:
-                print("[ERROR]: The Fast C-Extension could not be loaded? Is it installed? Fallback to default python "
-                      "implementation")
-                z = conv2d(args[0], self.kernel, stride=1) + self.b
-
-        else:
-            z = conv2d(args[0], self.kernel, stride=1) + self.b
-
-        if self.activation is None:
-            return z
-        elif self.activation is "relu":
-            return relu(z)
-        else:
-            raise ValueError("Activation of {} is not valid".format(self.activation))
-
-    def get_input_shape(self):
-        # Input data:  [batch, in_height, in_width, in_channels]
-        # Kernel size: [fh, fw, kin_ch, kout_ch]
-        #
-        # Data can be arbitrary shaped except the number of input channels, which must match the number of output
-        # channels
-        return -1, -1, -1, self.kernel.shape[2]
-
-    def get_output_shape(self, input_data_shape: ndarray = None):
-        # Input data:  [batch, in_height, in_width, in_channels]
-        # Kernel size: [fh, fw, kin_ch, kout_ch]
-        return -1, -1, -1, self.kernel.shape[3]
-
-    def cast(self, new_dtype: np.dtype):
-        self.dtype = new_dtype
-        self.kernel = self.kernel.astype(dtype=new_dtype)
-        self.b = self.b.astype(dtype=new_dtype)
-
-    def __copy__(self):
-        c = Conv2dLayer(in_channels=self.in_channels,
-                        out_channels=self.out_channels,
-                        kernel_size=self.kernel_size,
-                        activation=self.activation,
-                        dtype=self.dtype,
-                        kernel_init_weights=self.kernel.copy(),
-                        bias_init_weights=self.b.copy())
-        return c
-
-    def quantize_layer(self, target_type, max_value, min_value):
-        self.dtype = target_type
-        self.kernel = quantize_vector(self.kernel, target_type=target_type, max_value=max_value, min_value=min_value)
-        self.b = quantize_vector(self.b, target_type=target_type, max_value=max_value, min_value=min_value)
-
-
 def pooling_max(data_in: ndarray, pool_size: int, stride=2):
     batch, in_h, in_w, in_ch = data_in.shape
 
@@ -332,51 +215,51 @@ def apply_pool(data_in: ndarray, pool_size: int, f, stride=2):
     return pool_out
 
 
-class MaxPool2dLayer(Layer):
-    PoolSize: int
-
-    def __init__(self, size=2):
-        self.PoolSize = size
-
-    def __call__(self, *args, **kwargs):
-        data_in = args[0]
-        return pooling_max(data_in, pool_size=self.PoolSize, stride=self.PoolSize)
-
-    def get_input_shape(self):
-        # Input is completely arbitrary
-        return -1, -1, -1, -1
-
-    def get_output_shape(self, input_data_shape: ndarray = None):
-        # Input data:  [batch, in_height, in_width, in_channels]
-        batch, in_w, in_h, nch = input_data_shape.shape
-        out_w = math.ceil(in_w / self.PoolSize)
-        out_h = math.ceil(in_h / self.PoolSize)
-        return -1, out_w, out_h, -1
-
-    def __copy__(self):
-        return MaxPool2dLayer(size=self.PoolSize)
+def mean_squared_error(predictions: np.ndarray, labels: np.ndarray) -> np.ndarray:
+    """
+    Calculates the mean squared error
+    :param predictions: Array of predictions with dimensions [batch out_size]
+    :param labels: Array of labels with dimensions [batch out_size]
+    :return:
+    """
+    return np.sum(np.sum((predictions - labels) ** 2))
 
 
-class AveragePool2dLayer(Layer):
-    PoolSize: int
+def cross_entropy(predictions, labels):
+    """
+    Calculates the cross entropy cost
+    :param predictions: Array of predictions with dimensions [batch out_size]
+    :param labels: Array of labels with dimensions [batch out_size]
+    :return:
+    """
+    return np.sum(np.sum(labels * np.log(predictions) + (1 - labels) * np.log(1 - predictions)))
 
-    def __init__(self, size=2):
-        self.PoolSize = size
 
-    def __call__(self, *args, **kwargs):
-        data_in = args[0]
-        return apply_pool(data_in, pool_size=self.PoolSize, f=np.mean)
+def relu(x: np.ndarray) -> np.ndarray:
+    """
+    Applies the Relu activation function to the input
+    :param x: values
+    :return:
+    """
+    return x.clip(min=0)
 
-    def get_input_shape(self):
-        # Input is completely arbitrary
-        return -1, -1, -1, -1
 
-    def get_output_shape(self, input_data_shape: ndarray = None):
-        # Input data:  [batch, in_height, in_width, in_channels]
-        batch, in_w, in_h, nch = input_data_shape.shape
-        out_w = math.ceil(in_w / self.PoolSize)
-        out_h = math.ceil(in_h / self.PoolSize)
-        return -1, out_w, out_h, -1
+def drelu(x: np.ndarray) -> np.ndarray:
+    """
+    Evaluates the derivative of the relu func (which is equivalent to the step func)
+    :param x:
+    :return:
+    """
+    return (x > 0) * 1.0  # multiply to convert from boolean to float
 
-    def __copy__(self):
-        return AveragePool2dLayer(size=self.PoolSize)
+
+def softmax(x: np.ndarray) -> np.ndarray:
+    """
+    Calculates the softmax func
+
+    y = x / sum(x)
+
+    :param x: Array with dimensions [batch out_dim]
+    """
+    norm = np.sum(np.exp(x), axis=-1, keepdims=True)
+    return np.exp(x) / norm

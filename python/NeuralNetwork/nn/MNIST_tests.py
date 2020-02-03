@@ -6,10 +6,10 @@ import numpy as np
 import tensorflow.keras.backend as K
 from tensorflow import keras
 
-from NeuralNetwork.NN.ConvLayer import Conv2dLayer, test_kernel_gauss, MaxPoolLayer
-from NeuralNetwork.NN.FullyConnected import FullyConnectedLayer
-from NeuralNetwork.NN.Network import Network
-from NeuralNetwork.NN.Util import ReshapeLayer, indices
+from NeuralNetwork.nn.core import test_kernel_gauss
+from NeuralNetwork.nn.Layer import FullyConnectedLayer, Conv2dLayer, ReshapeLayer, MaxPool2dLayer
+from NeuralNetwork.nn.Network import Network
+from NeuralNetwork.nn.util import indices
 from NeuralNetwork.Reader import MnistDataReader, MnistDataDownloader, DataSetType
 
 
@@ -18,7 +18,7 @@ class MnistConvTestCase(unittest.TestCase):
     def test_blur(self):
         k = test_kernel_gauss()
         cl = Conv2dLayer(in_channels=1, out_channels=1, kernel_size=5)
-        loader = MnistDataDownloader("test/MNIST/")
+        loader = MnistDataDownloader("../../test/MNIST/")
         path_img, path_lbl = loader.get_path(DataSetType.TRAIN)
 
         reader = MnistDataReader(path_img, path_lbl)
@@ -74,7 +74,7 @@ class MnistConvTestCase(unittest.TestCase):
         interesting_layers = [1]  # don't care about reshape layers
         n = Network(layers)
 
-        loader = MnistDataDownloader("test/MNIST/")
+        loader = MnistDataDownloader("../../test/MNIST/")
         path_img, path_lbl = loader.get_path(DataSetType.TRAIN)
         reader = MnistDataReader(path_img, path_lbl)
 
@@ -132,9 +132,9 @@ class MnistConvTestCase(unittest.TestCase):
     def test_tensorflow_parameter(self):
         r1 = ReshapeLayer(newshape=[-1, 28, 28, 1])
         cn1 = Conv2dLayer(in_channels=1, out_channels=16, kernel_size=3, activation='relu')  # [? 28 28 16]
-        mp1 = MaxPoolLayer(size=2)  # [? 14 14 16]
+        mp1 = MaxPool2dLayer(size=2)  # [? 14 14 16]
         cn2 = Conv2dLayer(in_channels=16, out_channels=32, kernel_size=3, activation='relu')  # [? 14 14 32]
-        mp2 = MaxPoolLayer(size=2)  # [?  7  7 32]
+        mp2 = MaxPool2dLayer(size=2)  # [?  7  7 32]
         r2 = ReshapeLayer(newshape=[-1, 32 * 7 * 7])
         fc1 = FullyConnectedLayer(input_size=32 * 7 * 7, output_size=64, activation='relu')
         fc2 = FullyConnectedLayer(input_size=64, output_size=10, activation='softmax')
@@ -188,7 +188,7 @@ class MnistConvTestCase(unittest.TestCase):
 
         net = Network(layers)
 
-        loader = MnistDataDownloader("test/MNIST/")
+        loader = MnistDataDownloader("../../test/MNIST/")
         path_img, path_lbl = loader.get_path(DataSetType.TRAIN)
         reader = MnistDataReader(path_img, path_lbl)
 

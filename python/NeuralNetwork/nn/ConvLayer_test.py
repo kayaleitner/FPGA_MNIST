@@ -3,7 +3,7 @@ import unittest
 import numpy as np
 import tensorflow as tf
 
-from NeuralNetwork.NN.ConvLayer import Conv2dLayer, MaxPool2dLayer
+from NeuralNetwork.nn.Layer import MaxPool2dLayer, Conv2dLayer
 
 
 def indices(a, func):

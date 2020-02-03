@@ -1,4 +1,4 @@
-from __future__ import division, print_function
+from __future__ import division, print_function, absolute_import
 
 from enum import Enum
 from math import inf
@@ -55,20 +55,30 @@ def to_fpi_old(x, fraction_bits, target_type, zero_point=0):
 
 def to_fpi(x, fraction_bits, target_type, zero_point=0):
     (a_min, a_max) = np_limits(target_type)
-    val = np.clip(x / 2 ** (-fraction_bits), a_min=a_min, a_max=a_max).round().astype(target_type)
+    val = np.clip(x / (2 ** (-fraction_bits)), a_min=a_min, a_max=a_max).round().astype(target_type)
     return val
 
 
 def to_fpi_object(x, fraction_bits, target_type, zero_point=0):
-    val = to_fpi(x, fraction_bits, target_type, zero_point=0)
-    return fpi(value=val, fraction_bits=fraction_bits, target_type=target_type, zero_point=zero_point)
+    if not np.isscalar(x):
+        x_shape = x.shape
+        x_converted = map(lambda val: Fpi(val,
+                                          fraction_bits=fraction_bits,
+                                          target_type=target_type,
+                                          zero_point=zero_point),
+                          x.reshape(-1))
+        y = np.array(list(x_converted), dtype=Fpi)
+        return y.reshape(x_shape)
+    else:
+        val = to_fpi(x, fraction_bits, target_type, zero_point=0)
+        return Fpi(value=val, fraction_bits=fraction_bits, target_type=target_type, zero_point=zero_point)
 
 
 def from_fpi(x, fraction_bits, target_type, zero_point):
     return x * 2 ** (-fraction_bits)
 
 
-class fpi(numbers.Number):
+class Fpi(numbers.Number):
     """
     Implements a fixed point integer class
     """
@@ -107,7 +117,7 @@ class fpi(numbers.Number):
 
     def __eq__(self, o: object) -> bool:
 
-        if isinstance(o, fpi):
+        if isinstance(o, Fpi):
             return o.dtype == self.dtype and o.fraction_bits == self.fraction_bits and o.value == self.value
         else:
             return False
@@ -122,12 +132,12 @@ class fpi(numbers.Number):
         return self.__str__()
 
     def convert_and_check_input(self, other):
-        if isinstance(other, fpi):
+        if isinstance(other, Fpi):
             pass
         elif isinstance(other, float):
-            other = fpi(other, input_is_float=True, fraction_bits=self.fraction_bits, target_type=self.dtype)
+            other = Fpi(other, fraction_bits=self.fraction_bits, target_type=self.dtype)
         elif isinstance(other, int):
-            other = fpi(other, input_is_float=False, fraction_bits=self.fraction_bits, target_type=self.dtype)
+            other = Fpi(other, fraction_bits=self.fraction_bits, target_type=self.dtype)
         else:
             raise NotImplementedError()
 
@@ -153,7 +163,7 @@ class fpi(numbers.Number):
             cfrac = b.fraction_bits
 
         cval = aval + bval
-        return fpi(value=cval, fraction_bits=cfrac, target_type=self.dtype, zero_point=self.zero_point)
+        return Fpi(value=cval, fraction_bits=cfrac, target_type=self.dtype, zero_point=self.zero_point)
 
     def __sub__(self, other):
         other = self.convert_and_check_input(other)
@@ -171,7 +181,7 @@ class fpi(numbers.Number):
             cfrac = b.fraction_bits
 
         cval = aval - bval
-        return fpi(value=cval, fraction_bits=cfrac, target_type=self.dtype, zero_point=self.zero_point)
+        return Fpi(value=cval, fraction_bits=cfrac, target_type=self.dtype, zero_point=self.zero_point)
 
     def __mul__(self, other):
         """
@@ -185,12 +195,12 @@ class fpi(numbers.Number):
 
         """
 
-        if isinstance(other, fpi):
+        if isinstance(other, Fpi):
             assert self.dtype == other.dtype
             assert self.zero_point == other.zero_point == 0
             val = other.value * self.value
             frac_bits = other.fraction_bits + self.fraction_bits
-            x = fpi(value=val, fraction_bits=frac_bits, target_type=self.dtype, zero_point=self.zero_point)
+            x = Fpi(value=val, fraction_bits=frac_bits, target_type=self.dtype, zero_point=self.zero_point)
             return x
         raise NotImplementedError()
 
@@ -198,7 +208,7 @@ class fpi(numbers.Number):
         raise NotImplementedError()
 
 
-def to_fix_point(value: float, fraction_bits: int, target_type: np.dtype, zero_point=0.0) -> fpi:
+def to_fix_point(value: float, fraction_bits: int, target_type: np.dtype, zero_point=0.0) -> Fpi:
     non_fraction_bits = np_bits(target_type) - fraction_bits - 1
     # At least a single bit is needed
     # ToDo: Is this always the case?
@@ -207,8 +217,7 @@ def to_fix_point(value: float, fraction_bits: int, target_type: np.dtype, zero_p
     min_val = -(2 ** non_fraction_bits)
     lsb = (max_val - min_val) / np_ncodes(target_type)
     value = np.round(value / lsb + zero_point).astype(target_type)
-    fix_val = fpi(value, input_is_float=True, fraction_bits=fraction_bits, target_type=target_type,
-                  zero_point=zero_point)
+    fix_val = Fpi(value, fraction_bits=fraction_bits, target_type=target_type, zero_point=zero_point)
     return fix_val
 
 
