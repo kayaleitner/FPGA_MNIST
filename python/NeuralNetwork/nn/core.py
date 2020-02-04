@@ -17,7 +17,16 @@ def init_kernel(input_channels: int, out_channels: int = 3, kernel_size: int = 5
     return np.random.rand(kernel_size, kernel_size, input_channels, out_channels).astype(dtype=dtype)
 
 
-def test_kernel_gauss(size=5, sigma=1.6) -> ndarray:
+def make_gauss_kernel(size=5, sigma=1.6) -> ndarray:
+    """
+    Creates a gaussian blur filter kernel
+    Args:
+        size:
+        sigma:
+
+    Returns:
+
+    """
     k = np.zeros(shape=[size, size])
 
     for i in range(size):
@@ -122,6 +131,81 @@ def conv2d(data_in: ndarray, kernel: ndarray, stride: int = 1):
                 i_out += 1
 
     return out
+
+
+def q_conv2d(data_in: ndarray,
+             data_in_scaling,
+             kernel: ndarray,
+             kernel_in_scaling,
+             data_out_scaling,
+             bias: ndarray = None,
+             bias_in_scaling=None,
+             bias_out_scaling=None,
+             stride: int = 1):
+    """
+    Perform a 2D convolution over a batch of tensors. This is equivalent to
+
+     output[b, i, j, k] =
+         sum_{di, dj, q} input[b, strides[1] * i + di, strides[2] * j + dj, q] *
+                         filter[di, dj, q, k]
+
+    :param data_in: Input data tensor with shape [batch, height, width, channels_in]
+    :param kernel: Convolution kernel tensor with shape [kernel_height, kernel_width, channels_in, channels_out]
+    :param stride: Integer for the step width
+    :return: Tensor with shape [batch, height/stride, width/stride, channels_out]
+    """
+
+    if kernel.dtype.kind not in 'i':  # check if datatype is unsigned or integer
+        raise ValueError('kernel datatype must be integer')
+
+    # Obtain shapes
+    fh, fw, kin_ch, kout_ch = kernel.shape
+    batch, in_h, in_w, in_ch = data_in.shape
+
+    if kin_ch != in_ch:
+        raise ValueError("Input channel mismatch")
+
+    # Check if the filter has an uneven width
+    assert (1 == fh % 2)
+    assert (1 == fw % 2)
+
+    # Find the midpoint of the filter. This only works for odd filter sizes
+    fh2 = (fh - 1) // 2
+    fw2 = (fw - 1) // 2
+
+    out = np.zeros(shape=[batch, in_h, in_w, kout_ch], dtype=data_in.dtype)
+    in_padded = np.pad(data_in, ((0, 0), (fh2, fh2), (fw2, fw2), (0, 0)), 'constant', constant_values=(0, 0))
+
+    for b in range(batch):
+        for k in range(kout_ch):
+            i_out, j_out = 0, 0
+            for i in range(0, in_h, stride):
+                for j in range(0, in_w, stride):
+                    patch = in_padded[b, i:i + fh, j:j + fw, :]  # 3d tensor 3x3x16
+
+                    temp = patch * kernel[:, :, :, k]
+                    temp_out_scaling = data_in_scaling + kernel_in_scaling
+                    delta_scale = data_out_scaling - temp_out_scaling
+                    np.left_shift(temp, delta_scale, where=delta_scale>0)
+                    np.right_shift(temp, -delta_scale, where=delta_scale<0)
+                    out = patch / (2 ** delta_scale)
+
+                    temp = temp.flatten().astype(np.int64)
+                    # patch_sum = np.sum(patch * kernel[:, :, :, k], axis=(0, 1, 2))  # sum along all axis
+                    min_value = np.iinfo(kernel.dtype).min
+                    max_value = np.iinfo(kernel.dtype).max
+                    patch_sum = np.sum(temp).clip(min=min_value, max=max_value).astype(kernel.dtype)
+                    out[b, i_out, j_out, k] = np.clip(patch_sum, a_min=min_value, a_max=max_value).astype(
+                        kernel.dtype)
+                    j_out += 1
+                j_out = 0
+                i_out += 1
+
+    return out
+
+
+def q_matmul(w, x, b):
+    pass
 
 
 def conv2d_fast(data_in, kernel, stride=1):

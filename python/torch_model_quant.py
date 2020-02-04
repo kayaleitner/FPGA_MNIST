@@ -195,7 +195,7 @@ def train(net, *args):
             optimizer.step()
 
 
-def test(model, device, test_loader):
+def model_test(model, device, test_loader):
     model.eval()
     test_loss = 0
     correct = 0
@@ -244,12 +244,16 @@ if __name__ == '__main__':
 
     net.load_state_dict(state_dict)
 
-    test(model=net, device=device, test_loader=dataloaders['val'])
+    model_test(model=net, device=device, test_loader=dataloaders['val'])
 
-    # net.parameters
-    NeuralNetwork.NN.Util.plot_network_parameter_histogram(weights=list(net.parameters()))
+    net.eval()
+    net.fuse_model()
+    net.qconfig = torch.quantization.default_qconfig
+    qnet = torch.quantization.convert(net)
+    torch.quantization.convert(net, inplace=True)
 
-    qnet = convert(net, inplace=False)
+    # qnet = convert(net, inplace=True)
+
     # qnet = torch.quantization.quantize(model=net, run_fn=train, run_args=())
     visualize_model(qnet, dataloaders=dataloaders, class_names=class_names)
     plt.ioff()

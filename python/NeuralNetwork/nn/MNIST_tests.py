@@ -6,7 +6,7 @@ import numpy as np
 import tensorflow.keras.backend as K
 from tensorflow import keras
 
-from NeuralNetwork.nn.core import test_kernel_gauss
+from NeuralNetwork.nn.core import make_gauss_kernel
 from NeuralNetwork.nn.Layer import FullyConnectedLayer, Conv2dLayer, ReshapeLayer, MaxPool2dLayer
 from NeuralNetwork.nn.Network import Network
 from NeuralNetwork.nn.util import indices
@@ -16,7 +16,7 @@ from NeuralNetwork.Reader import MnistDataReader, MnistDataDownloader, DataSetTy
 class MnistConvTestCase(unittest.TestCase):
 
     def test_blur(self):
-        k = test_kernel_gauss()
+        k = make_gauss_kernel()
         cl = Conv2dLayer(in_channels=1, out_channels=1, kernel_size=5)
         loader = MnistDataDownloader("../../test/MNIST/")
         path_img, path_lbl = loader.get_path(DataSetType.TRAIN)

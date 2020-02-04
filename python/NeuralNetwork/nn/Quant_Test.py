@@ -1,5 +1,167 @@
 import unittest
 import numpy as np
+import NeuralNetwork.nn.quant as quant
+from NeuralNetwork import nn
+
+
+class GeneralQuantizationTests(unittest.TestCase):
+
+    def test_next_pow2(self):
+        self.assertEqual(1024, quant.next_pow2(1023))
+        self.assertEqual(64, quant.next_pow2(63))
+        self.assertEqual(32, quant.next_pow2(32))
+        self.assertEqual(16, quant.next_pow2(16))
+        self.assertEqual(4, quant.next_pow2(4))
+        self.assertEqual(8, quant.next_pow2(5))
+
+    def test_quant_mul(self):
+        q1 = 32  # 0.5
+        s1 = -6
+        q2 = 64  # 0.5
+        s2 = -7
+
+        qr = q1 * q2
+        sr = s1 + s2
+
+        x1 = q1 * 2 ** s1
+        x2 = q2 * 2 ** s2
+        xr = qr * 2 ** sr
+
+        print("x1 = ", x1)
+        print("x2 = ", x2)
+        print("v  = ", 0.5 * 0.5)
+        print("xr = ", xr)
+
+        self.assertAlmostEqual(0.5 * 0.5, xr)
+
+    def test_quant_add(self):
+        q1 = 32  # 0.5
+        s1 = -6
+        q2 = 64  # 0.5
+        s2 = -7
+
+        # Scaling Shift
+        sd1 = s1 - s2
+        sd2 = s2 - s1
+
+        qr1 = q2 + (q1 << sd1)
+        qr2 = q1 + (q2 >> -sd2)
+        sr1 = s2
+        sr2 = s1
+
+        x1 = q1 * 2 ** s1
+        x2 = q2 * 2 ** s2
+        xr1 = qr1 * 2 ** sr1
+        xr2 = qr2 * 2 ** sr2
+
+        print("x1  = ", x1)
+        print("x2  = ", x2)
+        print("v   = ", 0.5 + 0.5)
+        print("xr1 = ", xr1)
+        print("xr2 = ", xr2)
+
+        self.assertAlmostEqual(0.5 + 0.5, xr1)
+        self.assertAlmostEqual(0.5 + 0.5, xr2)
+
+    def test_numpy_quant_mul(self):
+        kernel = np.random.uniform(low=-1, high=1, size=(3, 3, 1))
+        patch = np.random.uniform(low=-1, high=1, size=(3, 3, 1))
+        yr_temp = kernel * patch
+        yr = yr_temp.flatten().sum()
+
+        s = -4
+        scale = quant.fracbits_to_scale(4)
+        qkernel = quant.quantise_uniform(kernel, scale, 256).astype(np.int8)
+        qpatch = quant.quantise_uniform(patch, scale, 256).astype(np.int8)
+        qr_temp = qkernel * qpatch
+        qr = qr_temp.flatten().sum(dtype=np.int8)
+        qr2 = qr_temp.flatten().astype(np.int16).sum()
+        sr = s + s
+
+        scale_out = quant.fracbits_to_scale(8)
+        xr_temp = quant.dequantise_uniform(qr_temp, scale_out)
+        xr = quant.dequantise_uniform(qr, scale_out)
+        xr3 = quant.dequantise_uniform(qr2, scale_out)
+
+        xr2 = xr_temp.flatten().sum()
+
+        print(yr.flatten())
+        print(xr.flatten())
+        print(yr - xr)
+
+        shift = 3
+        qr_temp_shifted = np.right_shift(qr_temp, shift)
+        qr3 = qr_temp_shifted.flatten().sum(dtype=np.int8)
+        scale3 = quant.fracbits_to_scale(8 - shift)
+        yr3 = quant.dequantise_uniform(qr3, scale3)
+        print(yr3)
+
+    def test_can_mul_overflow(self):
+        self.assertTrue(quant.can_mul_overflow(16, 8, 16, 8, 8))
+        self.assertFalse(quant.can_mul_overflow(16, 8, 16, 8, 10))
+        self.assertFalse(quant.can_mul_overflow(15, 8, 15, 8, 9))
+
+        for i in range(100):
+            a_bits = 16
+            b_bits = 16
+            out_bits = 16
+
+            # 2.0 * 3.0 = 6.0
+            quant.next_pow2(6.0)
+            quant.next_pow2(6.0)
+            quant.next_pow2(6.0)
+            a = quant.quantise_uniform(0.5, scale=1.0 / 16, ncodes=16)
+            b = quant.quantise_uniform(0.75, scale=1.0 / 16, ncodes=16)
+
+            overflows = quant.can_mul_overflow(a=a, a_bits=a_bits, b=b, b_bits=b_bits, out_bits=out_bits)
+
+    def test_can_add_overflow(self):
+        # No overflow
+
+        # 3 + 3 = 6
+        self.assertFalse(quant.can_add_overflow(3, 4, 0, 3, 4, 0, 4))
+
+        # 3 + 0.5
+        a = quant.quantise_uniform(0.5, scale=1.0 / 16, ncodes=16)
+        b = quant.quantise_uniform(0.75, scale=1.0 / 16, ncodes=16)
+        self.assertTrue(quant.can_add_overflow(a, 4, 4, b, 4, 4, 4))
+        self.assertFalse(quant.can_add_overflow(a, 4, 4, b, 4, 4, 5))
+
+    def test_quant_kernels(self):
+        kernel = np.random.normal(loc=0, scale=0.6, size=(3, 3, 1, 6))
+        mu = np.mean(kernel[:, :, :, 0])
+        sigma = np.std(kernel[:, :, :, 0])
+
+        bits = 8
+        ncodes = 2 ** bits
+        qkernel, fracbits = quant.quantize_kernels(kernel=kernel, parameter_bits=bits)
+        fkernel = quant.dequantizse_kernels(qkernel, parameter_bits=bits, frac_bits=fracbits)
+
+        self.assertTrue(np.all(qkernel <= ncodes / 2 - 1))
+        self.assertTrue(np.all(qkernel >= -ncodes / 2))
+        for i in range(1000):
+            sigma = np.random.uniform(0.1, 1.0)
+            c_in = np.random.randint(1, 16)
+            c_out = np.random.randint(1, 16)
+            kernel = np.random.normal(loc=0, scale=sigma, size=(3, 3, c_in, c_out))
+            bits = np.random.randint(4, 32)
+            ncodes = 2 ** bits
+            qkernel, fracbits = quant.quantize_kernels(kernel=kernel, parameter_bits=bits)
+            self.assertTrue(np.all(qkernel <= ncodes / 2 - 1))
+            self.assertTrue(np.all(qkernel >= -ncodes / 2))
+
+    def test_quant_kernel_precision(self):
+
+        kernel = np.random.normal(loc=0, scale=0.5, size=(3, 3, 2, 4))
+        image = np.random.normal(loc=0, scale=1.0, size=(3, 10, 10, 2))
+
+        qk4, mk = quant.quantize_kernels(kernel=kernel, parameter_bits=4)
+        qi8, mi = quant.quantize_conv_activations(input=image, parameter_bits=8)
+
+        qout = nn.core.conv2d(data_in=qi8, kernel=qk4)
+        mout = mk+mi
+
+        pass
 
 
 class QuantTestCase(unittest.TestCase):
@@ -83,8 +245,7 @@ class FPTestCase(unittest.TestCase):
         a = Fpi(120, fraction_bits=1, target_type=np.int8, zero_point=0)
         b = Fpi(120, fraction_bits=1, target_type=np.int8, zero_point=0)
 
-
-        c = a+b
+        c = a + b
 
     def test_fix_point_arithmetic_with_shift(self):
 
@@ -115,7 +276,7 @@ class FPTestCase(unittest.TestCase):
             frac_lower, frac_upper = frac_dict[target_dtype]
             fraction_bits_a = random.randint(frac_lower, frac_upper)
             fraction_bits_b = random.randint(frac_lower, frac_upper)
-            precision = max(1 / 2 ** fraction_bits_a, 1/2**fraction_bits_b)
+            precision = max(1 / 2 ** fraction_bits_a, 1 / 2 ** fraction_bits_b)
 
             fresult = operation(value_a, value_b)
 
@@ -133,7 +294,7 @@ class FPTestCase(unittest.TestCase):
                 # repeat operation
                 fpi_c = operation(fpi_a, fpi_b)
 
-            #self.assertTrue(abs(fresult - fpi_value) < precision)
+            # self.assertTrue(abs(fresult - fpi_value) < precision)
 
     def test_fix_point_arithmetic(self):
 

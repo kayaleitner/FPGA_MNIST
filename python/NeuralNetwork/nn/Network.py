@@ -1,8 +1,10 @@
 import os
 from typing import List
 
+
 import numpy as np
 
+import NeuralNetwork.nn as nn
 from NeuralNetwork.nn.core import mean_squared_error
 from NeuralNetwork.nn.Layer import Layer, FullyConnectedLayer, MaxPool2dLayer, Conv2dLayer, ReshapeLayer
 from NeuralNetwork.nn.quant import QuantConvLayerType, QuantFullyConnectedType, quantize_vector
@@ -186,6 +188,55 @@ class LeNet(Network):
         self.lenet_layers = [r1, cn1, mp1, cn2, mp2, r2, fc1, fc2]
 
         super(LeNet, self).__init__(self.lenet_layers)
+
+    @staticmethod
+    def get_keras_model(save_dir=None):
+        import keras
+
+        if save_dir is not None:
+            return nn.util.open_keras_model(save_dir=save_dir)
+
+        IMG_HEIGHT, IMG_WIDTH = 28, 28
+        (x_train, y_train), (x_test, y_test) = keras.datasets.mnist.load_data()
+        x_train, x_test = x_train / 255.0, x_test / 255.0
+
+        # Define Constraints (useful for quantization)
+        kernel_constraint = keras.constraints.max_norm(max_value=1)
+
+        """
+        Define the model here
+
+        Changes:
+        - Added initial BatchNorm: Makes sense to distribute the input image data evenly around zero
+        - Increased value of dropout layer to .5 in first fully connected layer 
+        - Removed bias from conv layers
+        """
+        model = keras.models.Sequential(name="KerasEggNet", layers=[
+            # Hack: Reshape the image to 1D to make the Keras BatchNorm layer work
+            keras.layers.Reshape(target_shape=(IMG_HEIGHT, IMG_WIDTH, 1), input_shape=(IMG_HEIGHT, IMG_WIDTH)),
+            keras.layers.Conv2D(16, kernel_size=3, padding='same', activation='linear', use_bias=True,
+                                kernel_constraint=kernel_constraint),
+            keras.layers.Dropout(0.2),
+            keras.layers.ReLU(),
+            keras.layers.MaxPooling2D(),
+            keras.layers.Conv2D(32, kernel_size=3, padding='same', activation='linear', use_bias=True,
+                                kernel_constraint=kernel_constraint),
+            keras.layers.Dropout(0.2),
+            keras.layers.ReLU(),
+            keras.layers.MaxPooling2D(),
+            keras.layers.Flatten(),
+            keras.layers.Dense(32, activation='linear', kernel_constraint=kernel_constraint),
+            keras.layers.Dropout(0.2),
+            keras.layers.ReLU(),
+            keras.layers.Dense(10, activation='softmax', kernel_constraint=kernel_constraint)
+        ])
+        # You must install pydot and graphviz for `pydotprint` to work.
+        # keras.utils.plot_model(model, 'multi_input_and_output_model.png', show_shapes=True)
+        model.compile(optimizer='adam',
+                      loss='sparse_categorical_crossentropy',
+                      metrics=['accuracy'])
+        model.build()
+        return model
 
     @staticmethod
     def load_from_files(save_dir):

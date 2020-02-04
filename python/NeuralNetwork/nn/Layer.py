@@ -388,6 +388,32 @@ class ReshapeLayer(Layer):
         return self.newshape
 
 
+class QConv(Conv2dLayer):
+
+    def __init__(self,
+                 in_channels,
+                 out_channels,
+                 kernel_size,
+                 activation,
+                 kernel_weights,
+                 kernel_scaling,
+                 bias_weights,
+                 bias_scaling,
+                 weight_dtype=np.int8,
+                 activations_dtype=np.int8,
+                 ):
+        super(QConv, self).__init__(in_channels=in_channels, out_channels=out_channels, kernel_size=kernel_size,
+                                    activation=activation)
+        self.kernel = kernel_weights
+        self.bias = bias_weights
+
+        self.kernel_scaling = kernel_scaling
+        self.bias_scaling = bias_scaling
+
+    def __call__(self, *args, **kwargs):
+        super.__call__(*args, **kwargs)
+
+
 class QuantFullyConnected(FullyConnectedLayer):
 
     def __init__(self,

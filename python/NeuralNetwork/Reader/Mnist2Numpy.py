@@ -166,7 +166,7 @@ class MnistDataReader:
         :return:
         """
         counter = 0
-        limit = 100
+        limit = 10000
         while counter < limit:
             vals = self.get_Arrays(batch_size)
             # if vals == None:

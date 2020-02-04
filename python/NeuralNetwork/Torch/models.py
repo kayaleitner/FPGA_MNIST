@@ -1,5 +1,3 @@
-from typing import Any
-
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -32,6 +30,62 @@ class SqueezeNet(nn.Module):
         return x
 
 
+class ConvBNReLU(nn.Sequential):
+    """
+    A combined Conv2D + BatchNorm + ReLU Layer
+    """
+
+    def __init__(self, in_planes, out_planes, kernel_size=3, stride=1, groups=1):
+        padding = (kernel_size - 1) // 2
+        super(ConvBNReLU, self).__init__(
+            nn.Conv2d(in_planes, out_planes, kernel_size, stride, padding, groups=groups, bias=False),
+            nn.BatchNorm2d(out_planes, momentum=0.1),
+            # Replace with ReLU
+            nn.ReLU(inplace=False)
+        )
+
+
+class ConvBN(nn.Sequential):
+    """
+    A combined Conv2D + BatchNorm Layer
+    """
+
+    def __init__(self, in_planes, out_planes, kernel_size=3, stride=1, groups=1):
+        padding = (kernel_size - 1) // 2
+        super(ConvBN, self).__init__(
+            nn.Conv2d(in_planes, out_planes, kernel_size, stride, padding, groups=groups, bias=False),
+            nn.BatchNorm2d(out_planes, momentum=0.1),
+        )
+
+
+class LinearRelu(nn.Sequential):
+
+    def __init__(self, in_features, out_features):
+        super(LinearRelu, self).__init__(
+            nn.Linear(in_features=in_features, out_features=out_features),
+            nn.ReLU(inplace=False)
+        )
+
+
+class LeNetV2(nn.Sequential):
+    """
+    Improved Version with BatchNorm and Dropout
+    """
+
+    def __init__(self):
+        super(LeNetV2, self).__init__(
+            ConvBN(in_planes=1, out_planes=16, kernel_size=3, stride=1),
+            nn.Dropout(p=0.25),
+            nn.MaxPool2d(kernel_size=2, stride=2),
+            ConvBN(in_planes=16, out_planes=32, kernel_size=3, stride=1),
+            nn.Dropout(p=0.25),
+            nn.MaxPool2d(kernel_size=2, stride=2),
+            LinearRelu(in_features=32*7*7, out_features=32),
+            nn.Dropout(p=0.25),
+            LinearRelu(in_features=32, out_features=10),
+        )
+
+
 class LeNet(nn.Module):
     """
     Simple implementation of the classic LeNet
@@ -59,6 +113,25 @@ class LeNet(nn.Module):
         net.conv2_1.weight = self.conv2_1.weight
         net.fc1.weight = self.fc1.weight
         net.fc2.weight = self.fc2.weight
+
+    def fuse_model(self):
+        """
+        Fuse Conv+BN and Conv+BN+Relu modules prior to quantization
+        This operation does not change the numerics
+        Returns:
+
+        """
+        import torch.quantization
+
+        for m in self.modules():
+            if type(m) == ConvBN:
+                torch.quantization.fuse_modules(m, ['0', '1'], inplace=True)
+            if type(m) == ConvBNReLU:
+                torch.quantization.fuse_modules(m, ['0', '1', '2'], inplace=True)
+            if type(m) == InvertedResidual:
+                for idx in range(len(m.conv)):
+                    if type(m.conv[idx]) == nn.Conv2d:
+                        torch.quantization.fuse_modules(m.conv, [str(idx), str(idx + 1)], inplace=True)
 
 
 class QuantLeNet(nn.Module):
