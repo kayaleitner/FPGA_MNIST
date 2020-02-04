@@ -33,6 +33,8 @@ extern "C" {
 #if _WIN32
 // Do not use __restrict with windows, because of super annoying build
 #define __restrict
+#define restrict
+
 #else
 #ifndef __restrict
 #define __restrict restrict

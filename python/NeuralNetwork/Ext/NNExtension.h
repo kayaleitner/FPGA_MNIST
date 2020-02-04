@@ -35,16 +35,16 @@ extern "C" {
 
 
 
-int relu_float(float* x, int d1);
-int relu_double(double* x, int d1);
-int relu_int8_t(int8_t* x, int d1);
-int relu_int16_t(int16_t* x, int d1);
-int relu_int32_t(int32_t* x, int d1);
-int relu_int64_t(int64_t* x, int d1);
-int relu_uint8_t(uint8_t* x, int d1);
-int relu_uint16_t(uint16_t* x, int d1);
-int relu_uint32_t(uint32_t* x, int d1);
-int relu_uint64_t(uint64_t* x, int d1);
+int relu_float_inplace(float* x, int d1);
+int relu_double_inplace(double* x, int d1);
+int relu_int8_t_inplace(int8_t* x, int d1);
+int relu_int16_t_inplace(int16_t* x, int d1);
+int relu_int32_t_inplace(int32_t* x, int d1);
+int relu_int64_t_inplace(int64_t* x, int d1);
+int relu_uint8_t_inplace(uint8_t* x, int d1);
+int relu_uint16_t_inplace(uint16_t* x, int d1);
+int relu_uint32_t_inplace(uint32_t* x, int d1);
+int relu_uint64_t_inplace(uint64_t* x, int d1);
 
 int conv2d_float(const float*  data_in, int batch, int in_h, int in_w, int in_ch, const float*  kernel, int fh, int fw, int kin_ch, int kout_ch, int stride, float** data_out, int* batch_out, int* out_h, int* out_w, int* out_ch);
 int conv2d_double(const double*  data_in, int batch, int in_h, int in_w, int in_ch, const double*  kernel, int fh, int fw, int kin_ch, int kout_ch, int stride, double** data_out, int* batch_out, int* out_h, int* out_w, int* out_ch);

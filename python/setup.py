@@ -161,6 +161,7 @@ if platform.system() == 'Linux':
 elif platform.system() == 'Darwin':
     extra_args = ['--verbose', '-Rpass=loop-vectorize', '-Rpass-analysis=loop-vectorize', '-ffast-math']
 elif platform.system() == 'Windows':
+    # extra_args = ['/Qrestrict', '/W3']
     extra_args = []
 else:
     raise RuntimeError('Operating System not supported?')
