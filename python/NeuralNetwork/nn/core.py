@@ -38,6 +38,10 @@ def make_gauss_kernel(size=5, sigma=1.6) -> ndarray:
     return k
 
 
+def make_random_kernel(size=(3, 3), mu=0.5, sigma=0.3):
+    return np.random.normal(loc=mu, scale=sigma, size=size)
+
+
 def conv2d(data_in: ndarray, kernel: ndarray, stride: int = 1):
     """
     Perform a 2D convolution over a batch of tensors. This is equivalent to
@@ -133,28 +137,12 @@ def conv2d(data_in: ndarray, kernel: ndarray, stride: int = 1):
     return out
 
 
-def q_conv2d(data_in: ndarray,
-             data_in_scaling,
-             kernel: ndarray,
-             kernel_in_scaling,
-             data_out_scaling,
-             bias: ndarray = None,
-             bias_in_scaling=None,
-             bias_out_scaling=None,
-             stride: int = 1):
-    """
-    Perform a 2D convolution over a batch of tensors. This is equivalent to
-
-     output[b, i, j, k] =
-         sum_{di, dj, q} input[b, strides[1] * i + di, strides[2] * j + dj, q] *
-                         filter[di, dj, q, k]
-
-    :param data_in: Input data tensor with shape [batch, height, width, channels_in]
-    :param kernel: Convolution kernel tensor with shape [kernel_height, kernel_width, channels_in, channels_out]
-    :param stride: Integer for the step width
-    :return: Tensor with shape [batch, height/stride, width/stride, channels_out]
-    """
-
+def fpi_conv2d(data_in: ndarray,
+               data_in_m: int,
+               kernel: ndarray,
+               kernel_m: int,
+               data_out_type=None,
+               stride: int = 1):
     if kernel.dtype.kind not in 'i':  # check if datatype is unsigned or integer
         raise ValueError('kernel datatype must be integer')
 
@@ -173,35 +161,64 @@ def q_conv2d(data_in: ndarray,
     fh2 = (fh - 1) // 2
     fw2 = (fw - 1) // 2
 
-    out = np.zeros(shape=[batch, in_h, in_w, kout_ch], dtype=data_in.dtype)
+    # Allocate output array
+    if data_out_type is not None:
+        out = np.zeros(shape=[batch, in_h, in_w, kout_ch], dtype=data_out_type)
+    else:
+        out = np.zeros(shape=[batch, in_h, in_w, kout_ch], dtype=data_in.dtype)
+        data_out_type = out.dtype
+
+    # Allocate memory for output scaling
+    out_m = np.zeros(shape=(kout_ch,), dtype=data_out_type)
+
     in_padded = np.pad(data_in, ((0, 0), (fh2, fh2), (fw2, fw2), (0, 0)), 'constant', constant_values=(0, 0))
 
     for b in range(batch):
         for k in range(kout_ch):
+
+            # Scaling has to be done for each output kernel
+            scale_kernel = kernel_m[k]
+            scale_out_patch = scale_kernel + data_in_m
+            scale_out_patch_final = np.min(scale_out_patch)
+            # Downscale
+            axis_shift = (scale_out_patch - scale_out_patch_final).astype(data_out_type)
+
             i_out, j_out = 0, 0
             for i in range(0, in_h, stride):
                 for j in range(0, in_w, stride):
                     patch = in_padded[b, i:i + fh, j:j + fw, :]  # 3d tensor 3x3x16
+                    # temp = patch * kernel[:, :, :, k]
+                    temp_control = patch.astype(np.float) * kernel[:, :, :, k].astype(np.float)
+                    temp = np.multiply(patch, kernel[:, :, :, k], dtype=data_out_type)
+                    assert np.allclose(temp, temp_control)
 
-                    temp = patch * kernel[:, :, :, k]
-                    temp_out_scaling = data_in_scaling + kernel_in_scaling
-                    delta_scale = data_out_scaling - temp_out_scaling
-                    np.left_shift(temp, delta_scale, where=delta_scale>0)
-                    np.right_shift(temp, -delta_scale, where=delta_scale<0)
-                    out = patch / (2 ** delta_scale)
+                    # Shift the kernel
+                    for ix_ax, ax_shift in enumerate(axis_shift):
+                        np.right_shift(temp[:, :, ix_ax], ax_shift)
+                        temp_control[:, :, ix_ax] = temp_control[:, :, ix_ax] / 2
 
-                    temp = temp.flatten().astype(np.int64)
-                    # patch_sum = np.sum(patch * kernel[:, :, :, k], axis=(0, 1, 2))  # sum along all axis
-                    min_value = np.iinfo(kernel.dtype).min
-                    max_value = np.iinfo(kernel.dtype).max
-                    patch_sum = np.sum(temp).clip(min=min_value, max=max_value).astype(kernel.dtype)
-                    out[b, i_out, j_out, k] = np.clip(patch_sum, a_min=min_value, a_max=max_value).astype(
-                        kernel.dtype)
+                    import NeuralNetwork.nn.quant as quant
+                    # the patch has shape e.g. (3,3,3)
+                    # how much space must be left to sum up those values?
+                    #
+                    additional_bits_needed = np.log2(quant.next_pow2(temp.size)).astype(np.int)
+                    scale_out_patch_final = np.min(scale_out_patch) - additional_bits_needed
+                    temp = np.right_shift(temp, additional_bits_needed)
+                    temp_control = temp_control // 2.0**(additional_bits_needed-1)
+
+
+                    patch_sum = temp.flatten().sum(dtype=data_out_type)
+                    patch_control_sum = temp_control.flatten().sum()
+                    if not np.allclose(patch_sum, patch_control_sum):
+                        print("Difference here")
+
+                    out_m[k] = scale_out_patch_final
+                    out[b, i_out, j_out, k] = patch_sum
                     j_out += 1
                 j_out = 0
                 i_out += 1
 
-    return out
+    return out, out_m
 
 
 def q_matmul(w, x, b):

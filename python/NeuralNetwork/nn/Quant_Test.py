@@ -159,7 +159,7 @@ class GeneralQuantizationTests(unittest.TestCase):
         qi8, mi = quant.quantize_conv_activations(input=image, parameter_bits=8)
 
         qout = nn.core.conv2d(data_in=qi8, kernel=qk4)
-        mout = mk+mi
+        mout = mk + mi
 
         pass
 
@@ -362,6 +362,34 @@ class FPTestCase(unittest.TestCase):
 
     def test_random_numpy(self):
         pass
+
+    def test_conv(self):
+
+        bits = 8
+        data_in = np.random.normal(size=(10, 28, 28, 3))
+        kernel = nn.make_random_kernel(size=(3, 3, 3, 6))
+
+        qkernel8, km = quant.quantize_kernels(kernel, parameter_bits=8)
+        qimage8, ki = quant.quantize_conv_activations(data_in, parameter_bits=8)
+
+        self.assertTrue(np.all(np.abs(qkernel8.flatten()) < 2 ** (bits - 1)))
+        self.assertTrue(np.all(np.abs(qimage8.flatten()) < 2 ** (bits - 1)))
+
+        qkernel8 = qkernel8.astype(np.int8)
+        qimage8 = qimage8.astype(np.int8)
+        dom = 4
+
+        qout, om = nn.fpi_conv2d(data_in=qimage8, data_in_m=ki,
+                                 kernel=qkernel8, kernel_m=km,
+                                 data_out_type=np.int16)
+
+        fqout = qout.astype(np.float) / (2 ** (om - 1))
+        fout = nn.conv2d(data_in, kernel)
+
+        err = np.abs(fqout - fout)
+
+        self.assertTrue(np.all(err < 0.1))
+
 
 
 if __name__ == '__main__':

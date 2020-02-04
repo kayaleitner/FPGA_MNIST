@@ -83,6 +83,31 @@ def from_fpi(x, fraction_bits, target_type, zero_point):
     return x * 2 ** (-fraction_bits)
 
 
+class np_Fpi:
+
+    def __init__(self, values, m, bit_width):
+        # super(Fpi, self).__init__(values)
+        super(Fpi, self).__init__()
+        self.values = values
+        self.m = m
+        self.bit_width = bit_width
+
+    def __add__(self, other):
+        raise NotImplementedError()
+        if not isinstance(other, Fpi):
+            other = Fpi(other, m=0, bit_width=64)
+
+        result = Fpi()
+
+
+    def __mul__(self, other):
+        raise NotImplementedError()
+    def __abs__(self):
+        raise NotImplementedError()
+
+    def __sub__(self, other):
+        raise NotImplementedError()
+
 class Fpi(numbers.Number):
     """
     Implements a fixed point integer class
@@ -544,3 +569,9 @@ def can_kernel_overflow(qkernel, kernel_bits, kernel_frac_bits,
 def dequantizse_kernels(qkernel, parameter_bits, frac_bits, mode=QuantConvLayerType.PER_CHANNEL):
     scale = 2.0 ** (-frac_bits)
     return dequantise_uniform(qkernel, scale)
+
+
+
+def fpi_conv2D(data_in, kernel_in, dtype_out=np.int8,  stride=1):
+
+    nn.conv2d(data_in=data_in.astype(dtype_out), kernel=kernel_in.astype(dtype_out),)
