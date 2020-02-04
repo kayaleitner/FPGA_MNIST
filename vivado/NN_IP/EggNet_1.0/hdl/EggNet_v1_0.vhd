@@ -10,7 +10,8 @@ entity EggNet_v1_0 is
     DATA_WIDTH              : integer := 8;
     L1_IN_CHANNEL_NUMBER	  : integer := 16;    
     L2_IN_CHANNEL_NUMBER	  : integer := 32;      
-    L3_IN_CHANNEL_NUMBER	  : integer := 32;      
+    L3_IN_CHANNEL_NUMBER	  : integer := 32;    
+    MEM_CTRL_NUMBER         : integer := 4; 
     
 		-- User parameters ends
 		-- Do not modify the parameters beyond this line
@@ -90,28 +91,35 @@ architecture arch_imp of EggNet_v1_0 is
 		C_S_AXI_ADDR_WIDTH	: integer	:= 4
 		);
 		port (
-    Status_i : in std_logic_vector(C_S_AXI_DATA_WIDTH-1 downto 0);
-		S_AXI_ACLK	: in std_logic;
-		S_AXI_ARESETN	: in std_logic;
-		S_AXI_AWADDR	: in std_logic_vector(C_S_AXI_ADDR_WIDTH-1 downto 0);
-		S_AXI_AWPROT	: in std_logic_vector(2 downto 0);
-		S_AXI_AWVALID	: in std_logic;
-		S_AXI_AWREADY	: out std_logic;
-		S_AXI_WDATA	: in std_logic_vector(C_S_AXI_DATA_WIDTH-1 downto 0);
-		S_AXI_WSTRB	: in std_logic_vector((C_S_AXI_DATA_WIDTH/8)-1 downto 0);
-		S_AXI_WVALID	: in std_logic;
-		S_AXI_WREADY	: out std_logic;
-		S_AXI_BRESP	: out std_logic_vector(1 downto 0);
-		S_AXI_BVALID	: out std_logic;
-		S_AXI_BREADY	: in std_logic;
-		S_AXI_ARADDR	: in std_logic_vector(C_S_AXI_ADDR_WIDTH-1 downto 0);
-		S_AXI_ARPROT	: in std_logic_vector(2 downto 0);
-		S_AXI_ARVALID	: in std_logic;
-		S_AXI_ARREADY	: out std_logic;
-		S_AXI_RDATA	: out std_logic_vector(C_S_AXI_DATA_WIDTH-1 downto 0);
-		S_AXI_RRESP	: out std_logic_vector(1 downto 0);
-		S_AXI_RVALID	: out std_logic;
-		S_AXI_RREADY	: in std_logic
+    Status_i                : in std_logic_vector(C_S_AXI_DATA_WIDTH-1 downto 0);
+    Dbg_bram_addr_o         : out std_logic_vector(C_S00_AXI_DATA_WIDTH-1 downto 0);
+    Dbg_bram_addr_check_i   : in std_logic_vector(C_S00_AXI_DATA_WIDTH-1 downto 0); 
+    Dbg_bram_data_i         : in std_logic_vector(C_S00_AXI_DATA_WIDTH-1 downto 0); 
+    Dbg_32bit_select_o      : out std_logic_vector(3 downto 0);   
+    Dbg_enable_o            : out std_logic;  
+    AXI_mem_ctrl_addr_o     : out std_logic_vector(MEM_CTRL_NUMBER-1 downto 0);  
+    AXI_layer_properties_i  : in  std_logic_vector(C_S00_AXI_DATA_WIDTH-1 downto 0);
+		S_AXI_ACLK	            : in std_logic;
+		S_AXI_ARESETN	          : in std_logic;
+		S_AXI_AWADDR	          : in std_logic_vector(C_S_AXI_ADDR_WIDTH-1 downto 0);
+		S_AXI_AWPROT	          : in std_logic_vector(2 downto 0);
+		S_AXI_AWVALID	          : in std_logic;
+		S_AXI_AWREADY	          : out std_logic;
+		S_AXI_WDATA	            : in std_logic_vector(C_S_AXI_DATA_WIDTH-1 downto 0);
+		S_AXI_WSTRB	            : in std_logic_vector((C_S_AXI_DATA_WIDTH/8)-1 downto 0);
+		S_AXI_WVALID	          : in std_logic;
+		S_AXI_WREADY	          : out std_logic;
+		S_AXI_BRESP	            : out std_logic_vector(1 downto 0);
+		S_AXI_BVALID	          : out std_logic;
+		S_AXI_BREADY	          : in std_logic;
+		S_AXI_ARADDR	          : in std_logic_vector(C_S_AXI_ADDR_WIDTH-1 downto 0);
+		S_AXI_ARPROT	          : in std_logic_vector(2 downto 0);
+		S_AXI_ARVALID	          : in std_logic;
+		S_AXI_ARREADY	          : out std_logic;
+		S_AXI_RDATA	            : out std_logic_vector(C_S_AXI_DATA_WIDTH-1 downto 0);
+		S_AXI_RRESP	            : out std_logic_vector(1 downto 0);
+		S_AXI_RVALID	          : out std_logic;
+		S_AXI_RREADY	          : in std_logic
 		);
 	end component EggNet_v1_0_S00_AXI;
 
@@ -124,11 +132,7 @@ component MemCtrl_3x3 is
       LAYER_WIDTH               : integer := 28;   
       AXI4_STREAM_INPUT         : integer range 0 to 1    := 0;
       C_S_AXIS_TDATA_WIDTH	    : integer	:= 32;
-      C_S00_AXI_DATA_WIDTH	    : integer	:= 32;
-      C_S00_AXI_ADDR_WIDTH	    : integer	:= 4;
-      MEM_CTRL_ADDR             : integer range 1 to 15 := 1  -- limited range because of limited address width in AXI_lite_reg_addr
-                                                              -- if more than 15 memory controller required change debugging using AXI lite
-    );
+      C_S00_AXI_DATA_WIDTH	    : integer	:= 32);
     Port (
       -- Clk and reset
       Layer_clk_i		    : in std_logic;
@@ -149,24 +153,27 @@ component MemCtrl_3x3 is
       M_layer_tlast_o   : out std_logic;
       M_layer_tready_i  : in std_logic;      
       -- M_layer FIFO
-      M_layer_fifo_srst : out std_logic;
-      M_layer_fifo_in   : out std_logic_vector(((DATA_WIDTH*L1_IN_CHANNEL_NUMBER)*2)-1 downto 0);
-      M_layer_fifo_wr   : out std_logic;
-      M_layer_fifo_rd   : out std_logic;
-      M_layer_fifo_out  : in std_logic_vector(((DATA_WIDTH*L1_IN_CHANNEL_NUMBER)*2)-1 downto 0);      
+      M_layer_fifo_srst_o : out std_logic;
+      M_layer_fifo_in_o   : out std_logic_vector(((DATA_WIDTH*L1_IN_CHANNEL_NUMBER)*2)-1 downto 0);
+      M_layer_fifo_wr_o   : out std_logic;
+      M_layer_fifo_rd_o   : out std_logic;
+      M_layer_fifo_out_i  : in std_logic_vector(((DATA_WIDTH*L1_IN_CHANNEL_NUMBER)*2)-1 downto 0);      
       -- BRAM interface
       Bram_clk_o        : out std_logic;
       Bram_pa_addr_o    : out std_logic_vector(L1_BRAM_ADDR_WIDTH-1 downto 0);
       Bram_pa_data_wr_o : out std_logic_vector((DATA_WIDTH*L1_IN_CHANNEL_NUMBER)-1 downto 0);
       Bram_pa_wea_o     : out std_logic_vector(((DATA_WIDTH*L1_IN_CHANNEL_NUMBER)/8)-1  downto 0);
       Bram_pb_addr_o    : out std_logic_vector(L1_BRAM_ADDR_WIDTH-1 downto 0);
-      Bram_pb_data_rd_i : in std_logic_vector((DATA_WIDTH*L1_IN_CHANNEL_NUMBER)-1 downto 0);
-      Bram_pb_rst_o     : out std_logic; -- ACTIVE HIGH!           
+      Bram_pb_data_rd_i : in std_logic_vector((DATA_WIDTH*L1_IN_CHANNEL_NUMBER)-1 downto 0);       
       -- AXI Lite dbg interface 
-      AXI_lite_reg_addr_i  : in std_logic_vector(C_S00_AXI_DATA_WIDTH-1 downto 0); 	-- 31 downto 28 : Memory controller address | 27 downto 24: 32 bit vector address | 23 downto 0: BRAM address
-      AXI_lite_reg_data_o  : out std_logic_vector(C_S00_AXI_DATA_WIDTH-1 downto 0);      
+      Dbg_bram_addr_i  : in std_logic_vector(C_S00_AXI_DATA_WIDTH-1 downto 0); -- BRAM address 
+      Dbg_bram_addr_o  : out std_logic_vector(C_S00_AXI_DATA_WIDTH-1 downto 0); -- BRAM address to double check if address fits to data 
+      Dbg_bram_data_o  : out std_logic_vector(C_S00_AXI_DATA_WIDTH-1 downto 0); -- 32 bit vector tile 
+      Dbg_32bit_select_i: in std_logic_vector(3 downto 0); 
+      Dbg_enable_i     : in std_logic;     
       -- Status
-      S_layer_invalid_block_o : out std_logic);
+      Layer_properties_o : out std_logic_vector(C_S00_AXI_DATA_WIDTH-1 downto 0);
+      Status_o : out std_logic_vector(C_S00_AXI_DATA_WIDTH-1 downto 0) );
   end component MemCtrl_3x3;
 
   component ShiftRegister_3x3 is
@@ -262,11 +269,17 @@ component MemCtrl_3x3 is
   signal l1_bram_pa_data_wr     : std_logic_vector((DATA_WIDTH*L1_IN_CHANNEL_NUMBER)-1 downto 0);
   signal l1_bram_pa_wea         : std_logic_vector(((DATA_WIDTH*L1_IN_CHANNEL_NUMBER)/8)-1  downto 0);
   signal l1_bram_pb_addr        : std_logic_vector(L1_BRAM_ADDR_WIDTH-1 downto 0);
-  signal l1_bram_pb_data_rd     : std_logic_vector((DATA_WIDTH*L1_IN_CHANNEL_NUMBER)-1 downto 0);
-  signal l1_bram_pb_rst         : std_logic; -- ACTIVE HIGH!            
-  signal l1_invalid_block_size  : std_logic; -- indicates if blocksize is invalid            
-  signal axi_lite_reg_addr      : std_logic_vector(C_S00_AXI_DATA_WIDTH-1 downto 0); 
-  signal axi_lite_reg_data      : std_logic_vector(C_S00_AXI_DATA_WIDTH-1 downto 0);
+  signal l1_bram_pb_data_rd     : std_logic_vector((DATA_WIDTH*L1_IN_CHANNEL_NUMBER)-1 downto 0);       
+  
+  
+  signal dbg_bram_addr_in       : std_logic_vector(L1_BRAM_ADDR_WIDTH-1 downto 0);
+  signal dbg_bram_addr_check    : std_logic_vector(L1_BRAM_ADDR_WIDTH-1 downto 0);
+  signal dbg_bram_data_out      : std_logic_vector(C_S00_AXI_DATA_WIDTH-1 downto 0);
+  signal dbg_32bit_select       : std_logic_vector(3 downto 0); 
+  signal dbg_enable_AXI         : std_logic;   
+  signal dbg_enable             : std_logic_vector(MEM_CTRL_NUMBER downto 0);   
+  signal axi_mem_ctrl_addr      : std_logic_vector(MEM_CTRL_NUMBER-1 downto 0);  
+  signal axi_progress           : std_logic_vector(C_S00_AXI_DATA_WIDTH-1 downto 0);   
   
   signal l1_s_conv_data_1       : std_logic_vector(((DATA_WIDTH*L1_IN_CHANNEL_NUMBER) - 1) downto 0);
   signal l1_s_conv_data_2       : std_logic_vector(((DATA_WIDTH*L1_IN_CHANNEL_NUMBER) - 1) downto 0);
@@ -281,7 +294,12 @@ component MemCtrl_3x3 is
   signal l1_s_conv_tlast        : std_logic;
   signal l1_s_conv_tready       : std_logic;  
 
-  signal status : std_logic_vector(C_S00_AXI_DATA_WIDTH-1 downto 0);
+  type STATUS_ARR is ARRAY (0 to MEM_CTRL_NUMBER) of std_logic_vector(C_S00_AXI_DATA_WIDTH-1 downto 0);
+  signal status                 : STATUS_ARR;
+  signal layer_properties       : STATUS_ARR; 
+  signal axi_layer_properties   : std_logic_vector(C_S00_AXI_DATA_WIDTH-1 downto 0);
+  signal axi_status             : std_logic_vector(C_S00_AXI_DATA_WIDTH-1 downto 0);
+  
   
 begin
 
@@ -292,7 +310,14 @@ EggNet_v1_0_S00_AXI_inst : EggNet_v1_0_S00_AXI
 		C_S_AXI_ADDR_WIDTH	=> C_S00_AXI_ADDR_WIDTH
 	)
 	port map (
-    Status_i    => status,
+    Status_i               => axi_status,              
+    Dbg_bram_addr_o        => dbg_bram_addr_in     ,
+    Dbg_bram_addr_check_i  => dbg_bram_addr_check  ,
+    Dbg_bram_data_i        => dbg_bram_data_out    ,
+    Dbg_32bit_select_o     => dbg_32bit_select     ,
+    Dbg_enable_o           => dbg_enable_AXI       ,
+    AXI_mem_ctrl_addr_o    => axi_mem_ctrl_addr    ,
+    AXI_layer_properties_i => axi_layer_properties ,
 		S_AXI_ACLK	=> s00_axi_aclk,
 		S_AXI_ARESETN	=> s00_axi_aresetn,
 		S_AXI_AWADDR	=> s00_axi_awaddr,
@@ -325,10 +350,8 @@ EggNet_v1_0_S00_AXI_inst : EggNet_v1_0_S00_AXI
       LAYER_HIGHT             => LAYER_HIGHT,
       LAYER_WIDTH             => LAYER_WIDTH,
       AXI4_STREAM_INPUT       => 1,
-      MEM_CTRL_ADDR           => 1,
       C_S_AXIS_TDATA_WIDTH    => C_S00_AXIS_TDATA_WIDTH,
-      C_S00_AXI_DATA_WIDTH    => C_S00_AXI_DATA_WIDTH,
-      C_S00_AXI_ADDR_WIDTH    => C_S00_AXI_ADDR_WIDTH
+      C_S00_AXI_DATA_WIDTH    => C_S00_AXI_DATA_WIDTH
       )       
     port map(
       Layer_clk_i		          => s00_axis_aclk,
@@ -346,21 +369,24 @@ EggNet_v1_0_S00_AXI_inst : EggNet_v1_0_S00_AXI
        M_layer_tnewrow_o      => l1_m_tnewrow       ,
       M_layer_tlast_o         => l1_m_tlast         ,
       M_layer_tready_i        => l1_m_tready        ,
-      M_layer_fifo_srst       => l1_m_fifo_srst     ,
-      M_layer_fifo_in         => l1_m_fifo_in       ,
-      M_layer_fifo_wr         => l1_m_fifo_wr       ,
-      M_layer_fifo_rd         => l1_m_fifo_rd       ,
-      M_layer_fifo_out        => l1_m_fifo_out      ,
+      M_layer_fifo_srst_o     => l1_m_fifo_srst     ,
+      M_layer_fifo_in_o       => l1_m_fifo_in       ,
+      M_layer_fifo_wr_o       => l1_m_fifo_wr       ,
+      M_layer_fifo_rd_o       => l1_m_fifo_rd       ,
+      M_layer_fifo_out_i      => l1_m_fifo_out      ,
       Bram_clk_o              => l1_bram_clk        ,
       Bram_pa_addr_o          => l1_bram_pa_addr    ,
       Bram_pa_data_wr_o       => l1_bram_pa_data_wr ,
       Bram_pa_wea_o           => l1_bram_pa_wea     ,
       Bram_pb_addr_o          => l1_bram_pb_addr    ,
       Bram_pb_data_rd_i       => l1_bram_pb_data_rd ,
-      Bram_pb_rst_o           => l1_bram_pb_rst     ,
-      AXI_lite_reg_addr_i     => axi_lite_reg_addr    ,
-      AXI_lite_reg_data_o     => axi_lite_reg_data    ,
-      S_layer_invalid_block_o => l1_invalid_block_size);
+      Dbg_bram_addr_i         => dbg_bram_addr_in ,
+      Dbg_bram_addr_o         => dbg_bram_addr_check,
+      Dbg_bram_data_o         => dbg_bram_data_out,
+      Dbg_32bit_select_i      => dbg_32bit_select  ,
+      Dbg_enable_i            => dbg_enable(1),
+      Layer_properties_o      => layer_properties(1),
+      Status_o                => status(1));
 
   -- ********************* Instantiation of Block RAM ************************************************  
   L1_bram : blk_mem_gen_0
@@ -417,13 +443,23 @@ EggNet_v1_0_S00_AXI_inst : EggNet_v1_0_S00_AXI
       M_tlast_o   => l1_s_conv_tlast , 
       M_tready_i  => l1_s_conv_tready
     );      
-      
-  P_Status: process(s00_axi_aclk,s00_axi_aresetn) is 
+  
+
+  layer_properties(0)(7 downto 0) <= std_logic_vector(to_unsigned(MEM_CTRL_NUMBER,8));
+  layer_properties(0)(31 downto 8) <= (others => '0'); -- FIND SOMETHING USEFULL 
+  status(0) <= x"FF00FF00"; -- ADD OVERALL STATUS
+  
+  Dbg_ctrl: process(s00_axi_aclk,s00_axi_aresetn) is 
   begin 
     if s00_axi_aresetn = '0' then 
-      status <= (others => '0');
+      axi_status <= (others => '0');
     elsif rising_edge(s00_axi_aclk) then 
-      status(status'left downto 0) <= x"FF00FF00";
+       
+      if unsigned(axi_mem_ctrl_addr) <= to_unsigned(MEM_CTRL_NUMBER,axi_mem_ctrl_addr'length) then 
+        axi_status <= status(to_integer(unsigned(axi_mem_ctrl_addr)));
+        axi_layer_properties <= layer_properties(to_integer(unsigned(axi_mem_ctrl_addr)));
+        dbg_enable(to_integer(unsigned(axi_mem_ctrl_addr))) <= dbg_enable_AXI;
+      end if;   
     end if;
   end process; 
 

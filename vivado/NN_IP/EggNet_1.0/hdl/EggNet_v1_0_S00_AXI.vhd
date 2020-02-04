@@ -5,7 +5,7 @@ use ieee.numeric_std.all;
 entity EggNet_v1_0_S00_AXI is
 	generic (
 		-- Users to add parameters here
-
+    MEM_CTRL_ADDR_WITDH   : integer := 4; 
 		-- User parameters ends
 		-- Do not modify the parameters beyond this line
 
@@ -16,8 +16,15 @@ entity EggNet_v1_0_S00_AXI is
 	);
 	port (
 		-- Users to add ports here
-    Status_i : in std_logic_vector(C_S_AXI_DATA_WIDTH-1 downto 0);
-		-- User ports ends
+    Status_i                : in std_logic_vector(C_S_AXI_DATA_WIDTH-1 downto 0);
+    Dbg_bram_addr_o         : out std_logic_vector(C_S_AXI_DATA_WIDTH-1 downto 0); -- BRAM address   
+    Dbg_bram_addr_check_i   : in std_logic_vector(C_S_AXI_DATA_WIDTH-1 downto 0); -- BRAM address to double
+    Dbg_bram_data_i         : in std_logic_vector(C_S_AXI_DATA_WIDTH-1 downto 0); -- 32 bit vector tile 
+    Dbg_32bit_select_o      : out std_logic_vector(3 downto 0);   
+    Dbg_enable_o            : out std_logic;  
+    AXI_layer_properties_i    : in std_logic_vector(C_S_AXI_DATA_WIDTH-1 downto 0);
+    AXI_mem_ctrl_addr_o       : out std_logic_vector(MEM_CTRL_ADDR_WITDH-1 downto 0);  
+    -- User ports ends
 		-- Do not modify the ports beyond this line
 
 		-- Global Clock Signal
@@ -354,11 +361,11 @@ begin
 	      when b"00" =>
 	        reg_data_out <= Status_i; -- 32 bit status register
 	      when b"01" =>
-	        reg_data_out <= slv_reg1;
+	        reg_data_out <= Dbg_bram_addr_check_i;
 	      when b"10" =>
-	        reg_data_out <= slv_reg2;
+	        reg_data_out <= Dbg_bram_data_i;
 	      when b"11" =>
-	        reg_data_out <= slv_reg3;
+	        reg_data_out <= AXI_layer_properties_i;
 	      when others =>
 	        reg_data_out  <= (others => '0');
 	    end case;
@@ -384,11 +391,10 @@ begin
 
 
 	-- Add user logic here
-
--- reg0 CPU -> (8) WR_nRD ,AXI MemCtrlAddr(7 downto 0) | (7 downot 0) MEMCTRL_STATUS 0 RUNNING, 1 DEBUG or ERROR if it should not be in debug mode  
--- reg1 CPU -> BRAMDATA(31 downto 0) | AXI -> CPU BRAMDATA(31 downto 0)
--- reg2 CPU -> AXI BRAMADDR(24 downto 0) BRAM32BITADDR(7 downto 0), | AXI -> CPU BRAM32BITADDR(7 downto 0), AXI BRAMADDR(24 downto 0)
--- reg4 AXI -> CPU progress (how many images are already completed) 
+  AXI_mem_ctrl_addr_o <= slv_reg0(7 downto 0); 
+  Dbg_enable_o <= slv_reg0(31);
+  Dbg_32bit_select_o <= slv_reg0(11 downto 8);
+  Dbg_bram_addr_o <= slv_reg1; 
 
 	-- User logic ends
 

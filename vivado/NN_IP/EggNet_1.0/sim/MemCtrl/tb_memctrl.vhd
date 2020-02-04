@@ -30,10 +30,10 @@ architecture tb of tb_memctrl is
   constant C_S00_AXI_ADDR_WIDTH	    : integer	:= 4;  
   constant MEM_CTRL_ADDR            : integer range 1 to 15 := 1; -- limited range because of limited address width in AXI_lite_reg_addr  
   constant KERNEL_SIZE                : integer := 3;
+  constant MEM_CTRL_NUMBER         : integer := 4;
 
-  constant DBG_MEM_CTRL_ADDR_WIDTH    : integer := 4;
   constant DBG_REA_32BIT_WIDTH        : integer := 4;
-  constant DBG_BRAM_ADDRESS_WIDTH     : integer := 24;
+  constant DBG_BRAM_ADDRESS_WIDTH     : integer := L1_BRAM_ADDR_WIDTH;
 
   component blk_mem_gen_0 IS
     PORT (
@@ -89,17 +89,12 @@ architecture tb of tb_memctrl is
     Generic(
       BRAM_ADDR_WIDTH		        : integer range 1 to 24   := 10; -- maximum = 24 
       DATA_WIDTH		            : integer := 8; -- channel number * bit depth maximum = 512    
-      IN_CHANNEL_NUMBER		      : integer := 1; 
-      LAYER_HIGHT               : integer := 28; -- Layer hight of next layer 
-      LAYER_WIDTH               : integer := 28; -- Layer width of next layer 
-      
+      IN_CHANNEL_NUMBER		      : integer range 1 to 256 := 1; 
+      LAYER_HIGHT               : integer range 1 to 4096 := 28; -- Layer hight of next layer 
+      LAYER_WIDTH               : integer range 1 to 4096 := 28; -- Layer width of next layer      
       AXI4_STREAM_INPUT         : integer range 0 to 1 := 0; -- integer to calculate S_LAYER_DATA_WIDTH 
       C_S_AXIS_TDATA_WIDTH	    : integer	:= 32;
-      C_S00_AXI_DATA_WIDTH	    : integer	:= 32;
-      C_S00_AXI_ADDR_WIDTH	    : integer	:= 4;
-      MEM_CTRL_ADDR             : integer range 1 to 15 := 1  -- limited range because of limited address width in AXI_lite_reg_addr
-                                                              -- if more than 15 memory controller required change debugging using AXI lite
-    );
+      C_S00_AXI_DATA_WIDTH	    : integer	:= 32);
     Port (
       -- Clk and reset
       Layer_clk_i		    : in std_logic;
@@ -123,11 +118,11 @@ architecture tb of tb_memctrl is
       M_layer_tready_i  : in std_logic;
 
       -- M_layer FIFO
-      M_layer_fifo_srst : out std_logic;
-      M_layer_fifo_in   : out std_logic_vector;
-      M_layer_fifo_wr   : out std_logic;
-      M_layer_fifo_rd   : out std_logic;
-      M_layer_fifo_out  : in std_logic_vector;
+      M_layer_fifo_srst_o : out std_logic;
+      M_layer_fifo_in_o   : out std_logic_vector;
+      M_layer_fifo_wr_o   : out std_logic;
+      M_layer_fifo_rd_o   : out std_logic;
+      M_layer_fifo_out_i  : in std_logic_vector;
       
       -- BRAM interface
       Bram_clk_o        : out std_logic;
@@ -136,16 +131,16 @@ architecture tb of tb_memctrl is
       Bram_pa_wea_o     : out std_logic_vector;
       Bram_pb_addr_o    : out std_logic_vector;
       Bram_pb_data_rd_i : in std_logic_vector;
-      Bram_pb_rst_o     : out std_logic; -- ACTIVE HIGH!
       
       -- AXI Lite dbg interface 
-      AXI_lite_reg_addr_i  : in std_logic_vector;
-      AXI_lite_reg_data_o  : out std_logic_vector; 
-      
+      Dbg_bram_addr_i  : in std_logic_vector; -- BRAM address 
+      Dbg_bram_addr_o  : out std_logic_vector; -- BRAM address to double check if address fits to data 
+      Dbg_bram_data_o  : out std_logic_vector; -- 32 bit vector tile 
+      Dbg_32bit_select_i: in std_logic_vector; 
+      Dbg_enable_i     : in std_logic;       
       -- Status
-      S_layer_invalid_block_o : out std_logic
-
-    );
+      Layer_properties_o : out std_logic_vector;
+      Status_o : out std_logic_vector);
   end component MemCtrl_3x3;
 
   component ShiftRegister_3x3 is
@@ -213,10 +208,9 @@ architecture tb of tb_memctrl is
   signal l1_bram_pb_addr           : std_logic_vector(L1_BRAM_ADDR_WIDTH-1 downto 0);
   signal l1_bram_pb_data_rd        : std_logic_vector((L1_DATA_WIDTH*L1_IN_CHANNEL_NUMBER)-1 downto 0);
   signal l1_bram_pb_rst            : std_logic; -- ACTIVE HIGH!            
-  signal axi_lite_reg_addr      : std_logic_vector(C_S00_AXI_DATA_WIDTH-1 downto 0); 
-  signal axi_lite_reg_data      : std_logic_vector(C_S00_AXI_DATA_WIDTH-1 downto 0);
   signal s_l1_invalid_block  : std_logic;
   signal l1_bram_block_done     : std_logic;
+  
 
   signal l1_shreg_data_1        : std_logic_vector(((L1_DATA_WIDTH*L1_IN_CHANNEL_NUMBER) - 1) downto 0);
   signal l1_shreg_data_2        : std_logic_vector(((L1_DATA_WIDTH*L1_IN_CHANNEL_NUMBER) - 1) downto 0);
@@ -327,13 +321,29 @@ architecture tb of tb_memctrl is
   signal block_done_sh_l2    : std_logic;
   signal img_length_sh_l2    : integer; 
   
-  
+
+  signal dbg_bram_addr_in       : std_logic_vector(L1_BRAM_ADDR_WIDTH-1 downto 0);
+  signal dbg_bram_addr_check    : std_logic_vector(L1_BRAM_ADDR_WIDTH-1 downto 0);
+  signal dbg_bram_data_out      : std_logic_vector(C_S00_AXI_DATA_WIDTH-1 downto 0);
+  signal dbg_32bit_select       : std_logic_vector(3 downto 0); 
+  signal dbg_enable_AXI         : std_logic;   
+  signal dbg_enable             : std_logic_vector(MEM_CTRL_NUMBER downto 0);   
+  signal axi_mem_ctrl_addr      : std_logic_vector(MEM_CTRL_NUMBER-1 downto 0);  
+  signal axi_progress           : std_logic_vector(C_S00_AXI_DATA_WIDTH-1 downto 0);  
   
   signal debug            : std_logic; 
   signal debug_done       : std_logic; 
-  signal debug_mem_ctrl   : std_logic_vector(DBG_MEM_CTRL_ADDR_WIDTH-1 downto 0);
-  signal debug_rea_32bit  : std_logic_vector(DBG_REA_32BIT_WIDTH-1 downto 0);
-  signal debug_bram_addr  : std_logic_vector(DBG_BRAM_ADDRESS_WIDTH-1 downto 0);
+  type   DEBUG_TYPE IS ARRAY(BLOCK_LENGTH_L1*2-1 downto 0) OF std_logic_vector(C_S00_AXI_DATA_WIDTH-1 downto 0); 
+  signal debug_buffer     : DEBUG_TYPE := (others => X"00000000"); 
+  
+  type STATUS_ARR is ARRAY (0 to MEM_CTRL_NUMBER) of std_logic_vector(C_S00_AXI_DATA_WIDTH-1 downto 0);
+  signal status                 : STATUS_ARR;
+  signal layer_properties       : STATUS_ARR; 
+  signal axi_layer_properties   : std_logic_vector(C_S00_AXI_DATA_WIDTH-1 downto 0);
+  signal axi_status             : std_logic_vector(C_S00_AXI_DATA_WIDTH-1 downto 0);
+  
+  type DBG_STATES is (IDLE,INIT_DEBUG,GET_DATA,WAIT_FOR_DATA); 
+  signal dbg_state : DBG_STATES; 
   
   file file_TEST_DATA : text;
   file file_RESULTS : text;
@@ -352,9 +362,7 @@ begin
     LAYER_WIDTH             => LAYER_WIDTH       ,
     AXI4_STREAM_INPUT       => AXI4_STREAM_INPUT   ,
     C_S_AXIS_TDATA_WIDTH    => C_S_AXIS_TDATA_WIDTH,
-    C_S00_AXI_DATA_WIDTH    => C_S00_AXI_DATA_WIDTH,
-    C_S00_AXI_ADDR_WIDTH    => C_S00_AXI_ADDR_WIDTH,
-    MEM_CTRL_ADDR           => MEM_CTRL_ADDR)       
+    C_S00_AXI_DATA_WIDTH    => C_S00_AXI_DATA_WIDTH)       
   port map(
     Layer_clk_i		          => layer_clk		        ,
     Layer_aresetn_i         => layer_aresetn        ,
@@ -371,21 +379,24 @@ begin
     M_layer_tnewrow_o       => m_l1_tnewrow      ,
     M_layer_tlast_o         => m_l1_tlast        ,
     M_layer_tready_i        => m_l1_tready       ,
-    M_layer_fifo_srst       => m_l1_fifo_srst    ,
-    M_layer_fifo_in         => m_l1_fifo_in      ,
-    M_layer_fifo_wr         => m_l1_fifo_wr      ,
-    M_layer_fifo_rd         => m_l1_fifo_rd      ,
-    M_layer_fifo_out        => m_l1_fifo_out     ,
+    M_layer_fifo_srst_o       => m_l1_fifo_srst    ,
+    M_layer_fifo_in_o         => m_l1_fifo_in      ,
+    M_layer_fifo_wr_o         => m_l1_fifo_wr      ,
+    M_layer_fifo_rd_o         => m_l1_fifo_rd      ,
+    M_layer_fifo_out_i        => m_l1_fifo_out     ,
     Bram_clk_o              => l1_bram_clk             ,
     Bram_pa_addr_o          => l1_bram_pa_addr         ,
     Bram_pa_data_wr_o       => l1_bram_pa_data_wr      ,
     Bram_pa_wea_o           => l1_bram_pa_wea          ,
     Bram_pb_addr_o          => l1_bram_pb_addr         ,
     Bram_pb_data_rd_i       => l1_bram_pb_data_rd      ,
-    Bram_pb_rst_o           => l1_bram_pb_rst          ,
-    AXI_lite_reg_addr_i     => axi_lite_reg_addr    ,
-    AXI_lite_reg_data_o     => axi_lite_reg_data    ,
-    S_layer_invalid_block_o => s_l1_invalid_block);
+    Dbg_bram_addr_i         => dbg_bram_addr_in ,
+    Dbg_bram_addr_o         => dbg_bram_addr_check,
+    Dbg_bram_data_o         => dbg_bram_data_out,
+    Dbg_32bit_select_i      => dbg_32bit_select  ,
+    Dbg_enable_i            => dbg_enable(1),
+    Layer_properties_o      => layer_properties(1),
+    Status_o                => status(1));
 
   -- ********************* Instantiation of Block RAM ************************************************  
   Bram_layer1 : blk_mem_gen_0
@@ -453,9 +464,7 @@ begin
     LAYER_WIDTH             => LAYER_WIDTH       ,
     AXI4_STREAM_INPUT       => 0   ,
     C_S_AXIS_TDATA_WIDTH    => C_S_AXIS_TDATA_WIDTH,
-    C_S00_AXI_DATA_WIDTH    => C_S00_AXI_DATA_WIDTH,
-    C_S00_AXI_ADDR_WIDTH    => C_S00_AXI_ADDR_WIDTH,
-    MEM_CTRL_ADDR           => 2)       
+    C_S00_AXI_DATA_WIDTH    => C_S00_AXI_DATA_WIDTH)       
   port map(
     Layer_clk_i		          => layer_clk		        ,
     Layer_aresetn_i         => layer_aresetn        ,
@@ -472,21 +481,24 @@ begin
     M_layer_tnewrow_o       => m_l2_tnewrow      ,
     M_layer_tlast_o         => m_l2_tlast        ,
     M_layer_tready_i        => m_l2_tready       ,
-    M_layer_fifo_srst       => m_l2_fifo_srst    ,
-    M_layer_fifo_in         => m_l2_fifo_in      ,
-    M_layer_fifo_wr         => m_l2_fifo_wr      ,
-    M_layer_fifo_rd         => m_l2_fifo_rd      ,
-    M_layer_fifo_out        => m_l2_fifo_out     ,
+    M_layer_fifo_srst_o       => m_l2_fifo_srst    ,
+    M_layer_fifo_in_o         => m_l2_fifo_in      ,
+    M_layer_fifo_wr_o         => m_l2_fifo_wr      ,
+    M_layer_fifo_rd_o         => m_l2_fifo_rd      ,
+    M_layer_fifo_out_i        => m_l2_fifo_out     ,
     Bram_clk_o              => l2_bram_clk             ,
     Bram_pa_addr_o          => l2_bram_pa_addr         ,
     Bram_pa_data_wr_o       => l2_bram_pa_data_wr      ,
     Bram_pa_wea_o           => l2_bram_pa_wea          ,
     Bram_pb_addr_o          => l2_bram_pb_addr         ,
     Bram_pb_data_rd_i       => l2_bram_pb_data_rd      ,
-    Bram_pb_rst_o           => l2_bram_pb_rst          ,
-    AXI_lite_reg_addr_i     => axi_lite_reg_addr    ,
-    AXI_lite_reg_data_o     => axi_lite_reg_data    ,
-    S_layer_invalid_block_o => s_l2_invalid_block);
+    Dbg_bram_addr_i         => dbg_bram_addr_in ,
+    Dbg_bram_addr_o         => dbg_bram_addr_check,
+    Dbg_bram_data_o         => dbg_bram_data_out,
+    Dbg_32bit_select_i      => dbg_32bit_select  ,
+    Dbg_enable_i            => dbg_enable(2),
+    Layer_properties_o      => layer_properties(2),
+    Status_o                => status(2));
 
   -- ********************* Instantiation of Block RAM ************************************************  
   Bram_layer2 : blk_mem_layer_2
@@ -557,6 +569,7 @@ begin
       start_package_l1 <= '0';
       start_package_l2 <= '0';
       debug <= '0';
+      axi_mem_ctrl_addr <= (others => '0');
       -- Reset generation
       layer_aresetn <= '0';
       wait for 25 ns;
@@ -569,6 +582,17 @@ begin
       start_package_l1 <= '0';
       start_package_l2 <= '0';
       wait for 40 us;
+      -- axi_mem_ctrl_addr <= std_logic_vector(to_unsigned(1,axi_mem_ctrl_addr'length));
+      -- debug <= '1';
+      -- wait until debug_done'event and debug_done='1';
+      -- debug <= '0';
+      -- axi_mem_ctrl_addr <= std_logic_vector(to_unsigned(0,axi_mem_ctrl_addr'length));
+      -- wait for 20 ns;
+      -- axi_mem_ctrl_addr <= std_logic_vector(to_unsigned(2,axi_mem_ctrl_addr'length));
+      -- debug <= '1';
+      -- wait until debug_done'event and debug_done='1';
+      -- debug <= '0';
+      -- axi_mem_ctrl_addr <= std_logic_vector(to_unsigned(0,axi_mem_ctrl_addr'length));
       report "send package 2"; 
       start_package_l1 <= '1';
       start_package_l2 <= '1';
@@ -590,6 +614,74 @@ begin
       TbSimEnded <= '1';
       wait;
   end process;
+-- ****************** Debug Controller *************************************************************
+
+  layer_properties(0)(7 downto 0) <= std_logic_vector(to_unsigned(MEM_CTRL_NUMBER,8));
+  layer_properties(0)(31 downto 8) <= (others => '0'); -- FIND SOMETHING USEFULL 
+  status(0) <= x"FF00FF00"; -- ADD OVERALL STATUS
+  
+  Dbg_ctrl: process(layer_clk,layer_aresetn) is 
+  begin 
+    if layer_aresetn = '0' then 
+      axi_status <= (others => '0');
+      axi_layer_properties <= (others => '0');
+      dbg_enable <= (others => '0');
+    elsif rising_edge(layer_clk) then   
+      for i in 0 to MEM_CTRL_NUMBER-1 loop 
+        dbg_enable(i) <= '0'; 
+      end loop; 
+      if unsigned(axi_mem_ctrl_addr) <= to_unsigned(MEM_CTRL_NUMBER,axi_mem_ctrl_addr'length) then 
+        axi_status <= status(to_integer(unsigned(axi_mem_ctrl_addr)));
+        axi_layer_properties <= layer_properties(to_integer(unsigned(axi_mem_ctrl_addr)));
+        dbg_enable(to_integer(unsigned(axi_mem_ctrl_addr))) <= dbg_enable_AXI;
+      end if;   
+    end if;
+  end process;       
+
+  AXI_lite_sim: process(layer_clk,layer_aresetn) 
+    variable data_counter : unsigned(DBG_BRAM_ADDRESS_WIDTH-1 downto 0) := (others => '0');
+    variable bit_select_number : unsigned(3 downto 0) := (others => '0');
+  begin
+    if layer_aresetn = '0' then 
+      dbg_32bit_select <= (others => '0');
+      dbg_bram_addr_in <= (others => '0');       
+      debug_done <= '0'; 
+      dbg_state <= IDLE;
+      dbg_enable_AXI <= '0';
+    elsif rising_edge(layer_clk) then 
+      case(dbg_state) is 
+        when IDLE => 
+          if debug = '1' then 
+            dbg_state <= INIT_DEBUG; 
+            debug_done <= '0'; 
+          end if;
+        when INIT_DEBUG => 
+          dbg_enable_AXI <= '1'; 
+          data_counter := (others => '0');
+          bit_select_number := unsigned(axi_layer_properties(29 downto 26))+1; --/32*8 --> shift by 2  --> 31 downto 26 instead of 31 downto 24
+          if axi_status(3 downto 0) = "1111" then 
+            dbg_state <= GET_DATA; 
+            dbg_32bit_select <= std_logic_vector(bit_select_number);
+          end if;   
+        when GET_DATA => 
+          dbg_bram_addr_in <= std_logic_vector(data_counter); 
+          dbg_state <= WAIT_FOR_DATA; 
+        when WAIT_FOR_DATA => 
+          if dbg_bram_addr_in = dbg_bram_addr_check then 
+            debug_buffer(to_integer(data_counter)) <= dbg_bram_data_out;
+            if to_integer(data_counter) >= BLOCK_LENGTH_L1-1 then 
+              debug_done <= '1';
+              dbg_state <= IDLE;
+            else   
+              dbg_state <= GET_DATA;
+              data_counter := data_counter +1;
+            end if;
+          end if; 
+        when others => 
+          dbg_state <= IDLE;
+      end case;
+    end if; 
+  end process;  
 
 -- ****************** LAYER 1 **********************************************************************
   AXI_master: process(layer_clk,layer_aresetn) 
@@ -625,16 +717,17 @@ begin
       if start_package_l1 = '1' then 
         package_active := '1';
         data_counter := BLOCK_LENGTH_L1*block_counter;
-        block_counter := block_counter +1;
         s_l1_tlast <= '0';
-      elsif data_counter >= BLOCK_LENGTH_L1*block_counter-4 then 
+      elsif data_counter >= BLOCK_LENGTH_L1*(block_counter+1)-4 then 
         package_active := '0';
+        block_counter := block_counter +1;
         data_counter := 0;
         s_l1_tlast <= '1';
-      else 
+      elsif s_l1_tready = '1' then 
         s_l1_tlast <= '0';
       end if; 
     end if;
+    test_datacounter <= data_counter;
   end process;
   
   BRAM_Rec_L1: process(layer_clk,layer_aresetn) 
@@ -645,48 +738,13 @@ begin
       if l1_bram_pa_wea = "1" then 
         l1_bram_data_buffer(to_integer(unsigned(l1_bram_pa_addr))) <= l1_bram_pa_data_wr;
       end if;  
-      if to_integer(unsigned(l1_bram_pa_addr)) = 784 or to_integer(unsigned(l1_bram_pa_addr)) = (BLOCK_LENGTH_L1*2) then 
+      if to_integer(unsigned(l1_bram_pa_addr)) = BLOCK_LENGTH_L1-1 or to_integer(unsigned(l1_bram_pa_addr)) = (BLOCK_LENGTH_L1*2-1) then 
         l1_bram_block_done <= '1'; 
       else 
         l1_bram_block_done <= '0';
       end if;      
     end if;
   end process;
-
-  axi_lite_reg_addr <= (debug_mem_ctrl & debug_rea_32bit & debug_bram_addr);
-
-  DEBUG_CONTR: process(layer_clk,layer_aresetn) 
-    variable data_counter : unsigned(DBG_BRAM_ADDRESS_WIDTH-1 downto 0) := (others => '0');
-  begin
-    if layer_aresetn = '0' then 
-      debug_mem_ctrl  <= (others => '0');
-      debug_rea_32bit <= (others => '0');
-      debug_bram_addr <= (others => '0');       
-      debug_done <= '0'; 
-    elsif rising_edge(layer_clk) then 
-      if debug = '1' then 
-        debug_mem_ctrl <= std_logic_vector(to_unsigned(1,debug_mem_ctrl'length));
-        debug_bram_addr <= std_logic_vector(data_counter);
-        if data_counter > 0 then 
-          dbg_l1_bram_data_buffer(to_integer(data_counter)-1) <= axi_lite_reg_data((L1_DATA_WIDTH*L1_IN_CHANNEL_NUMBER)-1 downto 0);
-        end if;        
-        if data_counter > (BLOCK_LENGTH_L1*2) then 
-          data_counter := (others => '0');
-          debug_done <= '1';
-        else 
-          debug_done <= '0';
-          data_counter := data_counter +1;
-        end if;                
-      else 
-        data_counter := (others => '0');
-        debug_done <= '0';
-        debug_mem_ctrl  <= (others => '0');
-        debug_rea_32bit <= (others => '0');
-        debug_bram_addr <= (others => '0');          
-      end if;  
-    end if;
-  end process;   
-  axi_lite_reg_addr <= (debug_mem_ctrl & debug_rea_32bit & debug_bram_addr);
 
   M_LAYER_1_Rec: process(layer_clk,layer_aresetn) 
     variable data_counter : integer;
@@ -746,7 +804,7 @@ begin
     variable v_ILINE      : line;
     variable read_data    : integer;
   begin
-    file_open(file_TEST_DATA, "C:/Users/lukas/Documents/SoC_Lab/FPGA_MNIST/vivado/NN_IP/EggNet_1.0/sim/MemCtrl/tmp/testdata.txt",  read_mode);
+    file_open(file_TEST_DATA, "C:/Users/lukas/Documents/SoC_Lab/FPGA_MNIST/vivado/NN_IP/EggNet_1.0/sim/MemCtrl/tmp/feature_map_L1_c0.txt",  read_mode);
     report "testdata opened successfully"; 
     for i in 0 to BLOCKS_TO_TEST-1 loop
       for j in 0 to BLOCK_LENGTH_L1-1 loop
@@ -927,10 +985,10 @@ begin
       if start_package_l2 = '1' then 
         package_active := '1';
         data_counter := BLOCK_LENGTH_L2*block_counter;
-        block_counter := block_counter +1;
         s_l2_tlast <= '0';
-      elsif data_counter >= BLOCK_LENGTH_L2*block_counter-1 then 
+      elsif data_counter >= BLOCK_LENGTH_L2*(block_counter+1)-1 then 
         package_active := '0';
+        block_counter := block_counter +1;
         data_counter := 0;
         s_l2_tlast <= '1';
       else 
@@ -947,7 +1005,7 @@ begin
       if l2_bram_pa_wea = (l2_bram_pa_wea'range => '1') then 
         l2_bram_data_buffer(to_integer(unsigned(l2_bram_pa_addr))) <= l2_bram_pa_data_wr;
       end if;  
-      if to_integer(unsigned(l2_bram_pa_addr)) = 783 or to_integer(unsigned(l2_bram_pa_addr)) = (BLOCK_LENGTH_L2*2)-1 then 
+      if to_integer(unsigned(l2_bram_pa_addr)) = BLOCK_LENGTH_L2-1 or to_integer(unsigned(l2_bram_pa_addr)) = (BLOCK_LENGTH_L2*2)-1 then 
         l2_bram_block_done <= '1'; 
       else 
         l2_bram_block_done <= '0';
@@ -1012,7 +1070,6 @@ begin
         block_done_sh_l2 <= '0';
       end if;
     end if;
-    test_datacounter <= data_counter;
   end process; 
    
   read_testdata_l2: process
@@ -1071,32 +1128,43 @@ begin
     variable v_OLINE      : line;  
     variable block_cnt : integer := 0;
     variable write_data : integer := 0;
+    variable out_vec    : std_logic_vector(L2_DATA_WIDTH-1 downto 0) := (others => '0');
   begin  
     wait until block_done_vec_l2'event and block_done_vec_l2='1';
-    for k in 0 to L2_IN_CHANNEL_NUMBER-1 loop
-      file_open(file_RESULTS, "C:/Users/lukas/Documents/SoC_Lab/FPGA_MNIST/vivado/NN_IP/EggNet_1.0/sim/MemCtrl/tmp/l2_inVector_1_c" & integer'image(k) & "_b" & integer'image(block_cnt) & ".txt", write_mode);
-      for j in 0 to img_length_l2-1 loop
-        write_data := to_integer(unsigned(M_l2_buffer_1(j)(k)));
+    file_open(file_RESULTS, "C:/Users/lukas/Documents/SoC_Lab/FPGA_MNIST/vivado/NN_IP/EggNet_1.0/sim/MemCtrl/tmp/l2_inVector_1_b" & integer'image(block_cnt) & ".txt", write_mode);
+    for j in 0 to img_length_l2-1 loop
+      for i in 0 to L2_IN_CHANNEL_NUMBER-1 loop 
+        out_vec := M_l2_buffer_1(j)(i);
+        report "outvec: " & integer'image(to_integer(unsigned(out_vec))); 
+        write_data := to_integer(unsigned(out_vec));
+        report "write_data: " & integer'image(write_data);
         write(v_OLINE, write_data);
-        writeline(file_RESULTS, v_OLINE); 
-      end loop;  
-      file_close(file_RESULTS);
-      file_open(file_RESULTS, "C:/Users/lukas/Documents/SoC_Lab/FPGA_MNIST/vivado/NN_IP/EggNet_1.0/sim/MemCtrl/tmp/l2_inVector_2_c" & integer'image(k) & "_b" & integer'image(block_cnt) & ".txt", write_mode);
-      for j in 0 to img_length_l2-1 loop
-        write_data := to_integer(unsigned(M_l2_buffer_2(j)(k)));
+        write(v_OLINE, string'(" "));
+      end loop;
+      writeline(file_RESULTS, v_OLINE);  
+    end loop;  
+    file_close(file_RESULTS);
+    file_open(file_RESULTS, "C:/Users/lukas/Documents/SoC_Lab/FPGA_MNIST/vivado/NN_IP/EggNet_1.0/sim/MemCtrl/tmp/l2_inVector_2_b" & integer'image(block_cnt) & ".txt", write_mode);
+    for j in 0 to img_length_l2-1 loop
+      for i in 0 to L2_IN_CHANNEL_NUMBER-1 loop 
+        write_data := to_integer(unsigned(M_l2_buffer_2(j)(i)));
         write(v_OLINE, write_data);
-        writeline(file_RESULTS, v_OLINE); 
-      end loop;  
-      file_close(file_RESULTS);
-      file_open(file_RESULTS, "C:/Users/lukas/Documents/SoC_Lab/FPGA_MNIST/vivado/NN_IP/EggNet_1.0/sim/MemCtrl/tmp/l2_inVector_3_c" & integer'image(k) & "_b" & integer'image(block_cnt) & ".txt", write_mode);
-      for j in 0 to img_length_l2-1 loop
-        write_data := to_integer(unsigned(M_l2_buffer_3(j)(k)));
+        write(v_OLINE, string'(" "));
+      end loop;
+      writeline(file_RESULTS, v_OLINE);  
+    end loop;  
+    file_close(file_RESULTS);
+    file_open(file_RESULTS, "C:/Users/lukas/Documents/SoC_Lab/FPGA_MNIST/vivado/NN_IP/EggNet_1.0/sim/MemCtrl/tmp/l2_inVector_3_b" & integer'image(block_cnt) & ".txt", write_mode);
+    for j in 0 to img_length_l2-1 loop
+      for i in 0 to L2_IN_CHANNEL_NUMBER-1 loop 
+        write_data := to_integer(unsigned(M_l2_buffer_3(j)(i)));
         write(v_OLINE, write_data);
-        writeline(file_RESULTS, v_OLINE); 
-      end loop;  
-      file_close(file_RESULTS);    
-      report "Write m layer 1 b" & integer'image(block_cnt) & " done";
-    end loop;
+        write(v_OLINE, string'(" "));
+      end loop;
+      writeline(file_RESULTS, v_OLINE);  
+    end loop;  
+    file_close(file_RESULTS);    
+    report "Write m layer 1 b" & integer'image(block_cnt) & " done";
     block_cnt := block_cnt+1;
   end process;  
 
@@ -1106,73 +1174,97 @@ begin
     variable write_data : integer := 0;
   begin  
     wait until block_done_sh_l2'event and block_done_sh_l2='1';
-    for k in 0 to L2_IN_CHANNEL_NUMBER-1 loop
-      file_open(file_RESULTS, "C:/Users/lukas/Documents/SoC_Lab/FPGA_MNIST/vivado/NN_IP/EggNet_1.0/sim/MemCtrl/tmp/l2_inKernel_1_c" & integer'image(k) & "_b" & integer'image(block_cnt) & ".txt", write_mode);
-      for j in 0 to img_length_sh_l2-1 loop
-        write_data := to_integer(unsigned(l2_shreg_buffer_1(j)(k)));
+    file_open(file_RESULTS, "C:/Users/lukas/Documents/SoC_Lab/FPGA_MNIST/vivado/NN_IP/EggNet_1.0/sim/MemCtrl/tmp/l2_inKernel_1_b" & integer'image(block_cnt) & ".txt", write_mode);
+    for j in 0 to img_length_l2-1 loop
+      for i in 0 to L2_IN_CHANNEL_NUMBER-1 loop 
+        write_data := to_integer(unsigned(l2_shreg_buffer_1(j)(i)));
         write(v_OLINE, write_data);
-        writeline(file_RESULTS, v_OLINE); 
-      end loop;  
-      file_close(file_RESULTS);
-      file_open(file_RESULTS, "C:/Users/lukas/Documents/SoC_Lab/FPGA_MNIST/vivado/NN_IP/EggNet_1.0/sim/MemCtrl/tmp/l2_inKernel_2_c" & integer'image(k) & "_b" & integer'image(block_cnt) & ".txt", write_mode);
-      for j in 0 to img_length_sh_l2-1 loop
-        write_data := to_integer(unsigned(l2_shreg_buffer_2(j)(k)));
+        write(v_OLINE, string'(" "));
+      end loop;
+      writeline(file_RESULTS, v_OLINE);  
+    end loop;  
+    file_close(file_RESULTS); 
+    file_open(file_RESULTS, "C:/Users/lukas/Documents/SoC_Lab/FPGA_MNIST/vivado/NN_IP/EggNet_1.0/sim/MemCtrl/tmp/l2_inKernel_2_b" & integer'image(block_cnt) & ".txt", write_mode);
+    for j in 0 to img_length_l2-1 loop
+      for i in 0 to L2_IN_CHANNEL_NUMBER-1 loop 
+        write_data := to_integer(unsigned(l2_shreg_buffer_2(j)(i)));
         write(v_OLINE, write_data);
-        writeline(file_RESULTS, v_OLINE); 
-      end loop;  
-      file_close(file_RESULTS);
-      file_open(file_RESULTS, "C:/Users/lukas/Documents/SoC_Lab/FPGA_MNIST/vivado/NN_IP/EggNet_1.0/sim/MemCtrl/tmp/l2_inKernel_3_c" & integer'image(k) & "_b" & integer'image(block_cnt) & ".txt", write_mode);
-      for j in 0 to img_length_sh_l2-1 loop
-        write_data := to_integer(unsigned(l2_shreg_buffer_3(j)(k)));
+        write(v_OLINE, string'(" "));
+      end loop;
+      writeline(file_RESULTS, v_OLINE);  
+    end loop; 
+    file_close(file_RESULTS);
+    file_open(file_RESULTS, "C:/Users/lukas/Documents/SoC_Lab/FPGA_MNIST/vivado/NN_IP/EggNet_1.0/sim/MemCtrl/tmp/l2_inKernel_3_b" & integer'image(block_cnt) & ".txt", write_mode);
+    for j in 0 to img_length_l2-1 loop
+      for i in 0 to L2_IN_CHANNEL_NUMBER-1 loop 
+        write_data := to_integer(unsigned(l2_shreg_buffer_3(j)(i)));
         write(v_OLINE, write_data);
-        writeline(file_RESULTS, v_OLINE); 
-      end loop;  
-      file_close(file_RESULTS);      
-      file_open(file_RESULTS, "C:/Users/lukas/Documents/SoC_Lab/FPGA_MNIST/vivado/NN_IP/EggNet_1.0/sim/MemCtrl/tmp/l2_inKernel_4_c" & integer'image(k) & "_b" & integer'image(block_cnt) & ".txt", write_mode);
-      for j in 0 to img_length_sh_l2-1 loop
-        write_data := to_integer(unsigned(l2_shreg_buffer_4(j)(k)));
+        write(v_OLINE, string'(" "));
+      end loop;
+      writeline(file_RESULTS, v_OLINE);  
+    end loop; 
+    file_close(file_RESULTS);      
+    file_open(file_RESULTS, "C:/Users/lukas/Documents/SoC_Lab/FPGA_MNIST/vivado/NN_IP/EggNet_1.0/sim/MemCtrl/tmp/l2_inKernel_4_b" & integer'image(block_cnt) & ".txt", write_mode);
+    for j in 0 to img_length_l2-1 loop
+      for i in 0 to L2_IN_CHANNEL_NUMBER-1 loop 
+        write_data := to_integer(unsigned(l2_shreg_buffer_4(j)(i)));
         write(v_OLINE, write_data);
-        writeline(file_RESULTS, v_OLINE); 
-      end loop;  
-      file_close(file_RESULTS);
-      file_open(file_RESULTS, "C:/Users/lukas/Documents/SoC_Lab/FPGA_MNIST/vivado/NN_IP/EggNet_1.0/sim/MemCtrl/tmp/l2_inKernel_5_c" & integer'image(k) & "_b" & integer'image(block_cnt) & ".txt", write_mode);
-      for j in 0 to img_length_sh_l2-1 loop
-        write_data := to_integer(unsigned(l2_shreg_buffer_5(j)(k)));
+        write(v_OLINE, string'(" "));
+      end loop;
+      writeline(file_RESULTS, v_OLINE);  
+    end loop; 
+    file_close(file_RESULTS);
+    file_open(file_RESULTS, "C:/Users/lukas/Documents/SoC_Lab/FPGA_MNIST/vivado/NN_IP/EggNet_1.0/sim/MemCtrl/tmp/l2_inKernel_5_b" & integer'image(block_cnt) & ".txt", write_mode);
+    for j in 0 to img_length_l2-1 loop
+      for i in 0 to L2_IN_CHANNEL_NUMBER-1 loop 
+        write_data := to_integer(unsigned(l2_shreg_buffer_5(j)(i)));
         write(v_OLINE, write_data);
-        writeline(file_RESULTS, v_OLINE); 
-      end loop;  
-      file_close(file_RESULTS);
-      file_open(file_RESULTS, "C:/Users/lukas/Documents/SoC_Lab/FPGA_MNIST/vivado/NN_IP/EggNet_1.0/sim/MemCtrl/tmp/l2_inKernel_6_c" & integer'image(k) & "_b" & integer'image(block_cnt) & ".txt", write_mode);
-      for j in 0 to img_length_sh_l2-1 loop
-        write_data := to_integer(unsigned(l2_shreg_buffer_6(j)(k)));
+        write(v_OLINE, string'(" "));
+      end loop;
+      writeline(file_RESULTS, v_OLINE);  
+    end loop;  
+    file_close(file_RESULTS);
+    file_open(file_RESULTS, "C:/Users/lukas/Documents/SoC_Lab/FPGA_MNIST/vivado/NN_IP/EggNet_1.0/sim/MemCtrl/tmp/l2_inKernel_6_b" & integer'image(block_cnt) & ".txt", write_mode);
+    for j in 0 to img_length_l2-1 loop
+      for i in 0 to L2_IN_CHANNEL_NUMBER-1 loop 
+        write_data := to_integer(unsigned(l2_shreg_buffer_6(j)(i)));
         write(v_OLINE, write_data);
-        writeline(file_RESULTS, v_OLINE); 
-      end loop;  
-      file_close(file_RESULTS);         
-      file_open(file_RESULTS, "C:/Users/lukas/Documents/SoC_Lab/FPGA_MNIST/vivado/NN_IP/EggNet_1.0/sim/MemCtrl/tmp/l2_inKernel_7_c" & integer'image(k) & "_b" & integer'image(block_cnt) & ".txt", write_mode);
-      for j in 0 to img_length_sh_l2-1 loop
-        write_data := to_integer(unsigned(l2_shreg_buffer_7(j)(k)));
+        write(v_OLINE, string'(" "));
+      end loop;
+      writeline(file_RESULTS, v_OLINE);  
+    end loop;  
+    file_close(file_RESULTS);         
+    file_open(file_RESULTS, "C:/Users/lukas/Documents/SoC_Lab/FPGA_MNIST/vivado/NN_IP/EggNet_1.0/sim/MemCtrl/tmp/l2_inKernel_7_b" & integer'image(block_cnt) & ".txt", write_mode);
+    for j in 0 to img_length_l2-1 loop
+      for i in 0 to L2_IN_CHANNEL_NUMBER-1 loop 
+        write_data := to_integer(unsigned(l2_shreg_buffer_7(j)(i)));
         write(v_OLINE, write_data);
-        writeline(file_RESULTS, v_OLINE); 
-      end loop;  
-      file_close(file_RESULTS);
-      file_open(file_RESULTS, "C:/Users/lukas/Documents/SoC_Lab/FPGA_MNIST/vivado/NN_IP/EggNet_1.0/sim/MemCtrl/tmp/l2_inKernel_8_c" & integer'image(k) & "_b" & integer'image(block_cnt) & ".txt", write_mode);
-      for j in 0 to img_length_sh_l2-1 loop
-        write_data := to_integer(unsigned(l2_shreg_buffer_8(j)(k)));
+        write(v_OLINE, string'(" "));
+      end loop;
+      writeline(file_RESULTS, v_OLINE);  
+    end loop;   
+    file_close(file_RESULTS);
+    file_open(file_RESULTS, "C:/Users/lukas/Documents/SoC_Lab/FPGA_MNIST/vivado/NN_IP/EggNet_1.0/sim/MemCtrl/tmp/l2_inKernel_8_b" & integer'image(block_cnt) & ".txt", write_mode);
+    for j in 0 to img_length_l2-1 loop
+      for i in 0 to L2_IN_CHANNEL_NUMBER-1 loop 
+        write_data := to_integer(unsigned(l2_shreg_buffer_8(j)(i)));
         write(v_OLINE, write_data);
-        writeline(file_RESULTS, v_OLINE); 
-      end loop;  
-      file_close(file_RESULTS);
-      file_open(file_RESULTS, "C:/Users/lukas/Documents/SoC_Lab/FPGA_MNIST/vivado/NN_IP/EggNet_1.0/sim/MemCtrl/tmp/l2_inKernel_9_c" & integer'image(k) & "_b" & integer'image(block_cnt) & ".txt", write_mode);
-      for j in 0 to img_length_sh_l2-1 loop
-        write_data := to_integer(unsigned(l2_shreg_buffer_9(j)(k)));
+        write(v_OLINE, string'(" "));
+      end loop;
+      writeline(file_RESULTS, v_OLINE);  
+    end loop; 
+    file_close(file_RESULTS);
+    file_open(file_RESULTS, "C:/Users/lukas/Documents/SoC_Lab/FPGA_MNIST/vivado/NN_IP/EggNet_1.0/sim/MemCtrl/tmp/l2_inKernel_9_b" & integer'image(block_cnt) & ".txt", write_mode);
+    for j in 0 to img_length_l2-1 loop
+      for i in 0 to L2_IN_CHANNEL_NUMBER-1 loop 
+        write_data := to_integer(unsigned(l2_shreg_buffer_9(j)(i)));
         write(v_OLINE, write_data);
-        writeline(file_RESULTS, v_OLINE); 
-      end loop;  
-      file_close(file_RESULTS);      
-      report "Write shift output b" & integer'image(block_cnt) & " done"; 
-      report "Write kernels channel " & integer'image(k) & " done"; 
-    end loop;
+        write(v_OLINE, string'(" "));
+      end loop;
+      writeline(file_RESULTS, v_OLINE);  
+    end loop;  
+    file_close(file_RESULTS);      
+    report "Write shift output b" & integer'image(block_cnt) & " done"; 
     block_cnt := block_cnt+1;
     
   end process;  

@@ -169,19 +169,20 @@ def run_vivado_sim_win():
     else:
         print("compile vhdl files done!")
     
-    err_elaborate = subprocess.Popen(elaborate,shell=True,stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    if err_elaborate.poll() == None: 
-        print("Wait till process finished..")
-        err_elaborate.wait(timeout=60.0)
+    #err_elaborate = subprocess.Popen(elaborate,shell=True,stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    # if err_elaborate.poll() == None: 
+    #     print("Wait till process finished..")
+    #     err_elaborate.wait(timeout=60.0)
     
-    if err_elaborate.returncode != 0:
-        out, err = err_elaborate.communicate()
-        err_elaborate.kill()
-        print(out)
-        print(err)
-    else:
-        print("elaborate design done!")
+    # if err_elaborate.returncode != 0:
+    #     out, err = err_elaborate.communicate()
+    #     err_elaborate.kill()
+    #     print(out)
+    #     print(err)
+    # else:
+    #     print("elaborate design done!")
         
+    subprocess.call(elaborate,shell=True)  
     subprocess.call(simulate,shell=True) # For some reason simulation doesn't work with Popen
 
         
@@ -251,7 +252,7 @@ def write_features_to_file(features,filename="feature_map",layernumber=1):
 
 # %% memory controller
 
-def get_vectors_from_data(test_data,img_width,img_hight,blocknumber,kernel_size=3,dtype=np.uint8):
+def get_vectors_from_data(test_data,img_width,img_hight,kernel_size=3,dtype=np.uint8):
     """
     Generates 3x1 vectors from test data 
 
@@ -263,12 +264,8 @@ def get_vectors_from_data(test_data,img_width,img_hight,blocknumber,kernel_size=
         with of test matrix.
     img_hight : integer
         hight of test matrix.
-    blocknumber : integer
-        number of blocks which are tested.
     kernel_size : integer, optional
         size of the kernel. The default is 3.
-    drange : integer, optional
-        Data. The default is 255.
     dtype : numpy dtype, optional
         Data type of numpy array. The default is np.uint8.
 
@@ -278,27 +275,26 @@ def get_vectors_from_data(test_data,img_width,img_hight,blocknumber,kernel_size=
         Vector to compare with the output of the memory controller 
 
     """
-    vector_number_per_block = (img_width*img_hight)
-    vectors = np.zeros((blocknumber,vector_number_per_block,kernel_size),dtype=dtype)
-    for i in range(blocknumber):
+    vectors = np.zeros((test_data.shape[0],test_data.shape[1],kernel_size,test_data.shape[2]),dtype=dtype)
+    for i in range(test_data.shape[0]):
         vector_cnt = 0
-        for j in range(img_width*img_hight):
+        for j in range(test_data.shape[1]):
                     
             if j < img_width:  
-                vectors[i,vector_cnt,0] = 0
-                vectors[i,vector_cnt,1] = test_data[i,j]
-                vectors[i,vector_cnt,2] = test_data[i,j+img_width]
+                vectors[i,vector_cnt,0,:] = 0
+                vectors[i,vector_cnt,1,:] = test_data[i,j,:]
+                vectors[i,vector_cnt,2,:] = test_data[i,j+img_width,:]
                 vector_cnt += 1
             elif j >= (img_width*(img_hight-1)):    
                 #print(j)
-                vectors[i,vector_cnt,0] = test_data[i,j-img_width]
-                vectors[i,vector_cnt,1] = test_data[i,j]
-                vectors[i,vector_cnt,2] = 0  
+                vectors[i,vector_cnt,0,:] = test_data[i,j-img_width,:]
+                vectors[i,vector_cnt,1,:] = test_data[i,j,:]
+                vectors[i,vector_cnt,2,:] = 0  
                 vector_cnt += 1
             else:  
-                vectors[i,vector_cnt,0] = test_data[i,j-img_width]
-                vectors[i,vector_cnt,1] = test_data[i,j]
-                vectors[i,vector_cnt,2] = test_data[i,j+img_width]   
+                vectors[i,vector_cnt,0,:] = test_data[i,j-img_width,:]
+                vectors[i,vector_cnt,1,:] = test_data[i,j,:]
+                vectors[i,vector_cnt,2,:] = test_data[i,j+img_width,:]   
                 vector_cnt += 1
                 
     return vectors
@@ -319,22 +315,22 @@ def get_Kernels(test_vectors,img_width):
         Kernel to compare with the output of the shiftregister
 
     """
-    kernels = np.zeros((test_vectors.shape[0],test_vectors.shape[1],test_vectors.shape[2],test_vectors.shape[2],1),dtype=np.uint8)
+    kernels = np.zeros((test_vectors.shape[0],test_vectors.shape[1],test_vectors.shape[2],test_vectors.shape[2],test_vectors.shape[3]),dtype=np.uint8)
     for i in range(test_vectors.shape[0]):
         for j in range(test_vectors.shape[1]):
             if j%img_width == 0:
-                kernels[i,j,:,0,0] = 0
-                kernels[i,j,:,1,0] = test_vectors[i,j,:]
-                kernels[i,j,:,2,0] = test_vectors[i,j+1,:]                
+                kernels[i,j,:,0,:] = 0
+                kernels[i,j,:,1,:] = test_vectors[i,j,:,:]
+                kernels[i,j,:,2,:] = test_vectors[i,j+1,:,:]                
                 
             elif j%img_width == img_width-1:    
-                kernels[i,j,:,0,0] = test_vectors[i,j-1,:]
-                kernels[i,j,:,1,0] = test_vectors[i,j,:]
-                kernels[i,j,:,2,0] = 0                  
+                kernels[i,j,:,0,:] = test_vectors[i,j-1,:,:]
+                kernels[i,j,:,1,:] = test_vectors[i,j,:,:]
+                kernels[i,j,:,2,:] = 0                  
             else:    
-                kernels[i,j,:,0,0] = test_vectors[i,j-1,:]
-                kernels[i,j,:,1,0] = test_vectors[i,j,:]
-                kernels[i,j,:,2,0] = test_vectors[i,j+1,:]
+                kernels[i,j,:,0,:] = test_vectors[i,j-1,:,:]
+                kernels[i,j,:,1,:] = test_vectors[i,j,:,:]
+                kernels[i,j,:,2,:] = test_vectors[i,j+1,:,:]
        
     return kernels
 
@@ -419,7 +415,7 @@ def conv_channel(kernels,weights,msb):
     if weighted_sum < 0: 
         weighted_sum = 0 
     else: # Quantization 
-        weighted_sum >>= msb-8                   
+        weighted_sum >>= msb+1-8                   
         if weighted_sum > 255: 
             weighted_sum = 255 
              
@@ -451,7 +447,159 @@ def kernel_3x3(kernel,weights):
             
     return weighted_sum            
 
+# %% Result checks 
+def check_bram(test_data,layernumber):
+    """
+    checks the 
 
+    Parameters
+    ----------
+    test_data : numpy array [B,W*H,Ci]
+        Data to check. Content of BRAM
+    layernumber : integer
+        Number of layer
+
+    Returns
+    -------
+    error_count : interger
+        Number of errors.
+
+    """
+    BLOCK_SIZE = test_data.shape[1]
+    error_count = 0
+    for i in range(test_data.shape[0]):
+        with open("tmp/l{}".format(layernumber) + "_bram{}.txt".format(i),"r") as f:
+            for j in range(test_data.shape[0]*2):
+                block_select = 1-(i+1)%2
+                read_data = f.readline().rstrip()
+                result_data = [int(g) for g in read_data.split(' ')]
+                for k in range(test_data.shape[2]):
+                    if block_select == 0 and j<BLOCK_SIZE:
+                         if result_data[k] != test_data[i,j,k]:
+                             print("Error in block {}".format(i) + " channel {}".format(k) + " in line {} ,".format(j+block_select*BLOCK_SIZE) \
+                                    + "{}".format(result_data[k]) + " != {}".format(test_data[i,j,k]))
+                             error_count += 1
+                    elif block_select == 0 and j>=BLOCK_SIZE and i==0:
+                        if result_data[k] != 0:
+                             print("Error in block {}".format(i) + " channel {}".format(k) + " in line {} ,".format(j+block_select*BLOCK_SIZE) \
+                                    + "{}".format(result_data[k]) + " != {}".format(0))
+                             error_count += 1
+                    elif block_select == 0 and j>=BLOCK_SIZE:
+                        if result_data[k] != test_data[i-1,j-BLOCK_SIZE,k]:
+                             print("Error in block {}".format(i) + " channel {}".format(k) + " in line {} ,".format(j+block_select*BLOCK_SIZE) \
+                                    + "{}".format(result_data[k]) + " != {}".format(test_data[i-1,j-BLOCK_SIZE,k]))
+                             error_count += 1           
+                    elif block_select == 1 and j<BLOCK_SIZE:
+                         if result_data[k] != test_data[i-1,j,k]:
+                             print("Error in block {}".format(i) + " channel {}".format(k) + " in line {} ,".format(j+block_select*BLOCK_SIZE) \
+                                    + "{}".format(result_data[k]) + " != {}".format(test_data[i-1,j,k]))
+                             error_count += 1
+                    elif block_select == 1 and j>=BLOCK_SIZE:
+                        if result_data[k] != test_data[i,j-BLOCK_SIZE,k]:
+                             print("Error in block {}".format(i) + " channel {}".format(k) + " in line {} ,".format(j+block_select*BLOCK_SIZE) \
+                                    + "{}".format(result_data[k]) + " != {}".format(test_data[i,j-BLOCK_SIZE,k]))
+                             error_count += 1   
+                    else:
+                            print("Error in porgram")
+        
+    if error_count == 0:
+        print("No errors in BRAM")
+    else:
+        print("{} errors occured checking BRAM".format(error_count))     
+        
+    return error_count
+
+def check_vectors(test_vectors,layernumber):
+    """
+    
+
+    Parameters
+    ----------
+    test_vectors : numpy array [B,W*H,3,Ci]
+        Data to check. Output data of MemCtrl
+    layernumber : integer
+        Number of layer.
+
+    Returns
+    -------
+    error_count_vectors : integer
+        Number of errors.
+
+    """
+    error_count_vectors = 0
+    result_vectors = np.zeros((test_vectors.shape[0],test_vectors.shape[1],test_vectors.shape[2],test_vectors.shape[3]),dtype=np.uint8)
+    for i in range(test_vectors.shape[0]):
+        with open("tmp/l{}".format(layernumber) + "_inVector_1_b{}.txt".format(i),"r") as f:
+            for j in range(test_vectors.shape[1]):
+                read_data = f.readline().rstrip()
+                result_vectors[i,j,0,:] = [int(g) for g in read_data.split(' ')]
+                if any(result_vectors[i,j,0,:] != test_vectors[i,j,0,:]):
+                    print("Error in tmp/l{}".format(layernumber) + "_inVector_1_b{}.txt" + " in line {} ,".format(j) \
+                                + "{}".format(result_vectors[i,j,0,:]) + " != {}".format(test_vectors[i,j,0,:]))
+                    error_count_vectors += 1
+        with open("tmp/l{}".format(layernumber) + "_inVector_2_b{}.txt".format(i),"r") as f:
+            for j in range(test_vectors.shape[1]):
+                read_data = f.readline().rstrip()
+                result_vectors[i,j,1,:] = [int(g) for g in read_data.split(' ')]
+                if any(result_vectors[i,j,1,:] != test_vectors[i,j,1,:]):
+                    print("Error in tmp/l{}".format(layernumber) + "_inVector_1_b{}.txt" + " in line {} ,".format(j) \
+                                + "{}".format(result_vectors[i,j,1,:]) + " != {}".format(test_vectors[i,j,1,:]))
+                    error_count_vectors += 1        
+        with open("tmp/l{}".format(layernumber) + "_inVector_3_b{}.txt".format(i),"r") as f:
+            for j in range(test_vectors.shape[1]):
+                read_data = f.readline().rstrip()
+                result_vectors[i,j,2,:] = [int(g) for g in read_data.split(' ')]
+                if any(result_vectors[i,j,2,:] != test_vectors[i,j,2,:]):
+                    print("Error in tmp/l{}".format(layernumber) + "_inVector_1_b{}.txt" + " in line {} ,".format(j) \
+                                + "{}".format(result_vectors[i,j,2,:]) + " != {}".format(test_vectors[i,j,2,:]))
+                    error_count_vectors += 1                
+    if error_count_vectors == 0:
+        print("Received Kernel vectors successfully!")
+    else:
+        print("{} errors occured receiving image".format(error_count_vectors))   
+        
+    return error_count_vectors
+
+def check_kernels(test_kernels,layernumber):
+    """
+    
+
+    Parameters
+    ----------
+    test_kernels : numpy array [B,W*H,3,3,Ci]
+        Data to check. Output data of shiftreg
+    layernumber : TYPE
+        DESCRIPTION.
+
+    Returns
+    -------
+    error_count_kernels : TYPE
+        DESCRIPTION.
+
+    """
+    error_count_kernels = 0
+    result_kernels = np.zeros((test_kernels.shape[0],test_kernels.shape[1],test_kernels.shape[2],test_kernels.shape[3],test_kernels.shape[4]),dtype=np.uint8)
+    for i in range(result_kernels.shape[0]):
+        file_cnt = 0
+        for k in range(test_kernels.shape[2]):
+            for h in range(test_kernels.shape[3]):
+                file_cnt += 1
+                with open("tmp/l{}".format(layernumber) + "_inKernel_{}".format(file_cnt) + "_b{}.txt".format(i),"r") as f:
+                    for j in range(result_kernels.shape[1]):
+                        read_data = f.readline().rstrip()
+                        result_kernels[i,j,h,k,:] = [int(g) for g in read_data.split(' ')]
+                        if any(result_kernels[i,j,h,k,:] != test_kernels[i,j,h,k,:]):
+                            print("Error in l{}".format(layernumber) + "_inKernel_{}".format(file_cnt) + "_b{}".format(i) + " in line {} ,".format(j) \
+                                        + "{}".format(result_kernels[i,j,h,k,:]) + " != {}".format(test_kernels[i,j,h,k,:]))
+                            error_count_kernels += 1
+        
+    if error_count_kernels == 0:
+        print("Received Kernel from shiftregister successfully!")
+    else:
+        print("{} errors occured receiving image".format(error_count_kernels)) 
+        
+    return error_count_kernels
+       
 # %% Mov average attemption 
 class FIFO:
     """
