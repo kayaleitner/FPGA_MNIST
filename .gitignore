@@ -13,7 +13,7 @@ cache/
 # Ignore Mac Spotlight Indices
 **/.DS_Store
 
-
+*.gz
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

@@ -2,10 +2,11 @@ from flask import Flask, render_template, jsonify
 
 import fpga
 import api
+from DataHandler import DataHandler
 
 app = Flask(__name__)
-app.config["DEBUG"] = True
-
+#app.config["DEBUG"] = True
+DataHandler = DataHandler(app.root_path)
 
 @app.route('/')
 def admin():
@@ -16,7 +17,6 @@ def admin():
 @app.route('/contact')
 def contact():
     return render_template('contact.html')
-
 
 @app.errorhandler(404)
 def page_not_found(e):
