@@ -18,6 +18,19 @@ def np_limits(dtype):
     return min_value, max_value
 
 
+def datatype_for_bits(bits):
+    if bits <= 8:
+        return np.int8
+    elif bits <= 16:
+        return np.int16
+    elif bits <= 32:
+        return np.int32
+    elif bits <= 64:
+        return np.int64
+    else:
+        raise NotImplementedError()
+
+
 def np_bits(dtype):
     d = {
         np.int64: 64,
@@ -29,7 +42,10 @@ def np_bits(dtype):
         np.int8: 8,
         np.uint8: 8,
     }
-    return d[dtype]
+    # ToDo: This doesnt work reliably. Why?
+    # return d[dtype]
+
+    return int(np.log2(np_ncodes(dtype)))
 
 
 def np_ncodes(dtype):
@@ -99,14 +115,15 @@ class np_Fpi:
 
         result = Fpi()
 
-
     def __mul__(self, other):
         raise NotImplementedError()
+
     def __abs__(self):
         raise NotImplementedError()
 
     def __sub__(self, other):
         raise NotImplementedError()
+
 
 class Fpi(numbers.Number):
     """
@@ -436,11 +453,11 @@ def qint_multiply_primitive(q1, s1, q2, s2):
 
 
 def scale_to_fracbits(scale):
-    return math.log2(scale)
+    return np.log2(scale)
 
 
 def next_pow2(x):
-    i = math.ceil(math.log2(x))
+    i = np.ceil(np.log2(x))
     return 2 ** i
 
 
@@ -456,16 +473,20 @@ BIT_SIZE_MAPPING = {
 }
 
 
-def quantize_conv_activations(input, parameter_bits, mode=QuantConvLayerType.PER_CHANNEL):
+def quantize_conv_activations(input, parameter_bits, mode=QuantConvLayerType.PER_CHANNEL, per_batch=False):
     # Idea: try to maximize precision
     # Only symmetric values are possible now
     #
     # Input Shape = [B, H, W, C]
     # is identical to the kernel shape. Therefore the same function can be used
-    return quantize_kernels(kernel=input, parameter_bits=parameter_bits, mode=mode)
+
+    if per_batch:
+        raise NotImplementedError()
+    else:
+        return quantize_kernels(kernel=input, parameter_bits=parameter_bits, mode=mode)
 
 
-def quantize_kernels(kernel, parameter_bits, mode=QuantConvLayerType.PER_CHANNEL):
+def quantize_kernels(kernel, parameter_bits, mode=QuantConvLayerType.PER_CHANNEL, signed=True):
     """
     Quantize kernel
     Args:
@@ -478,10 +499,7 @@ def quantize_kernels(kernel, parameter_bits, mode=QuantConvLayerType.PER_CHANNEL
     """
     # Idea: try to maximize precision
     # Only symmetric values are possible now
-
-    internal_width = int(math.log2(next_pow2(parameter_bits)))
-    internal_width = max(internal_width, 8)  # there is no int4 or lower
-    target_type = BIT_SIZE_MAPPING[internal_width]
+    target_type = datatype_for_bits(parameter_bits)
 
     if mode is QuantConvLayerType.PER_CHANNEL:
         # Determine maximum value for each channel, e.g.: 0.4
@@ -490,6 +508,8 @@ def quantize_kernels(kernel, parameter_bits, mode=QuantConvLayerType.PER_CHANNEL
         # Determine the maximum value for the whole kernel layer
         # gives a scalar value
         max_vals = np.max(np.abs(kernel), axis=(0, 1, 2, 3))
+    else:
+        raise NotImplementedError()
 
     # Determine the upper power of 2 (which can be negative, e.g. for a max_val = 0.4 it would be 0.5 == 2^-1)
     sbits = np.ceil(np.log2(max_vals))
@@ -503,7 +523,13 @@ def quantize_kernels(kernel, parameter_bits, mode=QuantConvLayerType.PER_CHANNEL
     # A scale from 1 corresponds to 8 fracbits
     # A scale from 0.5 corresponds to 9 fracbits
     # v = Q * 2^-m
-    m = parameter_bits - sbits
+
+    if signed:
+        # So, for signed, this would be:
+        m = parameter_bits - sbits - 1
+    else:
+        # and for unsigned
+        m = parameter_bits - sbits + 1
 
     # Use this helper function which applies scale and clips it to the right number of bits
     qkernel = quantise_uniform(kernel, scale=scale, ncodes=2 ** parameter_bits).astype(dtype=target_type)
@@ -571,7 +597,5 @@ def dequantizse_kernels(qkernel, parameter_bits, frac_bits, mode=QuantConvLayerT
     return dequantise_uniform(qkernel, scale)
 
 
-
-def fpi_conv2D(data_in, kernel_in, dtype_out=np.int8,  stride=1):
-
-    nn.conv2d(data_in=data_in.astype(dtype_out), kernel=kernel_in.astype(dtype_out),)
+def fpi_conv2D(data_in, kernel_in, dtype_out=np.int8, stride=1):
+    nn.conv2d(data_in=data_in.astype(dtype_out), kernel=kernel_in.astype(dtype_out), )

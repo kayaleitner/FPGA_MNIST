@@ -17,15 +17,13 @@ import NeuralNetwork.nn.util
 import NeuralNetwork.nn.quant as nnquant
 from NeuralNetwork.nn.util import plot_network_parameter_histogram
 
-
-
 """
 Preparations: MNIST, loadweights, etc
 """
 
 BATCH_SIZE = 1
 FRACTION_BITS = 8
-RESOLUTION = 1/(2**FRACTION_BITS)
+RESOLUTION = 1 / (2 ** FRACTION_BITS)
 
 mnist_data_dir = 'test/MNIST'
 nn_save_dir = 'test/lenet'
@@ -46,6 +44,47 @@ reader = Reader.MnistDataReader(image_filename=path_img, label_filename=path_lbl
 # Load models
 keras_lenet = nn.util.open_keras_model(save_dir=keras_save_dir)
 nn_lenet_f64 = nn.Network.LeNet.load_from_files(save_dir=nn_save_dir)
+
+
+for ix_layer, layer in enumerate(nn_lenet_f64.layers):
+    if isinstance(layer, NeuralNetwork.nn.Layer.Conv2dLayer):
+        kernel = layer.kernel
+        scales = np.max(np.abs(kernel), axis=(1, 2, 3))
+        plot_network_parameter_histogram([kernel.flatten()], cols=1)
+        plt.savefig(f'{ix_layer}_weights_conv_hist_layer.png')
+
+        bias = layer.b
+        scales = np.max(np.abs(kernel), axis=(1, 2, 3))
+        plot_network_parameter_histogram([bias.flatten()], cols=1)
+        plt.savefig(f'{ix_layer}_weights_conv_bias_hist_layer.png')
+
+    elif isinstance(layer, NeuralNetwork.nn.Layer.FullyConnectedLayer):
+        W = layer.W
+        scales = np.max(np.abs(W), axis=(1))
+        plot_network_parameter_histogram([W.flatten()], cols=1)
+        plt.savefig(f'{ix_layer}_weights_fc_hist_layer.png')
+
+
+        bias = layer.b
+        scales = np.max(np.abs(kernel), axis=(1, 2, 3))
+        plot_network_parameter_histogram([bias.flatten()], cols=1)
+        plt.savefig(f'{ix_layer}_weights_fc_bias_hist_layer.png')
+        pass
+    else:
+        continue
+
+
+for layer in nn_lenet_f64.layers:
+    if isinstance(layer, NeuralNetwork.nn.Layer.Conv2dLayer):
+        kernel = layer.kernel
+        scales = np.max(np.abs(kernel), axis=(1, 2, 3))
+        pass
+    elif isinstance(layer, NeuralNetwork.nn.Layer.FullyConnectedLayer):
+
+        pass
+    else:
+        continue
+
 nn_lenet_f32 = nn_lenet_f64.cast(new_dtype=np.float32)
 nn_lenet_f16 = nn_lenet_f64.cast(new_dtype=np.float16)
 
@@ -100,8 +139,8 @@ print("Keras | F64 | F32 | F16 | I32 | I16 | I8 ")
 print("-----------------------------------------")
 for i in range(lbls_nn_i8.shape[0]):
     print(" {}     {}   {}   {}  {}   {}   {} ".format(lbls_keras[i], lbls_nn_f64[i], lbls_nn_f32[i],
-                                                             lbls_nn_f16[i],
-                                                             lbls_nn_i32[i], lbls_nn_i16[i], lbls_nn_i8[i]))
+                                                       lbls_nn_f16[i],
+                                                       lbls_nn_i32[i], lbls_nn_i16[i], lbls_nn_i8[i]))
 
 
 def train_keras(save_dir, IMG_HEIGHT=28, IMG_WIDTH=28):

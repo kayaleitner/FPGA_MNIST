@@ -17,10 +17,10 @@ IMG_HEIGHT = 28
 IMG_WIDTH = 28
 DEFAULT_PLOT_HISTORY = False
 DEFAULT_EPOCHS = 2
+BATCH_SIZE = 128
 
 
-def train(nepochs=DEFAULT_EPOCHS, plot_history=DEFAULT_PLOT_HISTORY):
-
+def train(nepochs=DEFAULT_EPOCHS, batch_size=BATCH_SIZE, plot_history=DEFAULT_PLOT_HISTORY):
     (x_train, y_train), (x_test, y_test) = keras.datasets.mnist.load_data()
     x_train, x_test = x_train / 255.0, x_test / 255.0
 
@@ -40,20 +40,25 @@ def train(nepochs=DEFAULT_EPOCHS, plot_history=DEFAULT_PLOT_HISTORY):
         Reshape(target_shape=(IMG_HEIGHT * IMG_WIDTH, 1), input_shape=(IMG_HEIGHT, IMG_WIDTH)),
         BatchNormalization(),
         Reshape((IMG_HEIGHT, IMG_WIDTH, 1)),  # Reshape to 3D input for the Conv layer
-        Conv2D(16, 3, padding='same', activation='linear', use_bias=False, kernel_constraint=kernel_constraint),
+        Conv2D(4, kernel_size=5, padding='same', activation='linear', use_bias=False,
+               kernel_constraint=kernel_constraint),
         BatchNormalization(axis=-1),  # Normalize along the channels (meaning last axis)
-        ReLU(),
         Dropout(0.2),
+        ReLU(),
         MaxPooling2D(),
-        Conv2D(32, 3, padding='same', activation='linear', use_bias=False, kernel_constraint=kernel_constraint),
+        Conv2D(16, kernel_size=5, padding='same', activation='linear', use_bias=False,
+               kernel_constraint=kernel_constraint),
         BatchNormalization(axis=-1),  # Normalize along the channels (meaning last axis)
-        ReLU(),
         Dropout(0.2),
+        ReLU(),
         MaxPooling2D(),
+        Conv2D(filters=64, kernel_size=3, kernel_constraint=kernel_constraint),  # Reduce dimensionality
+        Dropout(0.2),
+        ReLU(),
         Flatten(),
         Dense(32, activation='linear', kernel_constraint=kernel_constraint),
-        ReLU(),
         Dropout(0.5),
+        ReLU(),
         Dense(10, activation='softmax', kernel_constraint=kernel_constraint)
     ])
 
@@ -74,7 +79,7 @@ def train(nepochs=DEFAULT_EPOCHS, plot_history=DEFAULT_PLOT_HISTORY):
     # For higher GPU Utilization it is useful to increase batch_size but this can slow down training
     history = model.fit(x_train, y_train,
                         epochs=nepochs,
-                        batch_size=50,
+                        batch_size=batch_size,
                         validation_split=0.1,
                         callbacks=[cp_callback])
 
@@ -89,6 +94,8 @@ def train(nepochs=DEFAULT_EPOCHS, plot_history=DEFAULT_PLOT_HISTORY):
 
     if plot_history:
         _plot_history(history=history)
+
+    return model
 
 
 def _plot_history(history):
@@ -124,5 +131,5 @@ if __name__ == '__main__':
     # parser.add_argument()
     # args = parser.parse_args(args=sys.argv)
     # plot_history = args.plot_history
-
-    train()
+    global model
+    model = train()

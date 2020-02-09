@@ -72,12 +72,12 @@ class Network:
             hist.append(np.sum(y_.argmax(-1) == y.argmax(-1)))
         return np.mean(hist)
 
-    def forward(self, x, *args, **kwargs):
-        z, _ = self.forward_intermediate(x)
+    def forward(self, inputs, **kwargs):
+        z, _ = self.forward_intermediate(inputs)
         return z
 
-    def forward_intermediate(self, x):
-        z = x  # copy data
+    def forward_intermediate(self, inputs):
+        z = inputs
         zs = []
         for layer in self.layers:
             z = layer(z)

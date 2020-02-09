@@ -141,7 +141,6 @@ def fpi_conv2d(data_in: ndarray,
                data_in_m: int,
                kernel: ndarray,
                kernel_m: int,
-               data_out_type=None,
                stride: int = 1):
     if kernel.dtype.kind not in 'i':  # check if datatype is unsigned or integer
         raise ValueError('kernel datatype must be integer')
@@ -161,27 +160,27 @@ def fpi_conv2d(data_in: ndarray,
     fh2 = (fh - 1) // 2
     fw2 = (fw - 1) // 2
 
-    # Allocate output array
-    if data_out_type is not None:
-        out = np.zeros(shape=[batch, in_h, in_w, kout_ch], dtype=data_out_type)
-    else:
-        out = np.zeros(shape=[batch, in_h, in_w, kout_ch], dtype=data_in.dtype)
-        data_out_type = out.dtype
+    import NeuralNetwork.nn.quant as quant
 
-    # Allocate memory for output scaling
-    out_m = np.zeros(shape=(kout_ch,), dtype=data_out_type)
+    """ Output bytes """
+    # the patch has shape e.g. (3,3,3)
+    # how much space must be left to sum up those values?
+    patch_size = kin_ch * fh * fw
+    additional_bits_needed = np.log2(quant.next_pow2(patch_size)).astype(np.int)
+    outbits = quant.np_bits(data_in.dtype) + quant.np_bits(kernel.dtype) + additional_bits_needed
+    data_out_type = quant.datatype_for_bits(outbits)
+    out = np.zeros(shape=[batch, in_h, in_w, kout_ch], dtype=data_out_type)
 
+    # The output scaling is identical to the kernel shift plus the minimum image channel shift. This is because the
+    # kernels dont disturb each other but the image channels must be rescaled due the fact that they are summed up
+    out_m = kernel_m + np.min(data_in_m)
+    image_axis_shift = (data_in_m - np.min(data_in_m)).astype(np.int)
+
+    """ Input Padding """
     in_padded = np.pad(data_in, ((0, 0), (fh2, fh2), (fw2, fw2), (0, 0)), 'constant', constant_values=(0, 0))
 
     for b in range(batch):
         for k in range(kout_ch):
-
-            # Scaling has to be done for each output kernel
-            scale_kernel = kernel_m[k]
-            scale_out_patch = scale_kernel + data_in_m
-            scale_out_patch_final = np.min(scale_out_patch)
-            # Downscale
-            axis_shift = (scale_out_patch - scale_out_patch_final).astype(data_out_type)
 
             i_out, j_out = 0, 0
             for i in range(0, in_h, stride):
@@ -193,32 +192,22 @@ def fpi_conv2d(data_in: ndarray,
                     assert np.allclose(temp, temp_control)
 
                     # Shift the kernel
-                    for ix_ax, ax_shift in enumerate(axis_shift):
-                        np.right_shift(temp[:, :, ix_ax], ax_shift)
-                        temp_control[:, :, ix_ax] = temp_control[:, :, ix_ax] / 2
-
-                    import NeuralNetwork.nn.quant as quant
-                    # the patch has shape e.g. (3,3,3)
-                    # how much space must be left to sum up those values?
-                    #
-                    additional_bits_needed = np.log2(quant.next_pow2(temp.size)).astype(np.int)
-                    scale_out_patch_final = np.min(scale_out_patch) - additional_bits_needed
-                    temp = np.right_shift(temp, additional_bits_needed)
-                    temp_control = temp_control // 2.0**(additional_bits_needed-1)
-
+                    for ix_ax, ax_shift in enumerate(image_axis_shift):
+                        temp[:, :, ix_ax] = np.right_shift(temp[:, :, ix_ax], ax_shift)
+                        temp_control[:, :, ix_ax] = temp_control[:, :, ix_ax] / 2**ax_shift
 
                     patch_sum = temp.flatten().sum(dtype=data_out_type)
                     patch_control_sum = temp_control.flatten().sum()
-                    if not np.allclose(patch_sum, patch_control_sum):
-                        print("Difference here")
+                    if np.abs(patch_sum-patch_control_sum) > 10:
+                        print("Significant Difference here")
+                        assert np.allclose(patch_sum, patch_control_sum)
 
-                    out_m[k] = scale_out_patch_final
                     out[b, i_out, j_out, k] = patch_sum
                     j_out += 1
                 j_out = 0
                 i_out += 1
 
-    return out, out_m
+    return out, out_m, outbits
 
 
 def q_matmul(w, x, b):

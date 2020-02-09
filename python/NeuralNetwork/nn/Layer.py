@@ -240,6 +240,7 @@ class Conv2dLayer(Layer):
                  kernel_size,
                  activation=None,
                  dtype=np.float32,
+                 use_bias=True,
                  kernel_init_weights=None,
                  bias_init_weights=None):
 
@@ -247,6 +248,7 @@ class Conv2dLayer(Layer):
         self.out_channels = out_channels
         self.kernel_size = kernel_size
         self.activation = activation
+        self.use_bias = use_bias
         self.dtype = dtype
 
         if kernel_init_weights is None:
@@ -286,17 +288,21 @@ class Conv2dLayer(Layer):
         assert value in ('relu', 'softmax', None)
         self.activation = value
 
-    def __call__(self, *args, **kwargs):
+    def __call__(self, input, *args, **kwargs):
+        x = input
         if self.dtype in (np.float32, np.float64):
             try:
-                z = core.conv2d_fast(args[0], self.kernel, stride=1) + self.b
+                z = core.conv2d_fast(x, self.kernel, stride=1)
             except ImportError as imerror:
                 print("[ERROR]: The Fast C-Extension could not be loaded? Is it installed? Fallback to default python "
                       "implementation")
-                z = core.conv2d(args[0], self.kernel, stride=1) + self.b
+                z = core.conv2d(x, self.kernel, stride=1)
 
         else:
-            z = core.conv2d(args[0], self.kernel, stride=1) + self.b
+            z = core.conv2d(x, self.kernel, stride=1)
+
+        if self.use_bias:
+            z += self.b
 
         if self.activation is None:
             return z
@@ -449,5 +455,71 @@ class QuantFullyConnected(FullyConnectedLayer):
             self.bias = quant.to_fpi(bias, fraction_bits=weight_quant_frac_bits, target_type=weight_quant_dtype)
 
 
-class QuantConv2dLayer(Conv2dLayer):
-    pass
+class QuantConv2dLayer(Layer):
+
+    def __init__(self,
+                 qkernel,
+                 kernel_m):
+        self.kernel = qkernel
+        self.kernel_m = kernel_m
+
+    def __call__(self, input, *args, **kwargs):
+        assert len(input) == 2
+        x, m = input
+        (x_, m_, bo_) = core.fpi_conv2d(data_in=x, data_in_m=m, kernel=self.kernel, kernel_m=self.kernel_m)
+        return x_, m_, bo_
+
+
+class RescaleLayer(Layer):
+    """
+
+    """
+
+    def __init__(self,
+                 target_bits: int,
+                 source_bits: int,
+                 axis):
+        """
+        Initialises a new rescale layer.
+        Args:
+            target_bits: How many output bits should be used
+            axis: The axis, over which the maximum value for rescaling should be rescaled. E.g. for images activations
+            with shape [B,H,W,C] a suitable value would be (1,2,3) (=per channel)  or (2,3) (=per batch and per channel)
+        """
+        super(RescaleLayer, self).__init__()
+        self.target_bits = target_bits
+        self.source_bits = source_bits
+        self.axis = axis
+
+    def __call__(self, input, *args, **kwargs):
+        """
+        Args:
+            x: the input tensor
+            m: the fixed point scaling so that x* 2**(-m) results in the float value
+            *args:
+            **kwargs:
+
+        Returns:
+            x_: the rescaled input with proper type
+            m_: the new scaling
+        """
+        assert len(input) == 3
+        x, m, output_bits = input
+        # Find maximum values
+        max_vals = np.max(np.abs(x), axis=self.axis)
+        # Find the next higher power of 2 and convert it to bits
+        source_scale_bits = np.log2(quant.next_pow2(max_vals)).astype(np.int)
+
+        target_dtype = quant.datatype_for_bits(self.target_bits)
+        source_bits = quant.np_bits(x.dtype)
+        shift = self.target_bits - output_bits
+        m_ = m + shift
+
+        if shift < 0:
+            # Shift right
+            x_ = np.right_shift(x, -shift)
+        else:
+            # Shift left
+            x_ = np.left_shift(x, shift)
+
+        return x_.astype(target_dtype), m_

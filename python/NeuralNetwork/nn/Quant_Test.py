@@ -366,11 +366,14 @@ class FPTestCase(unittest.TestCase):
     def test_conv(self):
 
         bits = 8
-        data_in = np.random.normal(size=(10, 28, 28, 3))
+        data_in = np.random.normal(size=(1, 7, 7, 3))
         kernel = nn.make_random_kernel(size=(3, 3, 3, 6))
 
         qkernel8, km = quant.quantize_kernels(kernel, parameter_bits=8)
         qimage8, ki = quant.quantize_conv_activations(data_in, parameter_bits=8)
+
+        fkernel8 = qkernel8 / 2 ** km
+        fimage8 = qimage8 / 2 ** ki
 
         self.assertTrue(np.all(np.abs(qkernel8.flatten()) < 2 ** (bits - 1)))
         self.assertTrue(np.all(np.abs(qimage8.flatten()) < 2 ** (bits - 1)))
@@ -380,16 +383,75 @@ class FPTestCase(unittest.TestCase):
         dom = 4
 
         qout, om = nn.fpi_conv2d(data_in=qimage8, data_in_m=ki,
-                                 kernel=qkernel8, kernel_m=km,
-                                 data_out_type=np.int16)
+                                 kernel=qkernel8, kernel_m=km)
 
-        fqout = qout.astype(np.float) / (2 ** (om - 1))
+        fqout = qout.astype(np.float) / 2 ** om
         fout = nn.conv2d(data_in, kernel)
 
         err = np.abs(fqout - fout)
+        self.assertTrue(np.all(err < 0.5))
 
-        self.assertTrue(np.all(err < 0.1))
 
+class QuantLayerTests(unittest.TestCase):
+
+    def test_rescale_layer(self):
+        import NeuralNetwork.nn.Layer as layer
+        input = np.random.normal(loc=0, scale=0.6, size=(10, 14, 14, 6))
+        x, m = quant.quantize_conv_activations(input, parameter_bits=16)
+        scale_layer = layer.RescaleLayer(target_bits=8, axis=(1, 2, 3))
+        x_, m_ = scale_layer(x, m)
+
+        v1 = x / 2.0 ** (m)
+        v2 = x_ / 2.0 ** (m_)
+
+
+class QuantNetworkTests(unittest.TestCase):
+
+    def test_quant_network(self):
+        x = np.random.uniform(low=0, high=1.0, size=(1, 14, 14, 1))
+        k1 = nn.make_random_kernel(size=(3, 3, 1, 3))
+        k2 = nn.make_random_kernel(size=(3, 3, 3, 9))
+
+        # Quantize Data
+        qk1, m1 = nn.quant.quantize_kernels(kernel=k1, parameter_bits=8)
+        qk2, m2 = nn.quant.quantize_kernels(kernel=k2, parameter_bits=8)
+        xq, mx = nn.quant.quantize_conv_activations(input=x, parameter_bits=8)
+
+        layers = [
+            nn.Layer.QuantConv2dLayer(qkernel=qk1, kernel_m=m1),
+            nn.Layer.RescaleLayer(target_bits=8, source_bits=20, axis=(1, 2, 3)),
+            nn.Layer.QuantConv2dLayer(qkernel=qk2, kernel_m=m2),
+            nn.Layer.RescaleLayer(target_bits=8, source_bits=20, axis=(1, 2, 3)),
+        ]
+
+        net = nn.Network.Network(layers)
+        q_out, q_intermediate_res = net.forward_intermediate(inputs=(xq, mx))
+        yq, my = q_out
+        self.assertTrue(my.size == 9)
+
+        # Compare to float net
+        layers = [
+            nn.Layer.Conv2dLayer(in_channels=1, out_channels=3, kernel_size=3, use_bias=False, kernel_init_weights=k1,
+                                 bias_init_weights=None, dtype=np.float),
+            nn.Layer.Conv2dLayer(in_channels=3, out_channels=9, kernel_size=3, use_bias=False, kernel_init_weights=k2,
+                                 bias_init_weights=None, dtype=np.float)
+        ]
+        float_net = nn.Network.Network(layers)
+
+        y, f_intermediate_res = float_net.forward_intermediate(x)
+        yqf = yq / 2 ** my
+        self.assertEqual(y.shape, yqf.shape)
+        err = y - yqf
+
+
+        # Outputs Quant
+        fq1 = q_intermediate_res[0][0] / 2**q_intermediate_res[0][1]
+        fq2 = q_intermediate_res[1][0] / 2**q_intermediate_res[1][1]
+        fq3 = q_intermediate_res[2][0] / 2**q_intermediate_res[2][1]
+        fq4 = q_intermediate_res[3][0] / 2**q_intermediate_res[3][1]
+
+        f1 = f_intermediate_res[0]
+        f2 = f_intermediate_res[1]
 
 
 if __name__ == '__main__':
