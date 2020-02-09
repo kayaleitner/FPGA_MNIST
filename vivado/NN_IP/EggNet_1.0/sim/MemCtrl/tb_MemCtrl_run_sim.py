@@ -63,8 +63,9 @@ test_kernels_l2 = tb.get_Kernels(test_vectors_l2,IMG_WIDTH)
 #tb.run_vivado_sim_win()
 filenames = ["tb_memctrl.vhd","../../src/bram_vhdl/bram.vhd", "../../src/MemCtrl/MemCtrl.vhd", "../../src/MemCtrl/Shiftregister_3x3.vhd", "../../src/Fifo_vhdl/fifo_dist_ram.vhd", "../../hdl/EggNet_v1_0_S00_AXIS.vhd"]
 tb_entity = "tb_memctrl"
-tb.run_ghdl_linux(filenames, tb_entity)
-# tb.run_vivado_sim_win()
+#tb.run_ghdl_linux(filenames, tb_entity)
+#tb.run_ghdl_win(filenames, tb_entity)
+tb.run_vivado_sim_win()
 
 # %% check bram layer 1  
 error_count_bram_l1 = tb.check_bram(image_data,1)  

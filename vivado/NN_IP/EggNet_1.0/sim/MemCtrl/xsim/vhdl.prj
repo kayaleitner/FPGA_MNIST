@@ -2,7 +2,10 @@ vhdl xil_defaultlib  \
 "../../../../hdl/EggNet_v1_0_S00_AXI.vhd" \
 "../../../../hdl/EggNet_v1_0_S00_AXIS.vhd" \
 "../../../../src/MemCtrl/MemCtrl.vhd" \
+"../../../../src/bram_vhdl/bram.vhd" \
+"../../../../src/Fifo_vhdl/fifo_dist_ram.vhd" \
 "../../../../src/MemCtrl/Shiftregister_3x3.vhd" \
+"../../../../src/MemCtrl/MemCtrl_AXIS.vhd" \
 "../../../../hdl/EggNet_v1_0.vhd" \
 "../../tb_memctrl.vhd" \
 

@@ -8,8 +8,8 @@ entity EggNet_v1_0 is
     LAYER_HIGHT             : integer := 28;
     LAYER_WIDTH             : integer := 28;
     DATA_WIDTH              : integer := 8;
-    L1_IN_CHANNEL_NUMBER	  : integer := 16;    
-    L2_IN_CHANNEL_NUMBER	  : integer := 32;      
+    L1_IN_CHANNEL_NUMBER	  : integer := 1;    
+    L2_IN_CHANNEL_NUMBER	  : integer := 16;      
     L3_IN_CHANNEL_NUMBER	  : integer := 32;    
     MEM_CTRL_NUMBER         : integer := 4; 
     
@@ -272,8 +272,8 @@ component MemCtrl_3x3 is
   signal l1_bram_pb_data_rd     : std_logic_vector((DATA_WIDTH*L1_IN_CHANNEL_NUMBER)-1 downto 0);       
   
   
-  signal dbg_bram_addr_in       : std_logic_vector(L1_BRAM_ADDR_WIDTH-1 downto 0);
-  signal dbg_bram_addr_check    : std_logic_vector(L1_BRAM_ADDR_WIDTH-1 downto 0);
+  signal dbg_bram_addr_in       : std_logic_vector(C_S00_AXI_DATA_WIDTH-1 downto 0);
+  signal dbg_bram_addr_check    : std_logic_vector(C_S00_AXI_DATA_WIDTH-1 downto 0);  
   signal dbg_bram_data_out      : std_logic_vector(C_S00_AXI_DATA_WIDTH-1 downto 0);
   signal dbg_32bit_select       : std_logic_vector(3 downto 0); 
   signal dbg_enable_AXI         : std_logic;   
@@ -311,7 +311,7 @@ EggNet_v1_0_S00_AXI_inst : EggNet_v1_0_S00_AXI
 	)
 	port map (
     Status_i               => axi_status,              
-    Dbg_bram_addr_o        => dbg_bram_addr_in     ,
+    Dbg_bram_addr_o        => dbg_bram_addr_in ,
     Dbg_bram_addr_check_i  => dbg_bram_addr_check  ,
     Dbg_bram_data_i        => dbg_bram_data_out    ,
     Dbg_32bit_select_o     => dbg_32bit_select     ,
@@ -462,6 +462,12 @@ EggNet_v1_0_S00_AXI_inst : EggNet_v1_0_S00_AXI
       end if;   
     end if;
   end process; 
+
+  m00_axis_tvalid <= l1_m_tvalid;
+  m00_axis_tdata <= (l1_s_conv_data_1 & l1_s_conv_data_2 & l1_s_conv_data_3 & l1_s_conv_data_4);
+  m00_axis_tkeep <= (others => '1');
+  m00_axis_tlast <= l1_m_tlast;
+  l1_s_conv_tready <= m00_axis_tready;
 
 
 	-- User logic ends

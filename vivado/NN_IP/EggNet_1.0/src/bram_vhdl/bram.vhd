@@ -5,7 +5,8 @@ use ieee.numeric_std.all;
 ENTITY bram IS
   GENERIC (
       BRAM_ADDR_WIDTH		        : integer range 1 to 24   := 10; -- maximum = 24
-      BRAM_DATA_WIDTH		        : integer := 32
+      BRAM_DATA_WIDTH		        : integer := 32;
+      BRAM_SIZE                 : integer := 1568
   );
 
   PORT (
@@ -24,7 +25,7 @@ END bram;
 
 ARCHITECTURE Behavioral of bram is
 
-    type TYPE_DATAWIDTH_ARRAY is array (0 to 2**BRAM_ADDR_WIDTH) of STD_LOGIC_VECTOR(BRAM_DATA_WIDTH - 1 DOWNTO 0);
+    type TYPE_DATAWIDTH_ARRAY is array (0 to BRAM_SIZE-1) of STD_LOGIC_VECTOR(BRAM_DATA_WIDTH - 1 DOWNTO 0);
     signal ram : TYPE_DATAWIDTH_ARRAY;
 
     signal pa_addr : STD_LOGIC_VECTOR(BRAM_ADDR_WIDTH - 1 DOWNTO 0);

@@ -444,6 +444,7 @@ def kernel_3x3(kernel,weights):
         16 bit output Matrix
     """
     weighted_sum = np.int32(np.sum(kernel * weights))
+    return weighted_sum
 
 # %% Result checks 
 def check_bram(test_data,layernumber):

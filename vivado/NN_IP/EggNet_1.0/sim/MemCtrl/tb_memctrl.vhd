@@ -5,6 +5,9 @@ use ieee.numeric_std.all;
 use STD.textio.all;
 
 entity tb_memctrl is
+Generic (
+  PATH : string := "C:/Users/lukas/Documents/SoC_Lab/FPGA_MNIST/vivado/NN_IP/EggNet_1.0/sim/MemCtrl/"
+ );
 end tb_memctrl;
 
 architecture tb of tb_memctrl is
@@ -35,7 +38,8 @@ architecture tb of tb_memctrl is
     component bram
         generic (
           BRAM_ADDR_WIDTH : integer range 1 to 24 := 10;
-          BRAM_DATA_WIDTH : integer := 32
+          BRAM_DATA_WIDTH : integer := 32;
+          BRAM_SIZE       : integer := 1568
         );
         port (
           clk_i     : IN  STD_LOGIC;
@@ -50,8 +54,8 @@ architecture tb of tb_memctrl is
 
   component STD_FIFO
         generic (
-          DATA_WIDTH : positive := 8;
-          FIFO_DEPTH : positive := 256
+          DATA_WIDTH      : integer := 8;
+          FIFO_DEPTH	    : integer := 256
         );
         port (
           Clk_i     : in  STD_LOGIC;
@@ -122,6 +126,7 @@ architecture tb of tb_memctrl is
       Layer_properties_o : out std_logic_vector;
       Status_o : out std_logic_vector);
   end component MemCtrl_3x3;
+  
 
   component ShiftRegister_3x3 is
     generic(
@@ -302,8 +307,8 @@ architecture tb of tb_memctrl is
   signal img_length_sh_l2    : integer; 
   
 
-  signal dbg_bram_addr_in       : std_logic_vector(L1_BRAM_ADDR_WIDTH-1 downto 0);
-  signal dbg_bram_addr_check    : std_logic_vector(L1_BRAM_ADDR_WIDTH-1 downto 0);
+  signal dbg_bram_addr_in       : std_logic_vector(C_S00_AXI_DATA_WIDTH-1 downto 0);
+  signal dbg_bram_addr_check    : std_logic_vector(C_S00_AXI_DATA_WIDTH-1 downto 0);
   signal dbg_bram_data_out      : std_logic_vector(C_S00_AXI_DATA_WIDTH-1 downto 0);
   signal dbg_32bit_select       : std_logic_vector(3 downto 0); 
   signal dbg_enable_AXI         : std_logic;   
@@ -359,11 +364,11 @@ begin
     M_layer_tnewrow_o       => m_l1_tnewrow      ,
     M_layer_tlast_o         => m_l1_tlast        ,
     M_layer_tready_i        => m_l1_tready       ,
-    M_layer_fifo_srst_o       => m_l1_fifo_srst    ,
-    M_layer_fifo_in_o         => m_l1_fifo_in      ,
-    M_layer_fifo_wr_o         => m_l1_fifo_wr      ,
-    M_layer_fifo_rd_o         => m_l1_fifo_rd      ,
-    M_layer_fifo_out_i        => m_l1_fifo_out     ,
+    M_layer_fifo_srst_o     => m_l1_fifo_srst    ,
+    M_layer_fifo_in_o       => m_l1_fifo_in      ,
+    M_layer_fifo_wr_o       => m_l1_fifo_wr      ,
+    M_layer_fifo_rd_o       => m_l1_fifo_rd      ,
+    M_layer_fifo_out_i      => m_l1_fifo_out     ,
     Bram_clk_o              => l1_bram_clk             ,
     Bram_pa_addr_o          => l1_bram_pa_addr         ,
     Bram_pa_data_wr_o       => l1_bram_pa_data_wr      ,
@@ -382,7 +387,8 @@ begin
   Bram_layer1 : bram
   generic map (
     BRAM_DATA_WIDTH => L1_DATA_WIDTH * L1_IN_CHANNEL_NUMBER,
-    BRAM_ADDR_WIDTH => L1_BRAM_ADDR_WIDTH
+    BRAM_ADDR_WIDTH => L1_BRAM_ADDR_WIDTH,
+    BRAM_SIZE       => BLOCK_LENGTH_L1*2
   )
   port map (clk_i  => l1_bram_clk,
             wea_i   => l1_bram_pa_wea,
@@ -400,7 +406,8 @@ begin
 
   linebuffer_layer1: STD_FIFO
     generic map (
-        DATA_WIDTH => 16
+        DATA_WIDTH => 2*L1_DATA_WIDTH * L1_IN_CHANNEL_NUMBER,
+        FIFO_DEPTH => LAYER_WIDTH+1
     )
     port map (
       Clk_i   => layer_clk,
@@ -491,7 +498,8 @@ begin
   Bram_layer2 : bram
   generic map (
     BRAM_DATA_WIDTH => L2_DATA_WIDTH * L2_IN_CHANNEL_NUMBER,
-    BRAM_ADDR_WIDTH => L2_BRAM_ADDR_WIDTH
+    BRAM_ADDR_WIDTH => L2_BRAM_ADDR_WIDTH,
+    BRAM_SIZE       => BLOCK_LENGTH_L1*2
   )
   port map (clk_i  => l2_bram_clk,
             wea_i   => l2_bram_pa_wea,
@@ -508,7 +516,8 @@ begin
 
   linebuffer_layer2: STD_FIFO
     generic map (
-        DATA_WIDTH => 256
+        DATA_WIDTH => 2*L2_DATA_WIDTH * L2_IN_CHANNEL_NUMBER,
+        FIFO_DEPTH => LAYER_WIDTH+1
     )
     port map (
       Clk_i   => layer_clk,
@@ -560,13 +569,18 @@ begin
   stimuli : process
   begin
       -- EDIT Adapt initialization as needed
+      report "Init Simulation";
       start_package_l1 <= '0';
       start_package_l2 <= '0';
       debug <= '0';
       axi_mem_ctrl_addr <= (others => '0');
       -- Reset generation
       layer_aresetn <= '0';
+      report "Init Done";
+      wait for 1 ns; 
+      report "Test";
       wait for 25 ns;
+      report "Start Simulation";
       layer_aresetn <= '1';
       wait for 15 ns;
       start_package_l1 <= '1';
@@ -633,7 +647,7 @@ begin
   end process;       
 
   AXI_lite_sim: process(layer_clk,layer_aresetn) 
-    variable data_counter : unsigned(DBG_BRAM_ADDRESS_WIDTH-1 downto 0) := (others => '0');
+    variable data_counter : unsigned(C_S00_AXI_DATA_WIDTH-1 downto 0) := (others => '0');
     variable bit_select_number : unsigned(3 downto 0) := (others => '0');
   begin
     if layer_aresetn = '0' then 
@@ -798,7 +812,7 @@ begin
     variable v_ILINE      : line;
     variable read_data    : integer;
   begin
-    file_open(file_TEST_DATA, "tmp/testdata.txt",  read_mode);
+    file_open(file_TEST_DATA, PATH & "tmp/feature_map_L1_c0.txt",  read_mode);
     report "testdata opened successfully";
     for i in 0 to BLOCKS_TO_TEST-1 loop
       for j in 0 to BLOCK_LENGTH_L1-1 loop
@@ -823,7 +837,7 @@ begin
     variable write_data : integer := 0;
   begin
     wait until l1_bram_block_done'event and l1_bram_block_done='1';
-    file_open(file_RESULTS, "tmp/l1_bram" & integer'image(block_cnt) & ".txt", write_mode);
+    file_open(file_RESULTS, PATH & "tmp/l1_bram" & integer'image(block_cnt) & ".txt", write_mode);
     for i in 0 to 1 loop
       for j in 0 to BLOCK_LENGTH_L1-1 loop
         write_data := to_integer(unsigned(l1_bram_data_buffer((i*BLOCK_LENGTH_L1)+j)));
@@ -846,21 +860,21 @@ begin
     variable write_data : integer := 0;
   begin
     wait until block_done_vec_l1'event and block_done_vec_l1='1';
-    file_open(file_RESULTS, "tmp/l1_inVector_1_b" & integer'image(block_cnt) & ".txt", write_mode);
+    file_open(file_RESULTS, PATH & "tmp/l1_inVector_1_b" & integer'image(block_cnt) & ".txt", write_mode);
     for j in 0 to img_length_l1-1 loop
       write_data := to_integer(unsigned(M_l1_buffer_1(j)));
       write(v_OLINE, write_data);
       writeline(file_RESULTS, v_OLINE);
     end loop;
     file_close(file_RESULTS);
-    file_open(file_RESULTS, "tmp/l1_inVector_2_b" & integer'image(block_cnt) & ".txt", write_mode);
+    file_open(file_RESULTS, PATH & "tmp/l1_inVector_2_b" & integer'image(block_cnt) & ".txt", write_mode);
     for j in 0 to img_length_l1-1 loop
       write_data := to_integer(unsigned(M_l1_buffer_2(j)));
       write(v_OLINE, write_data);
       writeline(file_RESULTS, v_OLINE);
     end loop;
     file_close(file_RESULTS);
-    file_open(file_RESULTS, "tmp/l1_inVector_3_b" & integer'image(block_cnt) & ".txt", write_mode);
+    file_open(file_RESULTS, PATH & "tmp/l1_inVector_3_b" & integer'image(block_cnt) & ".txt", write_mode);
     for j in 0 to img_length_l1-1 loop
       write_data := to_integer(unsigned(M_l1_buffer_3(j)));
       write(v_OLINE, write_data);
@@ -877,21 +891,21 @@ begin
     variable write_data : integer := 0;
   begin
     wait until block_done_sh_l1'event and block_done_sh_l1='1';
-    file_open(file_RESULTS, "tmp/l1_inKernel_1_b" & integer'image(block_cnt) & ".txt", write_mode);
+    file_open(file_RESULTS, PATH & "tmp/l1_inKernel_1_b" & integer'image(block_cnt) & ".txt", write_mode);
     for j in 0 to img_length_sh_l1-1 loop
       write_data := to_integer(unsigned(l1_shreg_buffer_1(j)));
       write(v_OLINE, write_data);
       writeline(file_RESULTS, v_OLINE);
     end loop;
     file_close(file_RESULTS);
-    file_open(file_RESULTS, "tmp/l1_inKernel_2_b" & integer'image(block_cnt) & ".txt", write_mode);
+    file_open(file_RESULTS, PATH & "tmp/l1_inKernel_2_b" & integer'image(block_cnt) & ".txt", write_mode);
     for j in 0 to img_length_sh_l1-1 loop
       write_data := to_integer(unsigned(l1_shreg_buffer_2(j)));
       write(v_OLINE, write_data);
       writeline(file_RESULTS, v_OLINE);
     end loop;
     file_close(file_RESULTS);
-    file_open(file_RESULTS, "tmp/l1_inKernel_3_b" & integer'image(block_cnt) & ".txt", write_mode);
+    file_open(file_RESULTS, PATH & "tmp/l1_inKernel_3_b" & integer'image(block_cnt) & ".txt", write_mode);
     for j in 0 to img_length_sh_l1-1 loop
       write_data := to_integer(unsigned(l1_shreg_buffer_3(j)));
       write(v_OLINE, write_data);
@@ -899,21 +913,21 @@ begin
     end loop;
     file_close(file_RESULTS);
 
-    file_open(file_RESULTS, "tmp/l1_inKernel_4_b" & integer'image(block_cnt) & ".txt", write_mode);
+    file_open(file_RESULTS, PATH & "tmp/l1_inKernel_4_b" & integer'image(block_cnt) & ".txt", write_mode);
     for j in 0 to img_length_sh_l1-1 loop
       write_data := to_integer(unsigned(l1_shreg_buffer_4(j)));
       write(v_OLINE, write_data);
       writeline(file_RESULTS, v_OLINE);
     end loop;
     file_close(file_RESULTS);
-    file_open(file_RESULTS, "tmp/l1_inKernel_5_b" & integer'image(block_cnt) & ".txt", write_mode);
+    file_open(file_RESULTS, PATH & "tmp/l1_inKernel_5_b" & integer'image(block_cnt) & ".txt", write_mode);
     for j in 0 to img_length_sh_l1-1 loop
       write_data := to_integer(unsigned(l1_shreg_buffer_5(j)));
       write(v_OLINE, write_data);
       writeline(file_RESULTS, v_OLINE);
     end loop;
     file_close(file_RESULTS);
-    file_open(file_RESULTS, "tmp/l1_inKernel_6_b" & integer'image(block_cnt) & ".txt", write_mode);
+    file_open(file_RESULTS, PATH & "tmp/l1_inKernel_6_b" & integer'image(block_cnt) & ".txt", write_mode);
     for j in 0 to img_length_sh_l1-1 loop
       write_data := to_integer(unsigned(l1_shreg_buffer_6(j)));
       write(v_OLINE, write_data);
@@ -921,21 +935,21 @@ begin
     end loop;
     file_close(file_RESULTS);
 
-    file_open(file_RESULTS, "tmp/l1_inKernel_7_b" & integer'image(block_cnt) & ".txt", write_mode);
+    file_open(file_RESULTS, PATH & "tmp/l1_inKernel_7_b" & integer'image(block_cnt) & ".txt", write_mode);
     for j in 0 to img_length_sh_l1-1 loop
       write_data := to_integer(unsigned(l1_shreg_buffer_7(j)));
       write(v_OLINE, write_data);
       writeline(file_RESULTS, v_OLINE);
     end loop;
     file_close(file_RESULTS);
-    file_open(file_RESULTS, "tmp/l1_inKernel_8_b" & integer'image(block_cnt) & ".txt", write_mode);
+    file_open(file_RESULTS, PATH & "tmp/l1_inKernel_8_b" & integer'image(block_cnt) & ".txt", write_mode);
     for j in 0 to img_length_sh_l1-1 loop
       write_data := to_integer(unsigned(l1_shreg_buffer_8(j)));
       write(v_OLINE, write_data);
       writeline(file_RESULTS, v_OLINE);
     end loop;
     file_close(file_RESULTS);
-    file_open(file_RESULTS, "tmp/l1_inKernel_9_b" & integer'image(block_cnt) & ".txt", write_mode);
+    file_open(file_RESULTS, PATH & "tmp/l1_inKernel_9_b" & integer'image(block_cnt) & ".txt", write_mode);
     for j in 0 to img_length_sh_l1-1 loop
       write_data := to_integer(unsigned(l1_shreg_buffer_9(j)));
       write(v_OLINE, write_data);
@@ -1072,8 +1086,8 @@ begin
   begin
 
     for k in 0 to L2_IN_CHANNEL_NUMBER-1 loop
-      file_open(file_TEST_DATA, "tmp/feature_map_L2_c" & integer'image(k) & ".txt",  read_mode);
-      report "feature map " & integer'image(k) & " opened successfully";
+      file_open(file_TEST_DATA, PATH & "tmp/feature_map_L2_c" & integer'image(k) & ".txt",  read_mode);
+      --report "feature map " & integer'image(k) & " opened successfully";
       for i in 0 to BLOCKS_TO_TEST-1 loop
         for j in 0 to BLOCK_LENGTH_L2-1 loop
           readline(file_TEST_DATA, v_ILINE);
@@ -1082,10 +1096,12 @@ begin
           --report "read_data=" & integer'image(read_data)
           --        & " i=" & integer'image(i) & " j=" & integer'image(j);
           if endfile(file_TEST_DATA) = true then
+            file_close(file_TEST_DATA);
             exit;
           end if;
         end loop;
       end loop;
+      report "Close File";
       file_close(file_TEST_DATA);
     end loop;
     report "Read data done";
@@ -1098,7 +1114,7 @@ begin
     variable write_data : integer := 0;
   begin
     wait until l2_bram_block_done'event and l2_bram_block_done='1';
-    file_open(file_RESULTS, "tmp/l2_bram" & integer'image(block_cnt) & ".txt", write_mode);
+    file_open(file_RESULTS, PATH & "tmp/l2_bram" & integer'image(block_cnt) & ".txt", write_mode);
     for i in 0 to 1 loop
       for j in 0 to BLOCK_LENGTH_L2-1 loop
         for k in 0 to L2_IN_CHANNEL_NUMBER-1 loop
@@ -1125,20 +1141,18 @@ begin
     variable out_vec    : std_logic_vector(L2_DATA_WIDTH-1 downto 0) := (others => '0');
   begin  
     wait until block_done_vec_l2'event and block_done_vec_l2='1';
-    file_open(file_RESULTS, "tmp/l2_inVector_1_b" & integer'image(block_cnt) & ".txt", write_mode);
+    file_open(file_RESULTS, PATH & "tmp/l2_inVector_1_b" & integer'image(block_cnt) & ".txt", write_mode);
     for j in 0 to img_length_l2-1 loop
       for i in 0 to L2_IN_CHANNEL_NUMBER-1 loop 
         out_vec := M_l2_buffer_1(j)(i);
-        report "outvec: " & integer'image(to_integer(unsigned(out_vec))); 
         write_data := to_integer(unsigned(out_vec));
-        report "write_data: " & integer'image(write_data);
         write(v_OLINE, write_data);
         write(v_OLINE, string'(" "));
       end loop;
       writeline(file_RESULTS, v_OLINE);  
     end loop;  
     file_close(file_RESULTS);
-    file_open(file_RESULTS, "tmp/l2_inVector_2_b" & integer'image(block_cnt) & ".txt", write_mode);
+    file_open(file_RESULTS, PATH & "tmp/l2_inVector_2_b" & integer'image(block_cnt) & ".txt", write_mode);
     for j in 0 to img_length_l2-1 loop
       for i in 0 to L2_IN_CHANNEL_NUMBER-1 loop 
         write_data := to_integer(unsigned(M_l2_buffer_2(j)(i)));
@@ -1148,7 +1162,7 @@ begin
       writeline(file_RESULTS, v_OLINE);  
     end loop;  
     file_close(file_RESULTS);
-    file_open(file_RESULTS, "tmp/l2_inVector_3_b" & integer'image(block_cnt) & ".txt", write_mode);
+    file_open(file_RESULTS, PATH & "tmp/l2_inVector_3_b" & integer'image(block_cnt) & ".txt", write_mode);
     for j in 0 to img_length_l2-1 loop
       for i in 0 to L2_IN_CHANNEL_NUMBER-1 loop 
         write_data := to_integer(unsigned(M_l2_buffer_3(j)(i)));
@@ -1168,7 +1182,7 @@ begin
     variable write_data : integer := 0;
   begin
     wait until block_done_sh_l2'event and block_done_sh_l2='1';
-    file_open(file_RESULTS, "tmp/l2_inKernel_1_b" & integer'image(block_cnt) & ".txt", write_mode);
+    file_open(file_RESULTS, PATH & "tmp/l2_inKernel_1_b" & integer'image(block_cnt) & ".txt", write_mode);
     for j in 0 to img_length_l2-1 loop
       for i in 0 to L2_IN_CHANNEL_NUMBER-1 loop 
         write_data := to_integer(unsigned(l2_shreg_buffer_1(j)(i)));
@@ -1178,7 +1192,7 @@ begin
       writeline(file_RESULTS, v_OLINE);  
     end loop;  
     file_close(file_RESULTS); 
-    file_open(file_RESULTS, "tmp/l2_inKernel_2_b" & integer'image(block_cnt) & ".txt", write_mode);
+    file_open(file_RESULTS, PATH & "tmp/l2_inKernel_2_b" & integer'image(block_cnt) & ".txt", write_mode);
     for j in 0 to img_length_l2-1 loop
       for i in 0 to L2_IN_CHANNEL_NUMBER-1 loop 
         write_data := to_integer(unsigned(l2_shreg_buffer_2(j)(i)));
@@ -1188,7 +1202,7 @@ begin
       writeline(file_RESULTS, v_OLINE);  
     end loop; 
     file_close(file_RESULTS);
-    file_open(file_RESULTS, "tmp/l2_inKernel_3_b" & integer'image(block_cnt) & ".txt", write_mode);
+    file_open(file_RESULTS, PATH & "tmp/l2_inKernel_3_b" & integer'image(block_cnt) & ".txt", write_mode);
     for j in 0 to img_length_l2-1 loop
       for i in 0 to L2_IN_CHANNEL_NUMBER-1 loop 
         write_data := to_integer(unsigned(l2_shreg_buffer_3(j)(i)));
@@ -1198,7 +1212,7 @@ begin
       writeline(file_RESULTS, v_OLINE);  
     end loop; 
     file_close(file_RESULTS);      
-    file_open(file_RESULTS, "tmp/l2_inKernel_4_b" & integer'image(block_cnt) & ".txt", write_mode);
+    file_open(file_RESULTS, PATH & "tmp/l2_inKernel_4_b" & integer'image(block_cnt) & ".txt", write_mode);
     for j in 0 to img_length_l2-1 loop
       for i in 0 to L2_IN_CHANNEL_NUMBER-1 loop 
         write_data := to_integer(unsigned(l2_shreg_buffer_4(j)(i)));
@@ -1208,7 +1222,7 @@ begin
       writeline(file_RESULTS, v_OLINE);  
     end loop; 
     file_close(file_RESULTS);
-    file_open(file_RESULTS, "tmp/l2_inKernel_5_b" & integer'image(block_cnt) & ".txt", write_mode);
+    file_open(file_RESULTS, PATH & "tmp/l2_inKernel_5_b" & integer'image(block_cnt) & ".txt", write_mode);
     for j in 0 to img_length_l2-1 loop
       for i in 0 to L2_IN_CHANNEL_NUMBER-1 loop 
         write_data := to_integer(unsigned(l2_shreg_buffer_5(j)(i)));
@@ -1218,7 +1232,7 @@ begin
       writeline(file_RESULTS, v_OLINE);  
     end loop;  
     file_close(file_RESULTS);
-    file_open(file_RESULTS, "tmp/l2_inKernel_6_b" & integer'image(block_cnt) & ".txt", write_mode);
+    file_open(file_RESULTS, PATH & "tmp/l2_inKernel_6_b" & integer'image(block_cnt) & ".txt", write_mode);
     for j in 0 to img_length_l2-1 loop
       for i in 0 to L2_IN_CHANNEL_NUMBER-1 loop 
         write_data := to_integer(unsigned(l2_shreg_buffer_6(j)(i)));
@@ -1228,7 +1242,7 @@ begin
       writeline(file_RESULTS, v_OLINE);  
     end loop;  
     file_close(file_RESULTS);         
-    file_open(file_RESULTS, "tmp/l2_inKernel_7_b" & integer'image(block_cnt) & ".txt", write_mode);
+    file_open(file_RESULTS, PATH & "tmp/l2_inKernel_7_b" & integer'image(block_cnt) & ".txt", write_mode);
     for j in 0 to img_length_l2-1 loop
       for i in 0 to L2_IN_CHANNEL_NUMBER-1 loop 
         write_data := to_integer(unsigned(l2_shreg_buffer_7(j)(i)));
@@ -1238,7 +1252,7 @@ begin
       writeline(file_RESULTS, v_OLINE);  
     end loop;   
     file_close(file_RESULTS);
-    file_open(file_RESULTS, "tmp/l2_inKernel_8_b" & integer'image(block_cnt) & ".txt", write_mode);
+    file_open(file_RESULTS, PATH & "tmp/l2_inKernel_8_b" & integer'image(block_cnt) & ".txt", write_mode);
     for j in 0 to img_length_l2-1 loop
       for i in 0 to L2_IN_CHANNEL_NUMBER-1 loop 
         write_data := to_integer(unsigned(l2_shreg_buffer_8(j)(i)));
@@ -1248,7 +1262,7 @@ begin
       writeline(file_RESULTS, v_OLINE);  
     end loop; 
     file_close(file_RESULTS);
-    file_open(file_RESULTS, "tmp/l2_inKernel_9_b" & integer'image(block_cnt) & ".txt", write_mode);
+    file_open(file_RESULTS, PATH & "tmp/l2_inKernel_9_b" & integer'image(block_cnt) & ".txt", write_mode);
     for j in 0 to img_length_l2-1 loop
       for i in 0 to L2_IN_CHANNEL_NUMBER-1 loop 
         write_data := to_integer(unsigned(l2_shreg_buffer_9(j)(i)));
@@ -1269,7 +1283,7 @@ begin
     variable write_data : integer := 0;
   begin
     wait until debug_done'event and debug_done='1';
-    file_open(file_RESULTS, "tmp/debug" & integer'image(block_cnt) & ".txt", write_mode);
+    file_open(file_RESULTS, PATH & "tmp/debug" & integer'image(block_cnt) & ".txt", write_mode);
     for i in 0 to 1 loop
       for j in 0 to BLOCK_LENGTH_L2-1 loop
         write_data := to_integer(unsigned(dbg_l2_bram_data_buffer((i*BLOCK_LENGTH_L2)+j)));

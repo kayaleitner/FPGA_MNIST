@@ -73,6 +73,15 @@ proc validate_PARAM_VALUE.LAYER_WIDTH { PARAM_VALUE.LAYER_WIDTH } {
 	return true
 }
 
+proc update_PARAM_VALUE.MEM_CTRL_NUMBER { PARAM_VALUE.MEM_CTRL_NUMBER } {
+	# Procedure called to update MEM_CTRL_NUMBER when any of the dependent parameters in the arguments change
+}
+
+proc validate_PARAM_VALUE.MEM_CTRL_NUMBER { PARAM_VALUE.MEM_CTRL_NUMBER } {
+	# Procedure called to validate MEM_CTRL_NUMBER
+	return true
+}
+
 proc update_PARAM_VALUE.C_S00_AXIS_TDATA_WIDTH { PARAM_VALUE.C_S00_AXIS_TDATA_WIDTH } {
 	# Procedure called to update C_S00_AXIS_TDATA_WIDTH when any of the dependent parameters in the arguments change
 }
@@ -190,5 +199,10 @@ proc update_MODELPARAM_VALUE.L2_IN_CHANNEL_NUMBER { MODELPARAM_VALUE.L2_IN_CHANN
 proc update_MODELPARAM_VALUE.L3_IN_CHANNEL_NUMBER { MODELPARAM_VALUE.L3_IN_CHANNEL_NUMBER PARAM_VALUE.L3_IN_CHANNEL_NUMBER } {
 	# Procedure called to set VHDL generic/Verilog parameter value(s) based on TCL parameter value
 	set_property value [get_property value ${PARAM_VALUE.L3_IN_CHANNEL_NUMBER}] ${MODELPARAM_VALUE.L3_IN_CHANNEL_NUMBER}
+}
+
+proc update_MODELPARAM_VALUE.MEM_CTRL_NUMBER { MODELPARAM_VALUE.MEM_CTRL_NUMBER PARAM_VALUE.MEM_CTRL_NUMBER } {
+	# Procedure called to set VHDL generic/Verilog parameter value(s) based on TCL parameter value
+	set_property value [get_property value ${PARAM_VALUE.MEM_CTRL_NUMBER}] ${MODELPARAM_VALUE.MEM_CTRL_NUMBER}
 }
 

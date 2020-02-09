@@ -8,7 +8,7 @@ entity EggNet_v1_0_S00_AXI is
     MEM_CTRL_ADDR_WITDH   : integer := 4; 
 		-- User parameters ends
 		-- Do not modify the parameters beyond this line
-
+  
 		-- Width of S_AXI data bus
 		C_S_AXI_DATA_WIDTH	: integer	:= 32;
 		-- Width of S_AXI address bus
@@ -352,7 +352,7 @@ begin
 	-- and the slave is ready to accept the read address.
 	slv_reg_rden <= axi_arready and S_AXI_ARVALID and (not axi_rvalid) ;
 
-	process (slv_reg0, slv_reg1, slv_reg2, slv_reg3, axi_araddr, S_AXI_ARESETN, slv_reg_rden)
+	process (Status_i, Dbg_bram_addr_check_i, Dbg_bram_data_i, AXI_layer_properties_i, axi_araddr, S_AXI_ARESETN, slv_reg_rden)
 	variable loc_addr :std_logic_vector(OPT_MEM_ADDR_BITS downto 0);
 	begin
 	    -- Address decoding for reading registers
@@ -391,7 +391,7 @@ begin
 
 
 	-- Add user logic here
-  AXI_mem_ctrl_addr_o <= slv_reg0(7 downto 0); 
+  AXI_mem_ctrl_addr_o <= slv_reg0(3 downto 0); 
   Dbg_enable_o <= slv_reg0(31);
   Dbg_32bit_select_o <= slv_reg0(11 downto 8);
   Dbg_bram_addr_o <= slv_reg1; 
