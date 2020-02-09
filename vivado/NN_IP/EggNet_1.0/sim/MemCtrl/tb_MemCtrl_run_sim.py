@@ -4,17 +4,18 @@ Created on Sun Jan  5 14:24:56 2020
 
 @author: lukas
 
-Generates random test data to test the memory controller and runs the 
-simulation test the module using ghdl 
+Generates random test data to test the memory controller and runs the
+simulation test the module using ghdl
 """
 
 # %% public imports
-import os 
+import os
 import shutil
 import numpy as np
+import matplotlib.pyplot as plt
 
 # %% import custom modules
-import vhdl_testbench as tb 
+import vhdl_testbench as tb
 
 # %% parameter
 KEEP_TEMPORARY_FILES = True
@@ -29,126 +30,65 @@ CO_L1 = 16
 # %% create tmp folder, delete folder if not tmp exists and create new one
 if os.path.isdir('tmp'):
     shutil.rmtree('tmp')
-    
+
 try : os.mkdir('tmp')
 except : print("Error creating tmp folder!")
 
 # %% create test data file
+image_data = np.uint8(np.random.normal(0,0.3,size=(NUMBER_OF_TEST_BLOCKS,BLOCK_SIZE,CI_L1))*256)
+tb.write_features_to_file(image_data,layernumber=1)
+#image_data = tb.gen_testdata(BLOCK_SIZE,NUMBER_OF_TEST_BLOCKS)
 
-image_data = tb.gen_testdata(BLOCK_SIZE,NUMBER_OF_TEST_BLOCKS)
+# %% generate test vectors layer 1
+test_vectors_l1 = tb.get_vectors_from_data(image_data,IMG_WIDTH,IMG_HIGTH)
 
-# %% generate test vectors 
-test_vectors = tb.get_vectors_from_data(image_data,IMG_WIDTH,IMG_HIGTH,NUMBER_OF_TEST_BLOCKS)
-
-# %% generate test kernels 
-test_kernels = tb.get_Kernels(test_vectors)
-
+# %% generate test kernels layer 1
+test_kernels_l1 = tb.get_Kernels(test_vectors_l1,IMG_WIDTH)
 # %% calculate Layer output as new memory controller input 
-weights_L1 = np.ones((CO_L1,CI_L1,KERNEL_SIZE,KERNEL_SIZE),dtype=np.int8)
-weights_L1[:,:,1,:] = 0
-weights_L1[:,:,2,:] = -1
-features_L1 = tb.conv_2d(test_kernels,weights_L1)
-             
+weights_L1 = np.int8(np.random.normal(0,0.3,size=(CO_L1,CI_L1,KERNEL_SIZE,KERNEL_SIZE))*128)
+msb = np.ones(CO_L1,dtype=np.int32)*15
+features_l2 = tb.conv_2d(test_kernels_l1,weights_L1,msb)
+
+tb.write_features_to_file(features_l2,layernumber=2)
+# %% generate test vectors layer 2 
+test_vectors_l2 = tb.get_vectors_from_data(features_l2,IMG_WIDTH,IMG_HIGTH) 
+
+# %% generate test kernels layer 2
+test_kernels_l2 = tb.get_Kernels(test_vectors_l2,IMG_WIDTH)
+ 
 # %% run ghdl 
 # Saving console ouput in log file is not working on windows            
+# %% run ghdl
+# Saving console ouput in log file is not working on windows
+#tb.run_vivado_sim_win()
+filenames = ["tb_memctrl.vhd","../../src/bram_vhdl/bram.vhd", "../../src/MemCtrl/MemCtrl.vhd", "../../src/MemCtrl/Shiftregister_3x3.vhd", "../../src/Fifo_vhdl/fifo_dist_ram.vhd", "../../hdl/EggNet_v1_0_S00_AXIS.vhd"]
+tb_entity = "tb_memctrl"
+#tb.run_ghdl_linux(filenames, tb_entity)
+#tb.run_ghdl_win(filenames, tb_entity)
 tb.run_vivado_sim_win()
 
-
-# %% check results 
-error_count_rec_images = 0
-
-for i in range(NUMBER_OF_TEST_BLOCKS):
-    with open("tmp/bram{}.txt".format(i),"r") as f:
-        for j in range(2*BLOCK_SIZE):
-            block_select = 1-(i+1)%2
-            result_data = int(f.readline())
-            if block_select == 0 and j<BLOCK_SIZE:
-                 if result_data != image_data[i,j]:
-                     print("Error in block {}".format(i) + " in line {} ,".format(j+block_select*BLOCK_SIZE) \
-                            + "{}".format(result_data) + " != {}".format(image_data[i,j]))
-                     error_count_rec_images += 1
-            elif block_select == 0 and j>=BLOCK_SIZE and i==0:
-                if result_data != 0:
-                     print("Error in block {}".format(i) + " in line {} ,".format(j+block_select*BLOCK_SIZE) \
-                            + "{}".format(result_data) + " != {}".format(0))
-                     error_count_rec_images += 1
-            elif block_select == 0 and j>=BLOCK_SIZE:
-                if result_data != image_data[i-1,j-BLOCK_SIZE]:
-                     print("Error in block {}".format(i) + " in line {} ,".format(j+block_select*BLOCK_SIZE) \
-                            + "{}".format(result_data) + " != {}".format(image_data[i-1,j-BLOCK_SIZE]))
-                     error_count_rec_images += 1           
-            elif block_select == 1 and j<BLOCK_SIZE:
-                 if result_data != image_data[i-1,j]:
-                     print("Error in block {}".format(i) + " in line {} ,".format(j+block_select*BLOCK_SIZE) \
-                            + "{}".format(result_data) + " != {}".format(image_data[i-1,j]))
-                     error_count_rec_images += 1
-            elif block_select == 1 and j>=BLOCK_SIZE:
-                if result_data != image_data[i,j-BLOCK_SIZE]:
-                     print("Error in block {}".format(i) + " in line {} ,".format(j+block_select*BLOCK_SIZE) \
-                            + "{}".format(result_data) + " != {}".format(image_data[i,j-BLOCK_SIZE]))
-                     error_count_rec_images += 1   
-            else:
-                    print("Error in porgram")
-                    
-if error_count_rec_images == 0:
-    print("Received image data successfully!")
-else:
-    print("{} errors occured receiving image".format(error_count_rec_images))    
+# %% check bram layer 1  
+error_count_bram_l1 = tb.check_bram(image_data,1)  
       
-# %% check memory controller output 
-error_count_vectors = 0
-result_vectors = np.zeros((test_vectors.shape[0],test_vectors.shape[1],test_vectors.shape[2]),dtype=np.uint8)
-for i in range(NUMBER_OF_TEST_BLOCKS):
-    with open("tmp/m_layer_data1_b{}.txt".format(i),"r") as f:
-        for j in range(test_vectors.shape[1]):
-            result_vectors[i,j,0] = int(f.readline())
-            if result_vectors[i,j,0] != test_vectors[i,j,0]:
-                print("Error in m_layer_data1_b{}".format(i) + " in line {} ,".format(j) \
-                            + "{}".format(result_vectors[i,j,0]) + " != {}".format(test_vectors[i,j,0]))
-                error_count_vectors += 1
-    with open("tmp/m_layer_data2_b{}.txt".format(i),"r") as f:
-        for j in range(test_vectors.shape[1]):
-            result_vectors[i,j,1] = int(f.readline())
-            if result_vectors[i,j,1] != test_vectors[i,j,1]:
-                print("Error in m_layer_data1_b{}".format(i) + " in line {} ,".format(j) \
-                            + "{}".format(result_vectors[i,j,1]) + " != {}".format(test_vectors[i,j,1]))
-                error_count_vectors += 1        
-    with open("tmp/m_layer_data3_b{}.txt".format(i),"r") as f:
-        for j in range(test_vectors.shape[1]):
-            result_vectors[i,j,2] = int(f.readline())
-            if result_vectors[i,j,2] != test_vectors[i,j,2]:
-                print("Error in m_layer_data1_b{}".format(i) + " in line {} ,".format(j) \
-                            + "{}".format(result_vectors[i,j,2]) + " != {}".format(test_vectors[i,j,2]))
-                error_count_vectors += 1                
-if error_count_vectors == 0:
-    print("Received Kernel vectors successfully!")
-else:
-    print("{} errors occured receiving image".format(error_count_vectors))     
-
+# %% check memory controller output layer 1
+error_count_vectors_l1 = tb.check_vectors(test_vectors_l1,1)
     
 # %% check memory shiftregister output 
-error_count_kernels = 0
-result_kernels = np.zeros((test_kernels.shape[0],test_kernels.shape[1],test_kernels.shape[2],test_kernels.shape[3]),dtype=np.uint8)
-for i in range(result_kernels.shape[0]):
-    file_cnt = 0
-    for k in range(test_kernels.shape[2]):
-        for h in range(test_kernels.shape[3]):
-            file_cnt += 1
-            with open("tmp/shift_data{}".format(file_cnt) + "_b{}.txt".format(i),"r") as f:
-                for j in range(result_kernels.shape[1]):
-                    result_kernels[i,j,h,k] = int(f.readline())
-                    if result_kernels[i,j,0,0] != test_kernels[i,j,0,0]:
-                        print("Error in shift_data1_b{}".format(i) + " in line {} ,".format(j) \
-                                    + "{}".format(result_kernels[i,j,0,0]) + " != {}".format(result_kernels[i,j,0,0]))
-                        error_count_kernels += 1
-    
-if error_count_vectors == 0:
-    print("Received Kernel from shiftregister successfully!")
-else:
-    print("{} errors occured receiving image".format(error_count_vectors)) 
+error_count_kernels_l1 = tb.check_kernels(test_kernels_l1,1)
 
-      
+error_count_l1 = error_count_bram_l1 + error_count_vectors_l1 + error_count_kernels_l1
+#%% check bram layer 2
+error_count_bram_l2 = tb.check_bram(features_l2,2)
+
+# %% check memory controller output layer 1
+error_count_vectors_l2 = tb.check_vectors(test_vectors_l2,2)
+    
+# %% check memory shiftregister output 
+error_count_kernels_l2 = tb.check_kernels(test_kernels_l2,2)
+    
+error_count_l2 = error_count_bram_l2 + error_count_vectors_l2 + error_count_kernels_l2
 # %% delete tmp folder 
-error_count = error_count_rec_images + error_count_vectors
+error_count = error_count_l1 + error_count_l2
+
 if not KEEP_TEMPORARY_FILES and error_count == 0:
     shutil.rmtree('tmp')

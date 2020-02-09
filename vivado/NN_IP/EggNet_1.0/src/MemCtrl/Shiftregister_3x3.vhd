@@ -15,6 +15,7 @@ entity ShiftRegister_3x3 is
     S_data_2_i      : in  STD_LOGIC_VECTOR((DATA_WIDTH - 1) downto 0); --  Input vector element 2 |Vector: trans(1,2,3)
     S_data_3_i      : in  STD_LOGIC_VECTOR((DATA_WIDTH - 1) downto 0); --  Input vector element 3 |Vector: trans(1,2,3)
     S_tvalid_i	    : in  STD_LOGIC; -- indicates if input data is valid 
+    S_tnewrow_i     : in  STD_LOGIC; -- indicates that a new row starts 
     S_tlast_i       : in  STD_LOGIC; -- indicates end of block 
     S_tready_o      : out STD_LOGIC; -- indicates if shiftregister is ready to for new data 
 
@@ -36,8 +37,12 @@ end ShiftRegister_3x3;
 
 architecture Behavioral of ShiftRegister_3x3 is
 
-  type STATES is (INIT,RUN);
+  type STATES is (INIT,NEW_LINE,RUN);
   signal state     :STATES;
+  
+  signal data_buffer_1 : STD_LOGIC_VECTOR((DATA_WIDTH - 1) downto 0);
+  signal data_buffer_2 : STD_LOGIC_VECTOR((DATA_WIDTH - 1) downto 0);
+  signal data_buffer_3 : STD_LOGIC_VECTOR((DATA_WIDTH - 1) downto 0);
   
   signal data_1    : STD_LOGIC_VECTOR((DATA_WIDTH - 1) downto 0);
   signal data_2    : STD_LOGIC_VECTOR((DATA_WIDTH - 1) downto 0);
@@ -73,13 +78,29 @@ begin
       data_7 <= (others => '0');
       data_8 <= (others => '0');
       data_9 <= (others => '0');
+      data_buffer_1 <= (others => '0');      
+      data_buffer_2 <= (others => '0');     
+      data_buffer_3 <= (others => '0');     
       state <= INIT;
       M_tlast_o <= '0';
       M_tvalid_o <= '0';
       S_tready_o <= '1';
     elsif rising_edge(Clk_i) then
+      
       case(state) is 
         when INIT => 
+          S_tready_o <= '1';
+          M_tlast_o <= '0';
+          M_tvalid_o <= '0';
+          if S_tvalid_i = '1' and S_tnewrow_i = '1' then
+            state <= NEW_LINE;
+            data_buffer_1 <= S_data_1_i;
+            data_buffer_2 <= S_data_2_i;
+            data_buffer_3 <= S_data_3_i; 
+          end if; 
+          
+
+        when NEW_LINE => 
           S_tready_o <= '1';
           M_tlast_o <= '0';
           if S_tvalid_i = '1' then
@@ -87,9 +108,9 @@ begin
             data_1 <= (others => '0');
             data_2 <= (others => '0');
             data_3 <= (others => '0');
-            data_4 <= (others => '0');
-            data_5 <= (others => '0');
-            data_6 <= (others => '0');
+            data_4 <= data_buffer_1;
+            data_5 <= data_buffer_2;
+            data_6 <= data_buffer_3;
             data_7 <= S_data_1_i;
             data_8 <= S_data_2_i;
             data_9 <= S_data_3_i;
@@ -103,18 +124,37 @@ begin
           if S_tvalid_i = '1' then
             M_tvalid_o <= '1';
             if M_tready_i = '1' then 
-              data_1 <= data_4;
-              data_2 <= data_5;
-              data_3 <= data_6;
-              data_4 <= data_7;
-              data_5 <= data_8;
-              data_6 <= data_9;
-              data_7 <= S_data_1_i;
-              data_8 <= S_data_2_i;
-              data_9 <= S_data_3_i;
+              if S_tnewrow_i = '1' then 
+                data_1 <= data_4;
+                data_2 <= data_5;
+                data_3 <= data_6;
+                data_4 <= data_7;
+                data_5 <= data_8;
+                data_6 <= data_9;
+                data_7 <= (others => '0');
+                data_8 <= (others => '0');
+                data_9 <= (others => '0'); 
+                data_buffer_1 <= S_data_1_i;
+                data_buffer_2 <= S_data_2_i;
+                data_buffer_3 <= S_data_3_i;   
+                if S_tlast_i = '1' then 
+                  state <= INIT;
+                else 
+                  state <= NEW_LINE;
+                end if;
+              else  
+                data_1 <= data_4;
+                data_2 <= data_5;
+                data_3 <= data_6;
+                data_4 <= data_7;
+                data_5 <= data_8;
+                data_6 <= data_9;
+                data_7 <= S_data_1_i;
+                data_8 <= S_data_2_i;
+                data_9 <= S_data_3_i;
+              end if;
               if S_tlast_i = '1' then 
                 M_tlast_o <= S_tlast_i; 
-                state <= INIT;
               end if;
             end if; 
           end if; 

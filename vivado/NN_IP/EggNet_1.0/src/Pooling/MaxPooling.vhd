@@ -1,9 +1,13 @@
+library ieee;
+use ieee.std_logic_1164.all;
+use ieee.numeric_std.all;
+
 entity MaxPooling is
   Generic(
     CHANNEL_NUMBER    : integer := 16;  -- number of output channels of previous layer 
     DATA_WIDTH        : integer := 8;   -- data with of each output channel 
     LAYER_HIGHT       : integer := 28;  -- previous layer matrix hight
-    LAYER_WIDTH       : integer := 28;  -- previous layer matrix width
+    LAYER_WIDTH       : integer := 28  -- previous layer matrix width
  );
   Port (
     -- Clk and reset
@@ -22,7 +26,7 @@ entity MaxPooling is
     M_layer_tdata_o   : out std_logic_vector((DATA_WIDTH*CHANNEL_NUMBER)-1 downto 0); --  Output vector element 1 |Vector: trans(1,2,3)
     M_layer_tkeep_o   : out std_logic_vector(((DATA_WIDTH*CHANNEL_NUMBER)/8)-1 downto 0); --only used if next layer is AXI-stream interface (default open)
     M_layer_tlast_o   : out std_logic;
-    M_layer_tready_i  : in std_logic;
+    M_layer_tready_i  : in std_logic
   );
 end MaxPooling;
 
@@ -44,18 +48,19 @@ architecture Behavioral of MaxPooling is
 
   type  STATES is (INIT,START,FIRST_LINE,POOL); 
   type  FIFO_TYPE IS ARRAY(CHANNEL_NUMBER-1 downto 0) OF std_logic_vector(DATA_WIDTH-1 downto 0); 
-  type  BUFFER_TYPE_0 IS ARRAY(CHANNEL_NUMBER-1 downto 0) OF std_logic_vector(DATA_WIDTH-1 downto 0); 
-  type  BUFFER_TYPE_1 IS ARRAY(CHANNEL_NUMBER-1 downto 0) OF std_logic_vector(DATA_WIDTH-1 downto 0); 
+  type  BUFFER_TYPE IS ARRAY(CHANNEL_NUMBER-1 downto 0) OF std_logic_vector(DATA_WIDTH-1 downto 0); 
   
   signal state        :STATES;
   
-  signal pool_buffer  : BUFFER_TYPE;
-  signal fifo_out     : FIFO_TYPE;
-  signal fifo_srst    : std_logic;
-  signal fifo_wr      : std_logic;
-  signal fifo_rd      : std_logic;
-  signal output_en    : std_logic;
-  signal s_ready      : std_logic;
+  signal pool_buffer_0  : BUFFER_TYPE;
+  signal pool_buffer_1  : BUFFER_TYPE;
+  signal fifo_out       : FIFO_TYPE;
+  signal fifo_srst      : std_logic;
+  signal fifo_wr        : std_logic;
+  signal fifo_rd        : std_logic;
+  signal output_en      : std_logic;
+  signal s_ready        : std_logic;
+  signal m_tvalid       : std_logic;
   
 begin 
 
@@ -72,8 +77,8 @@ begin
         empty => open 
       );  
   end generate;
-
-  S_layer_tkeep_i <= (others => '1') when S_layer_tvalid_i = '1' else (others => '0');
+  M_layer_tvalid_o <= m_tvalid;
+  M_layer_tkeep_o <= (others => '1') when m_tvalid = '1' else (others => '0');
   S_layer_tready_o <= s_ready;
   fifo_wr <= S_layer_tvalid_i and s_ready; 
 
@@ -82,9 +87,8 @@ begin
     variable row_cnt  : integer;
   begin
     if Layer_aresetn_i = '0' then 
-      M_layer_tvalid_o <= '0';
+      m_tvalid <= '0';
       M_layer_tdata_o  <= (others => '0');
-      M_layer_tkeep_o  <= (others => '0');
       M_layer_tlast_o  <= '0';
       for i in 0 to CHANNEL_NUMBER-1 loop
         pool_buffer_0(i) <= (others => '0');
@@ -116,7 +120,7 @@ begin
           if fifo_wr = '1' then 
             if col_cnt = LAYER_WIDTH-1 then 
               col_cnt := 0;
-              state <= pool 
+              state <= POOL; 
               fifo_rd <= '1';
             else 
               col_cnt := col_cnt +1;
@@ -134,7 +138,7 @@ begin
               pool_buffer_1(i) <= S_layer_tdata_i(((i+1)*DATA_WIDTH)-1 downto (i*DATA_WIDTH));
             end loop;                        
             if output_en = '1' then 
-              S_layer_tvalid_i <= '1';               
+              m_tvalid <= '1';               
               -- Pooling for all channels 
               for i in 0 to CHANNEL_NUMBER-1 loop
                 -- starting with S_layer_tdata_i because it is the most critical signal in case of timing 
@@ -165,19 +169,21 @@ begin
               -- If matrix width is odd 
               if S_layer_tlast_i = '1' then 
                 M_layer_tlast_o <= '1';
-                S_layer_tvalid_i <= '1'; 
-                if S_layer_tdata_i(((i+1)*DATA_WIDTH)-1 downto (i*DATA_WIDTH)) > fifo_out(i) then 
-                  M_layer_tdata_o(((i+1)*DATA_WIDTH)-1 downto (i*DATA_WIDTH)) <= 
+                m_tvalid <= '1'; 
+                for i in 0 to CHANNEL_NUMBER-1 loop  
+                  if S_layer_tdata_i(((i+1)*DATA_WIDTH)-1 downto (i*DATA_WIDTH)) > fifo_out(i) then 
+                    M_layer_tdata_o(((i+1)*DATA_WIDTH)-1 downto (i*DATA_WIDTH)) <= 
                                           S_layer_tdata_i(((i+1)*DATA_WIDTH)-1 downto (i*DATA_WIDTH));
-                else 
-                  M_layer_tdata_o(((i+1)*DATA_WIDTH)-1 downto (i*DATA_WIDTH)) <= fifo_out(i);
-                end if;
+                  else 
+                    M_layer_tdata_o(((i+1)*DATA_WIDTH)-1 downto (i*DATA_WIDTH)) <= fifo_out(i);
+                  end if;
+                end loop;  
                 state <= START; 
                 fifo_srst <= '1'; 
                 s_ready <= '0'; 
                 fifo_rd <= '0';                 
               else 
-                S_layer_tvalid_i <= '0'; 
+                m_tvalid <= '0'; 
               end if;
             end if;
             if col_cnt >= LAYER_WIDTH then 
@@ -188,7 +194,10 @@ begin
             end if;
           else 
             fifo_rd <= '0';
-          end if;  
+          end if; 
+        when others => 
+          state <= INIT;
+      end case;    
     end if;
   end process;
 

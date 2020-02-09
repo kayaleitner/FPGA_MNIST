@@ -195,7 +195,7 @@ begin
       block_active_R <= '0';      
       tlast_buf <= '0';
       Invalid_block_o <= '0';
-      Block_done_o <= '0';
+      Block_done_o <= '1';
       BRAM_PA_wea_o <= (others => '0');
     elsif (rising_edge (S_AXIS_ACLK)) then
       if bram_byte_counter = "11" and Next_block_wr_i /= "00" then 
@@ -205,9 +205,9 @@ begin
           bram_buffer <= stream_data_fifo(write_pointer-1);
           bram_byte_counter <= (others => '0');
           BRAM_PA_wea_o <= (others => '1');
-          Block_done_o <= '0';  
           -- Set initial address of RAM block 
           if block_active = '0' then 
+            Block_done_o <= '0';
             block_active <= '1';
             block_select <= not block_select; 
             if Next_block_wr_i(0) = '1' then 
@@ -217,27 +217,28 @@ begin
             end if;  
           end if;  
         else -- if FIFO is empty transaction ends and it is checked if block size is valid 
-          block_active <= '0';
-          BRAM_PA_wea_o <= (others => '0');
-          Block_done_o <= block_active;  
-          tlast_buf <= '0';
-          if Next_block_wr_i(0) = '1' then 
-            if bram_addr = std_logic_vector(unsigned(BLOCK_0_START_ADDR)+
-                                          to_unsigned(BRAM_ADDR_BLOCK_WIDTH,BRAM_ADDR_WIDTH)-1) then
-              
-              Invalid_block_o <= not tlast_buf; -- block is invalid if no tlast signal is detected
+          if tlast_buf = '1' then 
+            block_active <= '0';
+            BRAM_PA_wea_o <= (others => '0');
+            Block_done_o <= '1';  
+            tlast_buf <= '0';
+            if Next_block_wr_i(0) = '1' then 
+              if bram_addr = std_logic_vector(unsigned(BLOCK_0_START_ADDR)+
+                                            to_unsigned(BRAM_ADDR_BLOCK_WIDTH,BRAM_ADDR_WIDTH)-1) then     
+                Invalid_block_o <= '0'; 
+              else 
+                Invalid_block_o <= '1'; -- wrong block size
+              end if;
             else 
-              Invalid_block_o <= '1';
-            end if;
-          else 
-            if bram_addr = std_logic_vector(unsigned(BLOCK_0_START_ADDR)+
-                                          to_unsigned(BRAM_ADDR_BLOCK_WIDTH,BRAM_ADDR_WIDTH)-1) then
-                
-              Invalid_block_o <= not tlast_buf; -- block is invalid if no tlast signal is detected
-            else 
-              Invalid_block_o <= '1';
-            end if;
-          end if;    
+              if bram_addr = std_logic_vector(unsigned(BLOCK_1_START_ADDR)+
+                                            to_unsigned(BRAM_ADDR_BLOCK_WIDTH,BRAM_ADDR_WIDTH)-1) then
+                  
+                Invalid_block_o <= '0';
+              else 
+                Invalid_block_o <= '1'; -- wrong block size
+              end if;
+            end if; 
+          end if; 
         end if;  
       else -- byte counter to save each byte successively 
         bram_byte_counter <= std_logic_vector(unsigned(bram_byte_counter)+1);
@@ -249,7 +250,8 @@ begin
       -- buffer tlast signal till FIFO is empty 
       if S_AXIS_TLAST = '1' then 
         tlast_buf <= '1';
-      end if;  
+      end if; 
+    
 	  end  if;
 	end process;
   
