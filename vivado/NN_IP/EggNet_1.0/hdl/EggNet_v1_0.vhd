@@ -75,6 +75,28 @@ entity EggNet_v1_0 is
 		m00_axis_tkeep	: out std_logic_vector((C_M00_AXIS_TDATA_WIDTH/8)-1 downto 0);
 		m00_axis_tlast	: out std_logic;
 		m00_axis_tready	: in std_logic
+    
+    
+    ;ila_s00_axis_tready	: out std_logic;
+		ila_s00_axis_tdata	: out std_logic_vector(C_S00_AXIS_TDATA_WIDTH-1 downto 0);
+		ila_s00_axis_tkeep	: out std_logic_vector((C_S00_AXIS_TDATA_WIDTH/8)-1 downto 0);
+		ila_s00_axis_tlast	: out std_logic;
+		ila_s00_axis_tvalid	: out std_logic
+
+    ;ila_m00_axis_tvalid	: out std_logic;
+		ila_m00_axis_tdata	: out std_logic_vector(C_M00_AXIS_TDATA_WIDTH-1 downto 0);
+		ila_m00_axis_tkeep	: out std_logic_vector((C_M00_AXIS_TDATA_WIDTH/8)-1 downto 0);
+		ila_m00_axis_tlast	: out std_logic;
+		ila_m00_axis_tready	: out std_logic
+    
+
+    ;ila_dbg_bram_addr_in     : out std_logic_vector(C_S00_AXI_DATA_WIDTH-1 downto 0);
+    ila_dbg_bram_addr_check  : out std_logic_vector(C_S00_AXI_DATA_WIDTH-1 downto 0);  
+    ila_dbg_bram_data_out    : out std_logic_vector(C_S00_AXI_DATA_WIDTH-1 downto 0); 
+    ila_dbg_32bit_select     : out std_logic_vector(3 downto 0);
+    ila_dbg_enable           : out std_logic; 
+    ila_layer_properties     : out std_logic_vector(C_S00_AXI_DATA_WIDTH-1 downto 0);  
+    ila_status               : out std_logic_vector(C_S00_AXI_DATA_WIDTH-1 downto 0)  
 	);
 end EggNet_v1_0;
 
@@ -237,19 +259,23 @@ component MemCtrl_3x3 is
       doutb : OUT STD_LOGIC_VECTOR(7 DOWNTO 0)
     );
   end component blk_mem_gen_0;
-  
-  component fifo_generator_0 IS
-    PORT (
-      clk : IN STD_LOGIC;
-      srst : IN STD_LOGIC;
-      din : IN STD_LOGIC_VECTOR(15 DOWNTO 0);
-      wr_en : IN STD_LOGIC;
-      rd_en : IN STD_LOGIC;
-      dout : OUT STD_LOGIC_VECTOR(15 DOWNTO 0);
-      full : OUT STD_LOGIC;
-      empty : OUT STD_LOGIC
-    );
-  END component fifo_generator_0;   
+
+  component STD_FIFO
+        generic (
+          DATA_WIDTH      : integer := 8;
+          FIFO_DEPTH	    : integer := 256
+        );
+        port (
+          Clk_i     : in  STD_LOGIC;
+          Rst_i    : in  STD_LOGIC;
+          WriteEn_i : in  STD_LOGIC;
+          Data_i    : in  STD_LOGIC_VECTOR (DATA_WIDTH - 1 downto 0);
+          ReadEn_i  : in  STD_LOGIC;
+          Data_o    : out STD_LOGIC_VECTOR (DATA_WIDTH - 1 downto 0);
+          Empty_o   : out STD_LOGIC;
+          Full_o    : out STD_LOGIC
+        );
+    end component STD_FIFO;  
 
   signal l1_m_tvalid            : std_logic;
   signal l1_m_tdata_1           : std_logic_vector((DATA_WIDTH*L1_IN_CHANNEL_NUMBER)-1 downto 0);
@@ -300,8 +326,34 @@ component MemCtrl_3x3 is
   signal axi_layer_properties   : std_logic_vector(C_S00_AXI_DATA_WIDTH-1 downto 0);
   signal axi_status             : std_logic_vector(C_S00_AXI_DATA_WIDTH-1 downto 0);
   
+  signal l1_s_tready            : std_logic;
+  
   
 begin
+
+-- Debug Outputs for ILA 
+s00_axis_tready <= l1_s_tready ;
+
+ila_s00_axis_tready <= l1_s_tready;
+ila_s00_axis_tdata	<= s00_axis_tdata	 ;
+ila_s00_axis_tkeep	<= s00_axis_tkeep	 ;
+ila_s00_axis_tlast	<= s00_axis_tlast	 ;
+ila_s00_axis_tvalid <= s00_axis_tvalid ;
+
+ila_m00_axis_tvalid <= l1_s_conv_tvalid;
+ila_m00_axis_tdata	<= (l1_s_conv_data_1 & l1_s_conv_data_2 & l1_s_conv_data_3 & l1_s_conv_data_4);
+ila_m00_axis_tkeep	<= (others => '1');
+ila_m00_axis_tlast	<= l1_s_conv_tlast;
+ila_m00_axis_tready	<= m00_axis_tready;
+
+
+ila_dbg_bram_addr_in    <= dbg_bram_addr_in     ;
+ila_dbg_bram_addr_check <= dbg_bram_addr_check  ;
+ila_dbg_bram_data_out   <= dbg_bram_data_out    ;
+ila_dbg_32bit_select    <= dbg_32bit_select     ;
+ila_dbg_enable          <= dbg_enable(1)        ;
+ila_layer_properties    <= layer_properties(1)  ;
+ila_status              <= status(1);
 
 -- Instantiation of Axi Bus Interface S00_AXI
 EggNet_v1_0_S00_AXI_inst : EggNet_v1_0_S00_AXI
@@ -340,7 +392,7 @@ EggNet_v1_0_S00_AXI_inst : EggNet_v1_0_S00_AXI
 		S_AXI_RVALID	=> s00_axi_rvalid,
 		S_AXI_RREADY	=> s00_axi_rready
 	);
-  
+
 
   L1_Memory_Controller: MemCtrl_3x3
     generic map(                                   
@@ -360,7 +412,7 @@ EggNet_v1_0_S00_AXI_inst : EggNet_v1_0_S00_AXI
       S_layer_tdata_i         => s00_axis_tdata,
       S_layer_tkeep_i         => s00_axis_tkeep,
       S_layer_tlast_i         => s00_axis_tlast,
-      S_layer_tready_o        => s00_axis_tready,
+      S_layer_tready_o        => l1_s_tready,
       M_layer_tvalid_o	      => l1_m_tvalid        ,
       M_layer_tdata_1_o       => l1_m_tdata_1       ,
       M_layer_tdata_2_o       => l1_m_tdata_2       ,
@@ -404,17 +456,22 @@ EggNet_v1_0_S00_AXI_inst : EggNet_v1_0_S00_AXI
   -- Required in order to provide a new Data vector at each clock cycle 
   -- This method triples the performance because only one clock cycle is required to fetch a data vector
 
-  L1_linebuffer: fifo_generator_0 
+  linebuffer_layer1: STD_FIFO
+    generic map (
+        DATA_WIDTH => 2*DATA_WIDTH * L1_IN_CHANNEL_NUMBER,
+        FIFO_DEPTH => LAYER_WIDTH+1
+    )
     port map (
-      clk   => s00_axis_aclk,
-      srst  => l1_m_fifo_srst     ,
-      din   => l1_m_fifo_in       ,
-      wr_en => l1_m_fifo_wr       ,
-      rd_en => l1_m_fifo_rd       ,
-      dout  => l1_m_fifo_out      ,
-      full  => open,
-      empty => open 
+      Clk_i     => s00_axis_aclk,
+      Rst_i     => l1_m_fifo_srst     ,
+      Data_i    => l1_m_fifo_in       ,
+      WriteEn_i => l1_m_fifo_wr       ,
+      ReadEn_i  => l1_m_fifo_rd       ,
+      Data_o    => l1_m_fifo_out      ,
+      Full_o    => open,
+      Empty_o   => open
     );    
+    
 
   L1_shiftregister: ShiftRegister_3x3
     generic map(
@@ -463,12 +520,11 @@ EggNet_v1_0_S00_AXI_inst : EggNet_v1_0_S00_AXI
     end if;
   end process; 
 
-  m00_axis_tvalid <= l1_m_tvalid;
+  m00_axis_tvalid <= l1_s_conv_tvalid;
   m00_axis_tdata <= (l1_s_conv_data_1 & l1_s_conv_data_2 & l1_s_conv_data_3 & l1_s_conv_data_4);
   m00_axis_tkeep <= (others => '1');
-  m00_axis_tlast <= l1_m_tlast;
+  m00_axis_tlast <= l1_s_conv_tlast;
   l1_s_conv_tready <= m00_axis_tready;
-
 
 	-- User logic ends
 
