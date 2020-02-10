@@ -59,7 +59,7 @@ architecture tb of tb_memctrl is
         );
         port (
           Clk_i     : in  STD_LOGIC;
-          nRst_i    : in  STD_LOGIC;
+          Rst_i    : in  STD_LOGIC;
           WriteEn_i : in  STD_LOGIC;
           Data_i    : in  STD_LOGIC_VECTOR (DATA_WIDTH - 1 downto 0);
           ReadEn_i  : in  STD_LOGIC;
@@ -411,7 +411,7 @@ begin
     )
     port map (
       Clk_i   => layer_clk,
-      nRst_i  => m_l1_fifo_srst,
+      Rst_i  => m_l1_fifo_srst,
       Data_i   => m_l1_fifo_in,
       WriteEn_i => m_l1_fifo_wr,
       ReadEn_i => m_l1_fifo_rd,

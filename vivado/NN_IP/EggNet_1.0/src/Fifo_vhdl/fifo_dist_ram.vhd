@@ -9,7 +9,7 @@ entity STD_FIFO is
 	);
 	Port (
 		Clk_i		: in  STD_LOGIC;
-		nRst_i		: in  STD_LOGIC;
+		Rst_i		: in  STD_LOGIC; -- Active High!
 		WriteEn_i	: in  STD_LOGIC;
 		Data_i	: in  STD_LOGIC_VECTOR (DATA_WIDTH - 1 downto 0);
 		ReadEn_i	: in  STD_LOGIC;
@@ -36,7 +36,7 @@ begin
 		variable Looped : boolean;
 	begin
 		if rising_edge(Clk_i) then
-			if nRst_i = '1' then
+			if Rst_i = '1' then
 				Head := 0;
 				Tail := 0;
 
