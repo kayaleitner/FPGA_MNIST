@@ -1,0 +1,39 @@
+.heading {
+    background-color: grey;
+    padding: .2em;
+}
+.heading .cont {
+    margin: 0 20vw;
+    text-align: center;
+}
+
+.navbar {
+
+}
+
+.main {
+}
+
+.image-list {
+    width: 20rem;
+    height: 72vh;
+    overflow-y: scroll;
+}
+
+.content {
+    padding: 1em 2em;
+}
+
+.row .heading {
+
+    background-color: red;
+}
+
+.footer {
+    background-color: grey;
+    height: 6vh;
+    top:94vh;
+    position: absolute;
+    z-index: 10;
+    width: 100vw;
+}

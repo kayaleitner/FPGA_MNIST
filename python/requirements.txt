@@ -1,9 +1,0 @@
-numpy
-pandas
-matplotlib
-tensorflow
-wget
-pyviz
-graphviz
-pydotplus
-flask

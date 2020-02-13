@@ -1,12 +1,35 @@
-from flask import Flask, render_template, jsonify
+from flask import Flask, render_template, jsonify, redirect
+from flask_bootstrap import Bootstrap
+
 
 import fpga
 import api
 from DataHandler import DataHandler
+from forms import DataToFPGA
+
 
 app = Flask(__name__)
-#app.config["DEBUG"] = True
+Bootstrap(app)
+app.config["DEBUG"] = True
+app.config['SECRET_KEY'] = 'eggs-are-awesome'
 DataHandler = DataHandler(app.root_path)
+
+
+@app.route('/index')
+def index():
+    os_stats = fpga.get_system_stats()
+    form = DataToFPGA()
+    if form.validate_on_submit():
+        pass
+        #DataHander.sendToFPGA(form.start, form.end)
+    return render_template('index.html', sys_state=os_stats, images=DataHandler.testImageData, labels=DataHandler.testLabelData, form=form)
+
+
+@app.route('/index/upload', methods=['POST'])
+def upload():
+    #do something
+    return redirect('/index')
+
 
 @app.route('/')
 def admin():

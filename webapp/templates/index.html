@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+
+{% block navbar %}
+{% include '_navbar.html' %}
+{% endblock %}
+
+{% block content %}
+<div class="heading">
+    <div class="column heading cont">
+    <h1>Welcome to the Egg-Net!</h1>
+    <p>Egg-Net is a student project from TU Vienna, where a simple CNN Network is implemented on a Zedboar with a Zynq 7000</p>
+    </div>
+</div>
+
+<div class="container main">
+    <div class="row">
+    <div class="column image-list">
+        <ul class="images list-group">
+            {% for  n in images %}
+            <li class="list-group-item"> Image {{ loop.index }}</li>
+            {% endfor %}
+        </ul>
+
+    </div>
+    <div class="column content">
+            <div class="row select-images">
+                <p>Send images from {{ form.start }} to {{ form.end }} to the FPGA!</p>
+                <p>{{ form.submit() }}</p>
+            </div>
+
+            <div class="row results">
+                Here we will see the results in the future
+            </div>
+            <div class="row new-bitstream">
+                Upload new Bitstream
+                <form action = "/index/upload" method = "post" enctype="multipart/form-data">
+                    <input type="file" name="file" />
+                    <input type = "submit" value="Upload">
+                </form>
+            </div>
+    </div>
+    </div>
+</div>
+<div class="row footer">
+
+</div>
+{% endblock %}

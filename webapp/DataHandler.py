@@ -1,4 +1,4 @@
-import os, wget, gzip
+import os, wget
 import numpy as np
 import idx2numpy
 
@@ -25,13 +25,15 @@ class DataHandler:
             "train_labels": r"train-labels-idx1-ubyte.gz"}
 
         for x in self.Urls:
-            if os.path.exists(os.path.join(self.rootPath, self.fileNames[x])):
+            if os.path.exists(os.path.join(self.rootPath, self.fileNames[x] + ".gz")):
+                self.Downloaded[x] = True
+            elif os.path.exists(os.path.join(self.rootPath, self.fileNames[x])):
                 self.Downloaded[x] = True
             else:
                 self.download_files(x, self.rootPath)
 
-        self.testImageData = self.extract_files(self.fileNames["test_images"])
-        self.testLabelData = self.extract_files(self.fileNames["test_labels"])
+        self.testImageData = self.extract_files_python(self.fileNames["test_images"])
+        self.testLabelData = self.extract_files_python(self.fileNames["test_labels"])
         self.trainImageData = None
         self.trainLabelData = None
 
@@ -43,8 +45,15 @@ class DataHandler:
         except Exception as e:
             print("An error occurred downloading:" + name, e)
 
-    def extract_files(self, name):
-        return idx2numpy.convert_from_file(gzip.open(name))
+    def extract_files_python(self, file_path):
+        import gzip
+        file_path = file_path
+        return idx2numpy.convert_from_file(gzip.open(file_path))
+
+    def extract_files_linux(self, file_path):
+        import subprocess
+        proc = subprocess.Popen(["gunzip", "-c", file_path], stdout=subprocess.PIPE)
+        return idx2numpy.convert_from_string(proc.stdout.read())
 
     def send_to_fpga(self, data):
         pass
