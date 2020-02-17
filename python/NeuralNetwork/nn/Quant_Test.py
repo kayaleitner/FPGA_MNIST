@@ -407,7 +407,7 @@ class QuantLayerTests(unittest.TestCase):
 
 class QuantNetworkTests(unittest.TestCase):
 
-    def test_quant_network(self):
+    def test_quant_network_float(self):
         x = np.random.uniform(low=0, high=1.0, size=(1, 14, 14, 1))
         k1 = nn.make_random_kernel(size=(3, 3, 1, 3))
         k2 = nn.make_random_kernel(size=(3, 3, 3, 9))
@@ -443,15 +443,54 @@ class QuantNetworkTests(unittest.TestCase):
         self.assertEqual(y.shape, yqf.shape)
         err = y - yqf
 
-
         # Outputs Quant
-        fq1 = q_intermediate_res[0][0] / 2**q_intermediate_res[0][1]
-        fq2 = q_intermediate_res[1][0] / 2**q_intermediate_res[1][1]
-        fq3 = q_intermediate_res[2][0] / 2**q_intermediate_res[2][1]
-        fq4 = q_intermediate_res[3][0] / 2**q_intermediate_res[3][1]
+        fq1 = q_intermediate_res[0][0] / 2 ** q_intermediate_res[0][1]
+        fq2 = q_intermediate_res[1][0] / 2 ** q_intermediate_res[1][1]
+        fq3 = q_intermediate_res[2][0] / 2 ** q_intermediate_res[2][1]
+        fq4 = q_intermediate_res[3][0] / 2 ** q_intermediate_res[3][1]
 
         f1 = f_intermediate_res[0]
         f2 = f_intermediate_res[1]
+
+    def test_quant_network_fpi(self):
+
+        x = np.random.uniform(low=0, high=1.0, size=(1, 14, 14, 1))
+        k1 = nn.make_random_kernel(size=(3, 3, 1, 3))
+        k2 = nn.make_random_kernel(size=(3, 3, 3, 9))
+
+        bits = 8
+        frac_bits = 4
+        scale = 2**(-frac_bits)
+
+        a_max = 2**(bits-frac_bits-1)-1
+        a_min = -2**(bits-frac_bits-1)
+
+        qk1_2 = k1/scale
+        qk2_2 = k2/scale
+
+        qk1 = np.clip(k1 / scale, a_max=a_max, a_min=a_min, dtype=np.float)
+        qk2 = np.clip(k2 / scale, a_max=a_max, a_min=a_min, dtype=np.float)
+        xq = np.clip(x / scale, a_max=a_max, a_min=a_min, dtype=np.float)
+
+        qk1 = qk1.astype(np.int8)
+        qk2 = qk2.astype(np.int8)
+        xq = xq.astype(np.int8)
+
+        layers = [
+            nn.Layer.Conv2dLayer(in_channels=1, out_channels=3, kernel_size=3, kernel_init_weights=qk1, use_bias=False),
+            nn.Layer.ShiftLayer(target_bits=8, target_frac_bits=4, source_bits=16, source_frac_bits=8),
+            nn.Layer.Conv2dLayer(in_channels=3, out_channels=9, kernel_size=3, kernel_init_weights=qk2, use_bias=False),
+            nn.Layer.ShiftLayer(target_bits=8, target_frac_bits=4, source_bits=16, source_frac_bits=8),
+        ]
+
+        net = nn.Network.Network(layers)
+        q_out, q_intermediate_res = net.forward_intermediate(inputs=xq)
+
+
+
+
+
+
 
 
 if __name__ == '__main__':

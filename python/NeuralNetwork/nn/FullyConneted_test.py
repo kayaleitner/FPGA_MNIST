@@ -32,7 +32,7 @@ class FullyConnectedLayerTestCase(unittest.TestCase):
         W = fc.W
         b = fc.b
 
-        y_tf = tf.matmul(x, W) + b
+        y_tf = tf.linalg.matmul(x, W) + b
         y_tf = tf.nn.relu(y_tf)
         y_tf = y_tf.numpy()  # calculate numpy array
 

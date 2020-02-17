@@ -82,8 +82,10 @@ def conv2d(data_in: ndarray, kernel: ndarray, stride: int = 1):
     #
     # 3) For each patch, right-multiplies the
     # filter matrix and the image patch vector
-
-    out = np.zeros(shape=[batch, in_h, in_w, kout_ch], dtype=data_in.dtype)
+    if kernel.dtype.kind in 'ui':  # check if datatype is unsigned or integer
+        out = np.zeros(shape=[batch, in_h, in_w, kout_ch], dtype=np.int32)
+    else:
+        out = np.zeros(shape=[batch, in_h, in_w, kout_ch], dtype=data_in.dtype)
     # pad input
     in_padded = np.pad(data_in, ((0, 0), (fh2, fh2), (fw2, fw2), (0, 0)), 'constant', constant_values=(0, 0))
     # in_padded = np.pad(data_in, ((0, 0), (30, 30), (30, 30), (0, 0)), 'constant', constant_values=(0, 0))
@@ -118,14 +120,15 @@ def conv2d(data_in: ndarray, kernel: ndarray, stride: int = 1):
                     patch = in_padded[b, i:i + fh, j:j + fw, :]  # 3d tensor 3x3x16
 
                     if kernel.dtype.kind in 'ui':  # check if datatype is unsigned or integer
-                        temp = patch * kernel[:, :, :, k]
+                        patch16 = patch.astype(np.int16)
+                        kernel16 = kernel.astype(np.int16)
+                        temp = patch16 * kernel16[:, :, :, k]
                         temp = temp.flatten().astype(np.int64)
                         # patch_sum = np.sum(patch * kernel[:, :, :, k], axis=(0, 1, 2))  # sum along all axis
-                        min_value = np.iinfo(kernel.dtype).min
-                        max_value = np.iinfo(kernel.dtype).max
-                        patch_sum = np.sum(temp).clip(min=min_value, max=max_value).astype(kernel.dtype)
-                        out[b, i_out, j_out, k] = np.clip(patch_sum, a_min=min_value, a_max=max_value).astype(
-                            kernel.dtype)
+                        # min_value = np.iinfo(kernel.dtype).min
+                        # max_value = np.iinfo(kernel.dtype).max
+                        patch_sum = np.sum(temp)
+                        out[b, i_out, j_out, k] = patch_sum
                     else:
                         # patch_sum is always int64
                         patch_sum = np.sum(patch * kernel[:, :, :, k], axis=(0, 1, 2))  # sum along all axis
@@ -194,11 +197,11 @@ def fpi_conv2d(data_in: ndarray,
                     # Shift the kernel
                     for ix_ax, ax_shift in enumerate(image_axis_shift):
                         temp[:, :, ix_ax] = np.right_shift(temp[:, :, ix_ax], ax_shift)
-                        temp_control[:, :, ix_ax] = temp_control[:, :, ix_ax] / 2**ax_shift
+                        temp_control[:, :, ix_ax] = temp_control[:, :, ix_ax] / 2 ** ax_shift
 
                     patch_sum = temp.flatten().sum(dtype=data_out_type)
                     patch_control_sum = temp_control.flatten().sum()
-                    if np.abs(patch_sum-patch_control_sum) > 10:
+                    if np.abs(patch_sum - patch_control_sum) > 10:
                         print("Significant Difference here")
                         assert np.allclose(patch_sum, patch_control_sum)
 

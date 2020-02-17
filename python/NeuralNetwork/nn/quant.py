@@ -486,7 +486,7 @@ def quantize_conv_activations(input, parameter_bits, mode=QuantConvLayerType.PER
         return quantize_kernels(kernel=input, parameter_bits=parameter_bits, mode=mode)
 
 
-def quantize_kernels(kernel, parameter_bits, mode=QuantConvLayerType.PER_CHANNEL, signed=True):
+def quantize_kernels(kernel, parameter_bits, mode=QuantConvLayerType.PER_CHANNEL, signed=True, frac_bits=None):
     """
     Quantize kernel
     Args:
@@ -501,23 +501,24 @@ def quantize_kernels(kernel, parameter_bits, mode=QuantConvLayerType.PER_CHANNEL
     # Only symmetric values are possible now
     target_type = datatype_for_bits(parameter_bits)
 
-    if mode is QuantConvLayerType.PER_CHANNEL:
-        # Determine maximum value for each channel, e.g.: 0.4
-        max_vals = np.max(np.abs(kernel), axis=(0, 1, 2))
-    elif mode is QuantConvLayerType.FULL_LAYER:
-        # Determine the maximum value for the whole kernel layer
-        # gives a scalar value
-        max_vals = np.max(np.abs(kernel), axis=(0, 1, 2, 3))
-    else:
-        raise NotImplementedError()
+    if frac_bits is None:
+        if mode is QuantConvLayerType.PER_CHANNEL:
+            # Determine maximum value for each channel, e.g.: 0.4
+            max_vals = np.max(np.abs(kernel), axis=(0, 1, 2))
+        elif mode is QuantConvLayerType.FULL_LAYER:
+            # Determine the maximum value for the whole kernel layer
+            # gives a scalar value
+            max_vals = np.max(np.abs(kernel), axis=(0, 1, 2, 3))
+        else:
+            raise NotImplementedError()
 
-    # Determine the upper power of 2 (which can be negative, e.g. for a max_val = 0.4 it would be 0.5 == 2^-1)
-    sbits = np.ceil(np.log2(max_vals))
+        # Determine the upper power of 2 (which can be negative, e.g. for a max_val = 0.4 it would be 0.5 == 2^-1)
+        frac_bits = np.ceil(np.log2(max_vals))
 
     # Scale =
     # Divide by PowerOf2 MaxValue: value is in range -1 to 1
     # Multiply by the number of available codes, e.g. 128, so it is in range -128, +128
-    scale = 2 ** (sbits - parameter_bits + 1)  # = 2 ** sbits / (2**(parameter_bits-1))
+    scale = 2 ** (frac_bits - parameter_bits + 1)  # = 2 ** sbits / (2**(parameter_bits-1))
 
     # Calculate fracbits: E.g. for parameter_bits : 8
     # A scale from 1 corresponds to 8 fracbits
@@ -526,10 +527,10 @@ def quantize_kernels(kernel, parameter_bits, mode=QuantConvLayerType.PER_CHANNEL
 
     if signed:
         # So, for signed, this would be:
-        m = parameter_bits - sbits - 1
+        m = parameter_bits - frac_bits - 1
     else:
         # and for unsigned
-        m = parameter_bits - sbits + 1
+        m = parameter_bits - frac_bits + 1
 
     # Use this helper function which applies scale and clips it to the right number of bits
     qkernel = quantise_uniform(kernel, scale=scale, ncodes=2 ** parameter_bits).astype(dtype=target_type)
@@ -599,3 +600,25 @@ def dequantizse_kernels(qkernel, parameter_bits, frac_bits, mode=QuantConvLayerT
 
 def fpi_conv2D(data_in, kernel_in, dtype_out=np.int8, stride=1):
     nn.conv2d(data_in=data_in.astype(dtype_out), kernel=kernel_in.astype(dtype_out), )
+
+
+def rescale_fixed_point(x, input_bits=32, input_frac_bits=16, output_bits=8, output_frac_bits=4, output_signed=True):
+    if x.dtype.kind in 'i':  # check if datatype is unsigned or integer
+        is_signed = True
+        out_max_val = 2 ** (output_bits - 1) - 1
+        out_min_val = 2 ** (output_bits - 1)
+    elif x.dtype.kind in 'u':
+        is_signed = False
+        out_max_val = 2 ** output_bits
+        out_min_val = 0
+    else:
+        raise TypeError('Unknown datatype, expected [u]nsigned or [i]nteger but type has kind: {}'.format(x.dtype.kind))
+
+    target_type = datatype_for_bits(output_bits)
+    shift = input_frac_bits - output_frac_bits
+    if shift > 0:
+        xo = np.right_shift(x, shift)
+    else:
+        xo = np.left_shift(x, -shift)
+    xo = np.clip(xo, a_min=out_min_val, a_max=out_max_val).astype(dtype=target_type)
+    return xo

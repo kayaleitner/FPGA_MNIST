@@ -255,11 +255,13 @@ class Conv2dLayer(Layer):
             self.kernel = core.init_kernel(in_channels, out_channels, kernel_size, dtype=dtype)
         else:
             self.kernel = kernel_init_weights
+            self.dtype = kernel_init_weights.dtype
 
         if bias_init_weights is None:
             self.b = np.random.rand(out_channels).astype(dtype=dtype)
         else:
             self.b = bias_init_weights
+            assert self.dtype == bias_init_weights.dtype
 
     @property
     def weights(self):
@@ -295,7 +297,7 @@ class Conv2dLayer(Layer):
                 z = core.conv2d_fast(x, self.kernel, stride=1)
             except ImportError as imerror:
                 print("[ERROR]: The Fast C-Extension could not be loaded? Is it installed? Fallback to default python "
-                      "implementation")
+                      "implementation: ", imerror)
                 z = core.conv2d(x, self.kernel, stride=1)
 
         else:
@@ -523,3 +525,63 @@ class RescaleLayer(Layer):
             x_ = np.left_shift(x, shift)
 
         return x_.astype(target_dtype), m_
+
+
+class ShiftLayer(Layer):
+    """
+
+        """
+
+    def __init__(self,
+                 target_bits: int,
+                 target_frac_bits: int,
+                 source_bits: int,
+                 source_frac_bits: int):
+        """
+        Initialises a new rescale layer.
+        Args:
+            target_bits: How many output bits should be used
+            axis: The axis, over which the maximum value for rescaling should be rescaled. E.g. for images activations
+            with shape [B,H,W,C] a suitable value would be (1,2,3) (=per channel)  or (2,3) (=per batch and per channel)
+        """
+        super(ShiftLayer, self).__init__()
+        self.target_bits = target_bits
+        self.target_frac_bits = target_frac_bits
+        self.source_bits = source_bits
+        self.source_frac_bits = source_frac_bits
+
+    def __call__(self, x, *args, **kwargs):
+        """
+        Args:
+            x: the input tensor
+            m: the fixed point scaling so that x* 2**(-m) results in the float value
+            *args:
+            **kwargs:
+
+        Returns:
+            x_: the rescaled input with proper type
+            m_: the new scaling
+        """
+
+        a_max = 2**(self.target_bits-1) - 1
+        a_min = -2 ** (self.target_bits - 1)
+        shift = self.source_frac_bits - self.target_frac_bits
+
+        if shift > 0:
+            xs = np.right_shift(x, shift)
+        else:
+            xs = np.left_shift(x, -shift)
+
+        return np.clip(xs, a_min=a_min, a_max=a_max)
+
+
+class ConditionLayer(Layer):
+
+    def __init__(self, conditions):
+        self.conditions = conditions
+
+    def __call__(self, x, *args, **kwargs):
+        for cond in self.conditions:
+            assert cond(x)
+
+        return x

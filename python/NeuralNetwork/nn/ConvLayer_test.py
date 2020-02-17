@@ -123,7 +123,7 @@ class ConvLayerTest(unittest.TestCase):
         kernel = np.random.rand(5, 5, 8, 16)
         b = np.zeros(16)
         x = np.random.rand(5, 28, 28, 8)  # create 4 test images
-
+        
         y_tf = tf.nn.conv2d(x, kernel, strides=1, padding='SAME')
         y_tf = y_tf.numpy()  # calculate numpy array
         cl = Conv2dLayer(in_channels=8, out_channels=16, kernel_size=5)
