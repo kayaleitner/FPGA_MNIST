@@ -10,10 +10,11 @@ end tb_3x3_kernel;
 
 architecture beh of tb_3x3_kernel is
 	constant BIT_WIDTH_IN : integer := 8;
-	constant BIT_WIDTH_OUT : integer := 16;
+	constant BIT_WIDTH_OUT : integer := 20;
 	
 	--test kernel
-	constant WEIGHT : weight_array_t := (0,1,5,0,0,1,0,0,0);
+	constant WEIGHT : weight_array_t := (-125, -128, -128, -128, 31, 67, -128, 62, 127);
+	constant INPUTS : weight_array_t := (0,0,0,74,247,41,69,215,148);
 	
 	constant CLK_PERIOD : time := 10 ns; -- 100MHz
 	
@@ -72,7 +73,8 @@ begin
 		--fill input vector with random values between - 2**(BIT_WIDTH_IN - 1) and  2**(BIT_WIDTH_IN - 1) - 1
 		for I in 0 to 8 loop
 			uniform(seed1, seed2, x);
-			y := integer(floor(x * (2.0 ** BIT_WIDTH_IN))) - integer(2.0 ** (BIT_WIDTH_IN - 1));
+			--y := integer(floor(x * (2.0 ** BIT_WIDTH_IN)));
+			y := INPUTS(I);
 			report "X(" & integer'image(I) & "): " & integer'image(y);
 			report "WEIGHT(" & integer'image(I) & "): " & integer'image(WEIGHT(I));
 			s_X_i((I+1)*BIT_WIDTH_IN - 1 downto I*BIT_WIDTH_IN) <= std_logic_vector(to_signed(y, BIT_WIDTH_IN));
@@ -82,6 +84,7 @@ begin
 		--Compare expected to actual result
 		report "Result: " & integer'image(result);
 		wait until rising_edge(s_Clk_i);
+		s_Valid_i <= '0';
 		wait until rising_edge(s_Clk_i);
 		report "Output from uit: " & integer'image(to_integer(s_Y_o));
 		assert to_integer(s_Y_o) = result report "Actual and expected output does not match up!" severity error;

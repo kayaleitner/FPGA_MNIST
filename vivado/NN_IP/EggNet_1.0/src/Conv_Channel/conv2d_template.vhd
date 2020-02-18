@@ -1,7 +1,7 @@
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
-use work.kernel_pkg;
+use work.kernel_pkg.all;
 
 entity Conv2DTemplate is
 	generic(
@@ -15,7 +15,7 @@ entity Conv2DTemplate is
 		n_Res_i : in std_logic;
 		Valid_i : in std_logic;
 		Valid_o : out std_logic;
-		X_i : in signed(INPUT_CHANNELS*BIT_WIDTH_IN*KERNEL_SIZE - 1 downto 0);
-		Y_o : out signed(OUTPUT_CHANNELS*BIT_WIDTH_OUT - 1 downto 0)
+		X_i : in std_logic_vector(INPUT_CHANNELS*BIT_WIDTH_IN*KERNEL_SIZE - 1 downto 0);
+		Y_o : out unsigned(OUTPUT_CHANNELS*BIT_WIDTH_OUT - 1 downto 0)
 	);
 end Conv2DTemplate;

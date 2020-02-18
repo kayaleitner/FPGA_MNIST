@@ -8,7 +8,7 @@ file_names = ["../../../../../net/np/k_3_conv2d_1_0.txt",
          "../../../../../net/np/k_8_conv2d_2_0.txt"]
     
 def quantize(a):
-    return min(max(int(a/0.001),-128), 127)
+    return min(max(int(a/0.002),-128), 127)
 
 if __name__ == '__main__':
     num_input_channels = [None]*num_layers
@@ -32,13 +32,13 @@ if __name__ == '__main__':
             for y in range(0, num_output_channels[i]):
                 kernel_strings[i][x][y] = "(" + \
                 str(kernel_arrays[i][0][0][x][y]) + ", " +\
-                str(kernel_arrays[i][0][1][x][y]) + ", " +\
-                str(kernel_arrays[i][0][2][x][y]) + ", " +\
                 str(kernel_arrays[i][1][0][x][y]) + ", " +\
-                str(kernel_arrays[i][1][1][x][y]) + ", " +\
-                str(kernel_arrays[i][1][2][x][y]) + ", " +\
                 str(kernel_arrays[i][2][0][x][y]) + ", " +\
+                str(kernel_arrays[i][0][1][x][y]) + ", " +\
+                str(kernel_arrays[i][1][1][x][y]) + ", " +\
                 str(kernel_arrays[i][2][1][x][y]) + ", " +\
+                str(kernel_arrays[i][0][2][x][y]) + ", " +\
+                str(kernel_arrays[i][1][2][x][y]) + ", " +\
                 str(kernel_arrays[i][2][2][x][y]) + ")"
         channel_strings[i] = []
         for y in range(0, num_output_channels[i]):
@@ -59,7 +59,7 @@ if __name__ == '__main__':
         for j in range(0,len(channel_strings[i])):
             tp_str_new = tp_str.replace("ConvChannelTemplate", "ConvChannel" + str(i_convchan))
             tp_str_new = re.sub("constant KERNELS : kernel_array_t :=[^\n]*\n", "constant KERNELS : kernel_array_t := " + channel_strings[i][j] + ";\n", tp_str_new)
-            tp_str_new = re.sub("N : integer :=[^\n]*\n", "N : integer := " + str(num_input_channels[i]) + ";\n", tp_str_new)
+            tp_str_new = re.sub("\tN : integer :=[^\n]*\n", "\tN : integer := " + str(num_input_channels[i]) + ";\n", tp_str_new)
             tp_file_new = open("channels/convchannel" + str(i_convchan) + ".vhd", 'w')
             tp_file_new.write(tp_str_new)
             tp_file_new.close()
@@ -83,11 +83,11 @@ if __name__ == '__main__':
             use_str += "use work.ConvChannel" + str(i_convchan) + ";\n"
             i_convchan += 1
         i_convchan = i_convchan_old
-        tp_str_new = tp_str.replace("use work.kernel_pkg;\n", "use work.kernel_pkg;\n" + use_str)
+        tp_str_new = tp_str.replace("use work.kernel_pkg.all;\n", "use work.kernel_pkg.all;\n" + use_str)
         tp_str_new = tp_str_new.replace("Conv2DTemplate", "Conv2D_" + str(i))
         tp_str_new = re.sub("INPUT_CHANNELS : integer := [^\n]*\n", "INPUT_CHANNELS : integer := " + str(num_input_channels[i]) + ";\n", tp_str_new)
-        tp_str_new = re.sub("OUTPUT_CHANNELS : integer := [^\n]*\n", "OUTPUT_CHANNELS : integer := " + str(num_output_channels[i]) + ";\n", tp_str_new)
-        tp_str_new += "\narchitecture beh of " + "Conv2D_" + str(i) + " is\n"
+        tp_str_new = re.sub("OUTPUT_CHANNELS : integer := [^\n]*\n", "OUTPUT_CHANNELS : integer := " + str(num_output_channels[i]) + "\n", tp_str_new)
+        tp_str_new += "\narchitecture beh of " + "Conv2D_" + str(i) + " is\n begin\n"
         
         for y in range(0, num_output_channels[i]):
             entity_str_new = entity_str.replace("{J}", str(i_convchan))
