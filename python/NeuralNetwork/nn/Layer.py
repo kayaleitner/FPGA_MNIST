@@ -141,7 +141,8 @@ class FullyConnectedLayer(Layer):
     def __call__(self, *args, **kwargs):
         # use the '@' sign to refer to a tensor dot
         # calculate z = xW + b
-        z = np.matmul(args[0], self.W) + self.b
+        x = args[0]
+        z = np.matmul(x, self.W) + self.b
 
         if self.activation is None:
             return z
@@ -396,6 +397,35 @@ class ReshapeLayer(Layer):
         return self.newshape
 
 
+class FlattenLayer(Layer):
+
+    def __init__(self):
+        super(Layer, self).__init__()
+
+    def __call__(self, *args, **kwargs):
+        x = args[0]
+        assert x.ndim >= 2
+        b = x.shape[0]
+        return np.reshape(x, newshape=(b, -1))
+
+
+class BreakpointLayer(Layer):
+
+    def __init__(self, enabled=True):
+        super(BreakpointLayer, self).__init__()
+        self.enabled = enabled
+
+    def __call__(self, *args, **kwargs):
+        import platform
+        if platform.python_version() < "3.7":
+            print("Breakpoint keyword not supported")
+
+        if self.enabled:
+            breakpoint()
+
+        return args[0]
+
+
 class QConv(Conv2dLayer):
 
     def __init__(self,
@@ -563,7 +593,7 @@ class ShiftLayer(Layer):
             m_: the new scaling
         """
 
-        a_max = 2**(self.target_bits-1) - 1
+        a_max = 2 ** (self.target_bits - 1) - 1
         a_min = -2 ** (self.target_bits - 1)
         shift = self.source_frac_bits - self.target_frac_bits
 
