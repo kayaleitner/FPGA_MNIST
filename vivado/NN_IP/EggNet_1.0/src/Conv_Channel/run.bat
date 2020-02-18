@@ -1,0 +1,5 @@
+ghdl -s --ieee=synopsys kernel_pkg.vhd 3x3_kernel.vhd channels/convchannel0.vhd channels/convchannel1.vhd channels/convchannel2.vhd channels/convchannel3.vhd channels/convchannel4.vhd channels/convchannel5.vhd channels/convchannel6.vhd channels/convchannel7.vhd channels/convchannel8.vhd channels/convchannel9.vhd channels/convchannel10.vhd channels/convchannel11.vhd channels/convchannel12.vhd channels/convchannel13.vhd channels/convchannel14.vhd channels/convchannel15.vhd conv2d_0.vhd tb_conv2d_0.vhd
+ghdl -a --ieee=synopsys kernel_pkg.vhd 3x3_kernel.vhd channels/convchannel0.vhd channels/convchannel1.vhd channels/convchannel2.vhd channels/convchannel3.vhd channels/convchannel4.vhd channels/convchannel5.vhd channels/convchannel6.vhd channels/convchannel7.vhd channels/convchannel8.vhd channels/convchannel9.vhd channels/convchannel10.vhd channels/convchannel11.vhd channels/convchannel12.vhd channels/convchannel13.vhd channels/convchannel14.vhd channels/convchannel15.vhd conv2d_0.vhd tb_conv2d_0.vhd
+ghdl -e --ieee=synopsys tb_conv2d_0
+ghdl -r --ieee=synopsys tb_conv2d_0 --vcd=tb_conv2d_0.vcd
+gtkwave tb_conv2d_0.vcd
