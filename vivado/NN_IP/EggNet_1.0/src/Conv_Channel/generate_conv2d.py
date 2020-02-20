@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+import os 
+import shutil
 import numpy as np
 import re
 
@@ -16,6 +18,13 @@ if __name__ == '__main__':
     kernel_arrays = [None]*num_layers
     kernel_strings = [None]*num_layers
     channel_strings = [None]*num_layers
+    
+# %% create tmp folder, delete folder if not tmp exists and create new one
+    if os.path.isdir('channels'):
+        shutil.rmtree('channels')
+        
+    try : os.mkdir('channels')
+    except : print("Error creating temp channel folder!")
     
     for i in range(0, num_layers):
         file = open(file_names[i], 'r')

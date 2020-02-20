@@ -57,9 +57,6 @@ architecture beh of ConvChannelTemplate is
 		if (N_t = 1) then
 			return t_vec(0);
 		elsif (N_t = 2) then
-			report integer'image(SUM_WIDTH);
-			report integer'image(to_integer(t_vec(0)));
-			report integer'image(to_integer(t_vec(1)));
 			return t_vec(0) + t_vec(1);
 		else
 			return	 ternary_adder_tree(t_vec(LEFT_TREE_LOW_INDEX   to LEFT_TREE_HIGH_INDEX  ))
@@ -86,7 +83,6 @@ begin
 		term_vector(I) <= resize(K_out((I+1)*KERNEL_WIDTH_OUT - 1 downto I*KERNEL_WIDTH_OUT), SUM_WIDTH);
 	end generate;
 	
-	   
 	adder : process(Clk_i, n_Res_i)
 	    variable add_out : signed(SUM_WIDTH-1 downto 0);
 	begin

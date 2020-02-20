@@ -75,7 +75,7 @@ begin
 		type t_output_array is array(0 to OUTPUT_CHANNELS - 1) of t_pixel_array;
 		variable output : t_output_array;
 		variable output_line : line;
-        variable file_name_out : string(1 to 23) := "tmp/conv2d_output00.txt";
+        variable file_name_out : string(1 to 25) := "tmp/conv2d_0_output00.txt";
 	begin
 		if s_Valid_o = '1' and rising_edge(s_Clk_i) then
 			--report integer'image(K);
@@ -85,8 +85,8 @@ begin
 			K := K + 1;
 		elsif sim_ended = '1' then
 			for J in 0 to OUTPUT_CHANNELS - 1 loop
-				file_name_out(18) := char_num(J/10 + 1);
-				file_name_out(19) := char_num(J mod 10 + 1);
+				file_name_out(20) := char_num(J/10 + 1);
+				file_name_out(21) := char_num(J mod 10 + 1);
 				file_open(kernel_file, file_name_out, write_mode);
 				for I in 0 to INPUT_ARRAY_SIZE - 1 loop
 					write(output_line, output(J)(I));
@@ -102,12 +102,12 @@ begin
         variable input_line : line;
         variable output_line : line;
         variable input_int : integer;
-        variable file_name : string(1 to 21) := "tmp/conv2d_input0.txt";
+        variable file_name : string(1 to 23) := "tmp/conv2d_0_input0.txt";
 		variable K : integer := 0;
 	begin
 		
 		for I in 0 to KERNEL_SIZE - 1 loop
-			file_name(17) := char_num(I+1);
+			file_name(19) := char_num(I+1);
             file_open(kernel_file, file_name, read_mode);
 			K := 0;
             while not endfile(kernel_file) loop
