@@ -1,7 +1,13 @@
 import unittest
+
+import tensorflow as tf
+from tensorflow_core import matmul
+from tensorflow_core.python.ops.gen_nn_ops import relu
+
 from NeuralNetwork.nn.Layer import FullyConnectedLayer
 import numpy as np
 import tensorflow as tf
+import tensorflow.keras.backend
 
 
 class FullyConnectedLayerTestCase(unittest.TestCase):
@@ -25,15 +31,14 @@ class FullyConnectedLayerTestCase(unittest.TestCase):
         self.assertEqual(y.shape, (1, 10))
 
     def test_tf_compare(self):
-        x = np.random.rand(10, 1) .astype(np.float32)  # create 4 test images
+        x = np.random.rand(10, 1).astype(np.float32)  # create 4 test images
         fc = FullyConnectedLayer(input_size=1, output_size=10, activation='relu')
         y = fc(x)
 
         W = fc.W
         b = fc.b
-
-        y_tf = tf.linalg.matmul(x, W) + b
-        y_tf = tf.nn.relu(y_tf)
+        y_tf = tf.matmul(x, W) + b
+        y_tf = relu(y_tf)
         y_tf = y_tf.numpy()  # calculate numpy array
 
         self.assertEqual(y_tf.shape, y.shape)
