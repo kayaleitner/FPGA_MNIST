@@ -16,8 +16,12 @@ from __future__ import absolute_import
 #define SWIG_FILE_WITH_INIT
 
 #include "NNExtension.h"
+#include "chelper.h"
+#include "dbg.h"
+
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdint.h>
 
 %}
 

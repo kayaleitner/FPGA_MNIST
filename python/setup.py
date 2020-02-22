@@ -152,7 +152,10 @@ source_files = ['./NeuralNetwork/Ext/NNExtension.i', './NeuralNetwork/Ext/cconv.
                 './NeuralNetwork/Ext/cpool.c', './NeuralNetwork/Ext/crelu.c',
                 './NeuralNetwork/Ext/cmatmul.c', './NeuralNetwork/Ext/chelper.c']
 source_files = [os.path.abspath(sfile) for sfile in source_files]
-include_dirs = ['./NeuralNetwork/Ext/', numpy_include]
+print("************************ SOURCE FILES *************************")
+print(source_files)
+print("************************ SOURCE FILES *************************")
+include_dirs = [os.path.abspath('./NeuralNetwork/Ext/'), numpy_include]
 
 # Simple Platform Check (not entirely accurate because here should the compiler be checked)
 # ToDo: Should be done better for example via CMake -> https://www.benjack.io/2017/06/12/python-cpp-tests.html
@@ -161,6 +164,7 @@ if platform.system() == 'Linux':
 elif platform.system() == 'Darwin':
     extra_args = ['--verbose', '-Rpass=loop-vectorize', '-Rpass-analysis=loop-vectorize', '-ffast-math']
 elif platform.system() == 'Windows':
+    # extra_args = ['/Qrestrict', '/W3']
     extra_args = []
 else:
     raise RuntimeError('Operating System not supported?')
