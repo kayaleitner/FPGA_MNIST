@@ -175,7 +175,9 @@ NN_ext_module = SwigExtension('NeuralNetwork/Ext/' + '_NeuralNetworkExtension',
                               include_dirs=include_dirs,
                               swig_opts=['-py3'],
                               extra_compile_args=extra_args,
-                              extra_link_args=extra_link_args)
+                              extra_link_args=extra_link_args,
+                              depends=['numpy'],
+                              optional=True)
 
 setup(name='NeuralNetwork',
       version='1.0',
@@ -186,7 +188,6 @@ setup(name='NeuralNetwork',
       url='https://github.com/marbleton/FPGA_MNIST',
       long_description=readme(),
       long_description_content_type="text/markdown",
-      py_modules=["NeuralNetwork"],
       packages=find_packages(),
       package_data={
           # If any package contains *.txt or *.rst files, include them:

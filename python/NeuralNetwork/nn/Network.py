@@ -1,14 +1,13 @@
 import os
 from typing import List
 
+
 import numpy as np
 
-from NeuralNetwork.NN.ConvLayer import Conv2dLayer, MaxPool2dLayer
-from NeuralNetwork.NN.Costs import mean_squared_error
-from NeuralNetwork.NN.FullyConnected import FullyConnectedLayer
-from NeuralNetwork.NN.Layer import Layer
-from NeuralNetwork.NN.Quant import QuantConvLayerType, QuantFullyConnectedType, quantize_vector
-from NeuralNetwork.NN.Util import ReshapeLayer
+import NeuralNetwork.nn as nn
+from NeuralNetwork.nn.core import mean_squared_error
+from NeuralNetwork.nn.Layer import Layer, FullyConnectedLayer, MaxPool2dLayer, Conv2dLayer, ReshapeLayer
+from NeuralNetwork.nn.quant import QuantConvLayerType, QuantFullyConnectedType, quantize_vector
 
 
 def check_layers(list_of_layers: List[Layer]):
@@ -38,6 +37,11 @@ def check_layers(list_of_layers: List[Layer]):
                 "Layer {} has dimensions [{}] but layer {} has [{}]".format(i, l1_shape_out, i + 1, l2_shape_in))
 
 
+def metric_accuracy(y1: np.ndarray, y2: np.ndarray, metric_state):
+    metric_state.append(np.sum(y1.argmax(-1) == y2.argmax(-1)))
+    return metric_state
+
+
 class Network:
     layers: List[Layer]
 
@@ -53,15 +57,30 @@ class Network:
     def __call__(self, *args, **kwargs):
         return self.forward(*args, **kwargs)
 
-    def forward(self, x, *args, **kwargs):
-        z, _ = self.forward_intermediate(x)
+    def eval(self, dataset, metric=metric_accuracy, metric_state=None):
+        if metric_state is None:
+            metric_state = []
+        for x, y in dataset:
+            y_ = self.forward(x)
+            metric(y, y_, metric_state)
+        return metric_state
+
+    def eval_accuracy(self, dataset):
+        hist = []
+        for x, y in dataset:
+            y_ = self.forward(x)
+            hist.append(np.sum(y_.argmax(-1) == y.argmax(-1)))
+        return np.mean(hist)
+
+    def forward(self, inputs, **kwargs):
+        z, _ = self.forward_intermediate(inputs)
         return z
 
-    def forward_intermediate(self, x):
-        z = x  # copy data
+    def forward_intermediate(self, inputs):
+        z = inputs
         zs = []
-        for l in self.layers:
-            z = l(z)
+        for layer in self.layers:
+            z = layer(z)
             zs.append(z)
         return z, zs
 
@@ -70,10 +89,10 @@ class Network:
         loss = mean_squared_error(y, y_)
         delta = y - y_
         deltas = []
-        for l in self.layers:
-            delta = l.backprop(delta)
+        for layer in self.layers:
+            delta = layer.backprop(delta)
             deltas.append(delta)
-            l.update_weights(delta)
+            layer.update_weights(delta)
 
     def __copy__(self):
         net = Network(list_of_layers=[layer.deepcopy() for layer in self.layers])
@@ -171,6 +190,55 @@ class LeNet(Network):
         super(LeNet, self).__init__(self.lenet_layers)
 
     @staticmethod
+    def get_keras_model(save_dir=None):
+        import keras
+
+        if save_dir is not None:
+            return nn.util.open_keras_model(save_dir=save_dir)
+
+        IMG_HEIGHT, IMG_WIDTH = 28, 28
+        (x_train, y_train), (x_test, y_test) = keras.datasets.mnist.load_data()
+        x_train, x_test = x_train / 255.0, x_test / 255.0
+
+        # Define Constraints (useful for quantization)
+        kernel_constraint = keras.constraints.max_norm(max_value=1)
+
+        """
+        Define the model here
+
+        Changes:
+        - Added initial BatchNorm: Makes sense to distribute the input image data evenly around zero
+        - Increased value of dropout layer to .5 in first fully connected layer 
+        - Removed bias from conv layers
+        """
+        model = keras.models.Sequential(name="KerasEggNet", layers=[
+            # Hack: Reshape the image to 1D to make the Keras BatchNorm layer work
+            keras.layers.Reshape(target_shape=(IMG_HEIGHT, IMG_WIDTH, 1), input_shape=(IMG_HEIGHT, IMG_WIDTH)),
+            keras.layers.Conv2D(16, kernel_size=3, padding='same', activation='linear', use_bias=True,
+                                kernel_constraint=kernel_constraint),
+            keras.layers.Dropout(0.2),
+            keras.layers.ReLU(),
+            keras.layers.MaxPooling2D(),
+            keras.layers.Conv2D(32, kernel_size=3, padding='same', activation='linear', use_bias=True,
+                                kernel_constraint=kernel_constraint),
+            keras.layers.Dropout(0.2),
+            keras.layers.ReLU(),
+            keras.layers.MaxPooling2D(),
+            keras.layers.Flatten(),
+            keras.layers.Dense(32, activation='linear', kernel_constraint=kernel_constraint),
+            keras.layers.Dropout(0.2),
+            keras.layers.ReLU(),
+            keras.layers.Dense(10, activation='softmax', kernel_constraint=kernel_constraint)
+        ])
+        # You must install pydot and graphviz for `pydotprint` to work.
+        # keras.utils.plot_model(model, 'multi_input_and_output_model.png', show_shapes=True)
+        model.compile(optimizer='adam',
+                      loss='sparse_categorical_crossentropy',
+                      metrics=['accuracy'])
+        model.build()
+        return model
+
+    @staticmethod
     def load_from_files(save_dir):
         """
         Loads the LeNet with the files specified in the passed directory
@@ -182,7 +250,6 @@ class LeNet(Network):
         """
 
         model = LeNet()
-
         model.cn1.kernel = np.loadtxt(os.path.join(save_dir, 'w0.txt')).reshape(model.cn1.kernel.shape)
         model.cn1.b = np.loadtxt(os.path.join(save_dir, 'w1.txt')).reshape(model.cn1.b.shape)
         model.cn2.kernel = np.loadtxt(os.path.join(save_dir, 'w2.txt')).reshape(model.cn2.kernel.shape)
@@ -206,7 +273,7 @@ class LeNet(Network):
         """
         for root, dirs, files in os.walk(top=save_dir):
             txt_files = filter(lambda s: s.endswith('.txt'), files)
-            for i, weight_file in enumerate(files):
+            for i, weight_file in enumerate(txt_files):
 
                 # Get shape
                 with open(weight_file) as f:

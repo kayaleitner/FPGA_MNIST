@@ -1,7 +1,5 @@
 """
 Neural Network Package
 """
-import NeuralNetwork.NN
+import NeuralNetwork.nn
 import NeuralNetwork.Reader
-import NeuralNetwork.Util
-import NeuralNetwork.Ext

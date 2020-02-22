@@ -11,96 +11,198 @@ from tensorflow.keras.layers import Dense, Conv2D, Flatten, MaxPooling2D, Reshap
 from tensorflow.keras.models import Sequential
 from matplotlib import pyplot as plt
 
-import NeuralNetwork.NN as NN
+import NeuralNetwork.nn as nn
 import NeuralNetwork.Reader as Reader
-import NeuralNetwork.Util
-import NeuralNetwork.NN.Quant as nnquant
-from NeuralNetwork.Util import plot_network_parameter_histogram
+import NeuralNetwork.nn.util
+import NeuralNetwork.nn.quant as nnquant
+from NeuralNetwork.nn.util import plot_network_parameter_histogram
+
+"""
+Preparations: MNIST, loadweights, etc
+"""
+
+BATCH_SIZE = 50
+FRACTION_BITS = 8
+RESOLUTION = 1 / (2 ** FRACTION_BITS)
+
+mnist_data_dir = 'test/MNIST'
+nn_save_dir = 'test/lenet'
+# keras_save_dir = 'test/training_1'
+keras_save_dir = '../net/keras'
+
+INT_MAX_VAL = 2 ** 16
+
+# Train Keras (optional if data is already stored)
+# m = train_keras(save_dir=keras_save_dir)
+# NeuralNetwork.Util.save_keras_model_weights(m, save_path=nn_save_dir)
+
+# Prepare Reader
+data_loader = Reader.MnistDataDownloader(folder_path=mnist_data_dir)
+path_img, path_lbl = data_loader.get_path(dataset_type=Reader.DataSetType.TRAIN)
+reader = Reader.MnistDataReader(image_filename=path_img, label_filename=path_lbl)
+
+# Load models
+keras_lenet = nn.util.open_keras_model(save_dir=keras_save_dir)
+nn_lenet_f64 = nn.Network.LeNet.load_from_files(save_dir=nn_save_dir)
+
+for ix_layer, layer in enumerate(nn_lenet_f64.layers):
+    if isinstance(layer, NeuralNetwork.nn.Layer.Conv2dLayer):
+        kernel = layer.kernel
+        scales = np.max(np.abs(kernel), axis=(1, 2, 3))
+        plot_network_parameter_histogram([kernel.flatten()], cols=1)
+        plt.savefig(f'{ix_layer}_weights_conv_hist_layer.png')
+
+        bias = layer.b
+        scales = np.max(np.abs(kernel), axis=(1, 2, 3))
+        plot_network_parameter_histogram([bias.flatten()], cols=1)
+        plt.savefig(f'{ix_layer}_weights_conv_bias_hist_layer.png')
+
+    elif isinstance(layer, NeuralNetwork.nn.Layer.FullyConnectedLayer):
+        W = layer.W
+        scales = np.max(np.abs(W), axis=(1))
+        plot_network_parameter_histogram([W.flatten()], cols=1)
+        plt.savefig(f'{ix_layer}_weights_fc_hist_layer.png')
+
+        bias = layer.b
+        scales = np.max(np.abs(kernel), axis=(1, 2, 3))
+        plot_network_parameter_histogram([bias.flatten()], cols=1)
+        plt.savefig(f'{ix_layer}_weights_fc_bias_hist_layer.png')
+        pass
+    else:
+        continue
+
+for layer in nn_lenet_f64.layers:
+    if isinstance(layer, NeuralNetwork.nn.Layer.Conv2dLayer):
+        kernel = layer.kernel
+        scales = np.max(np.abs(kernel), axis=(1, 2, 3))
+        pass
+    elif isinstance(layer, NeuralNetwork.nn.Layer.FullyConnectedLayer):
+
+        pass
+    else:
+        continue
+
+nn_lenet_f32 = nn_lenet_f64.cast(new_dtype=np.float32)
+nn_lenet_f16 = nn_lenet_f64.cast(new_dtype=np.float16)
+
+# Compare results
+(lbls, imgs) = next(reader.get_next(batch_size=BATCH_SIZE))
+imgs_float = imgs.astype(dtype=np.float) / 256
+lbls_keras = keras_lenet(inputs=imgs_float)
+
+a_max = 2 ** 3 - 1
+a_min = -2 ** 3
+scale = 1 / 2 ** 4
+
+qk1 = np.clip(nn_lenet_f64.cn1.kernel / scale, a_max=a_max, a_min=a_min).astype(np.int8)
+qb1 = np.clip(nn_lenet_f64.cn1.bias / scale, a_max=a_max, a_min=a_min).astype(np.int8)
+qk2 = np.clip(nn_lenet_f64.cn2.kernel / scale, a_max=a_max, a_min=a_min).astype(np.int8)
+qb2 = np.clip(nn_lenet_f64.cn2.bias / scale, a_max=a_max, a_min=a_min).astype(np.int8)
+
+qw3 = np.clip(nn_lenet_f64.fc1.W / scale, a_max=a_max, a_min=a_min).astype(np.int8)
+qb3 = np.clip(nn_lenet_f64.fc1.b / scale, a_max=a_max, a_min=a_min).astype(np.int8)
+qw4 = np.clip(nn_lenet_f64.fc2.W / scale, a_max=a_max, a_min=a_min).astype(np.int8)
+qb4 = np.clip(nn_lenet_f64.fc2.b / scale, a_max=a_max, a_min=a_min).astype(np.int8)
+
+ni3 = nn_lenet_f64.fc1.input_size
+no3 = nn_lenet_f64.fc1.output_size
+ni4 = nn_lenet_f64.fc2.input_size
+no4 = nn_lenet_f64.fc2.output_size
+
+imgs_i8 = np.clip(imgs_float / scale, a_min=a_min, a_max=a_max)
+
+layers = [
+    nn.Layer.ReshapeLayer(newshape=(-1, 28, 28, 1)),
+    nn.Layer.Conv2dLayer(in_channels=1, out_channels=3, kernel_size=3, kernel_init_weights=qk1, bias_init_weights=qb1,
+                         use_bias=True),
+    nn.Layer.ShiftLayer(target_bits=8, target_frac_bits=4, source_bits=16, source_frac_bits=8),
+    nn.Layer.ReluActivationLayer(),
+    nn.Layer.MaxPool2dLayer(),
+    nn.Layer.Conv2dLayer(in_channels=3, out_channels=9, kernel_size=3, kernel_init_weights=qk2, bias_init_weights=qb2,
+                         use_bias=True),
+    nn.Layer.ShiftLayer(target_bits=8, target_frac_bits=4, source_bits=16, source_frac_bits=8),
+    nn.Layer.ReluActivationLayer(),
+    nn.Layer.MaxPool2dLayer(),
+    nn.Layer.FlattenLayer(),
+    nn.Layer.BreakpointLayer(enabled=False),
+    nn.Layer.FullyConnectedLayer(input_size=ni3, output_size=no3, dtype=np.int16, weights=qw3, bias=qb3),
+    nn.Layer.ShiftLayer(target_bits=8, target_frac_bits=4, source_bits=16, source_frac_bits=8),
+    nn.Layer.ReluActivationLayer(),
+    nn.Layer.FullyConnectedLayer(input_size=ni4, output_size=no4, dtype=np.int16, weights=qw4, bias=qb4),
+    nn.Layer.ShiftLayer(target_bits=8, target_frac_bits=4, source_bits=16, source_frac_bits=8),
+    nn.Layer.SoftmaxLayer()
+]
+
+net_fpi = nn.Network.Network(layers)
+
+lbls_keras = lbls_keras.numpy().argmax(axis=1)
+
+# lbls_nn_f64 = nn_lenet_f64.forward(x=imgs_float).argmax(axis=1)
+lbls_nn_f64, nnf64_activations = nn_lenet_f64.forward_intermediate(imgs_float)
+
+# Plot Network Weights
+#
+plot_network_parameter_histogram(weights=nn_lenet_f64.get_network_weights(), bins=32)
+
+# plot_network_parameter_histogram(weights=nn_lenet_i32.get_network_weights(), bins=32)
+
+# Plot Network Activations
+plot_network_parameter_histogram(weights=nnf64_activations, bins=32)
+
+lbls_nn_f64 = lbls_nn_f64.argmax(axis=1)
+lbls_nn_f32 = nn_lenet_f32.forward(inputs=imgs_float).argmax(axis=1)
+lbls_nn_f16 = nn_lenet_f16.forward(inputs=imgs_float).argmax(axis=1)
+
+lbls_nn_i8, nni8_activations = net_fpi.forward_intermediate(inputs=imgs_i8)
+
+# lbls_nn_i32, nn32_activations = nn_lenet_i32.forward_intermediate(x=imgs_i32)
 
 
-def main():
-    """
-    Preparations: MNIST, loadweights, etc
-    """
+# i_activation = 0
+# for iact, fact in zip(nni8_activations, nnf64_activations):
+#     # The back to float converted integer value
+#     dq_iact = [x / 2**4 for x in nni8_activations]
+#     plot_network_parameter_histogram([dq_iact, fact])
+#     plt.savefig(f'activation_hist_layer{i_activation}.png')
+#     i_activation += 1
 
-    mnist_data_dir = 'test/MNIST'
-    nn_save_dir = 'test/lenet'
-    # keras_save_dir = 'test/training_1'
-    keras_save_dir = '../net/keras'
+lbls_nn_i8 = lbls_nn_i8.argmax(axis=1)
+# lbls_nn_i16 = lbls_nn_i16.argmax(axis=1)
+# lbls_nn_i32 = lbls_nn_i32.argmax(axis=1)
 
-    INT_MAX_VAL = 2 ** 16
+print(" True  | Keras | F64 | F32 | F16 | I8")
+print("-----------------------------------------")
+for i in range(lbls_nn_i8.shape[0]):
+    print("{:^7}|{:^7}|{:^5}|{:^5}|{:^5}|{:^5}".format(lbls[i, 0], lbls_keras[i], lbls_nn_f64[i],
+                                                       lbls_nn_f32[i], lbls_nn_f16[i], lbls_nn_i8[i]))
 
-    # Train Keras (optional if data is already stored)
-    # m = train_keras(save_dir=keras_save_dir)
-    # NeuralNetwork.Util.save_keras_model_weights(m, save_path=nn_save_dir)
+"""
+Latest Result:
 
-    # Prepare Reader
-    data_loader = Reader.MnistDataDownloader(folder_path=mnist_data_dir)
-    path_img, path_lbl = data_loader.get_path(dataset_type=Reader.DataSetType.TRAIN)
-    reader = Reader.MnistDataReader(image_filename=path_img, label_filename=path_lbl)
+ True  | Keras | F64 | F32 | F16 | I8
+-----------------------------------------
+   5   |   5   |  5  |  5  |  5  |  5  
+   0   |   0   |  0  |  0  |  0  |  0  
+   4   |   4   |  4  |  4  |  4  |  4  
+   1   |   1   |  1  |  1  |  1  |  1  
+   9   |   9   |  9  |  9  |  9  |  9  
+   2   |   2   |  2  |  2  |  2  |  2  
+   1   |   1   |  1  |  1  |  1  |  1  
+   3   |   3   |  3  |  3  |  3  |  3  
+   1   |   1   |  1  |  1  |  1  |  1  
+   4   |   4   |  4  |  4  |  4  |  4  
+   3   |   3   |  3  |  3  |  3  |  3  
+   5   |   5   |  5  |  5  |  5  |  5  
+   3   |   3   |  3  |  3  |  3  |  3  
+   6   |   6   |  6  |  6  |  6  |  6  
+   1   |   1   |  1  |  1  |  1  |  1  
+   7   |   7   |  7  |  7  |  7  |  7  
+   2   |   2   |  2  |  2  |  2  |  2  
+   8   |   8   |  8  |  8  |  8  |  8  
+   6   |   6   |  6  |  6  |  6  |  6  
+   9   |   9   |  9  |  9  |  9  |  9
 
-    # Load models
-    keras_lenet = NeuralNetwork.Util.open_keras_model(save_dir=keras_save_dir)
-    nn_lenet_f64 = NN.Network.LeNet.load_from_files(save_dir=nn_save_dir)
-    nn_lenet_f32 = nn_lenet_f64.cast(new_dtype=np.float32)
-    nn_lenet_f16 = nn_lenet_f64.cast(new_dtype=np.float16)
-
-    nn_lenet_i32 = nn_lenet_f64.quantize_network(new_dtype=np.int32, min_value=-INT_MAX_VAL, max_value=INT_MAX_VAL)
-    nn_lenet_i16 = nn_lenet_f64.quantize_network(new_dtype=np.int16, min_value=-INT_MAX_VAL, max_value=INT_MAX_VAL)
-    nn_lenet_i8 = nn_lenet_f64.quantize_network(new_dtype=np.int8, min_value=-INT_MAX_VAL, max_value=INT_MAX_VAL)
-
-    # Compare results
-    (lbls, imgs) = next(reader.get_next(batch_size=1))
-    imgs_float = imgs.astype(dtype=np.float) / 256
-    lbls_keras = keras_lenet(inputs=imgs_float)
-
-    imgs_i8 = nnquant.quantize_vector(imgs_float, target_type=np.int8, max_value=INT_MAX_VAL, min_value=-INT_MAX_VAL,
-                                      signed=False)
-    imgs_i16 = nnquant.quantize_vector(imgs_float, target_type=np.int16, max_value=INT_MAX_VAL, min_value=-INT_MAX_VAL,
-                                       signed=False)
-    imgs_i32 = nnquant.quantize_vector(imgs_float, target_type=np.int32, max_value=INT_MAX_VAL, min_value=-INT_MAX_VAL,
-                                       signed=False)
-
-    lbls_keras = lbls_keras.numpy().argmax(axis=1)
-
-    # lbls_nn_f64 = nn_lenet_f64.forward(x=imgs_float).argmax(axis=1)
-    lbls_nn_f64, nnf64_activations = nn_lenet_f64.forward_intermediate(imgs_float)
-
-    # Plot Network Weights
-    #
-    plot_network_parameter_histogram(weights=nn_lenet_f64.get_network_weights(), bins=32)
-
-    plot_network_parameter_histogram(weights=nn_lenet_i32.get_network_weights(), bins=32)
-
-    # Plot Network Activations
-    plot_network_parameter_histogram(weights=nnf64_activations, bins=32)
-
-    lbls_nn_f64 = lbls_nn_f64.argmax(axis=1)
-    lbls_nn_f32 = nn_lenet_f32.forward(x=imgs_float).argmax(axis=1)
-    lbls_nn_f16 = nn_lenet_f16.forward(x=imgs_float).argmax(axis=1)
-
-    lbls_nn_i8 = nn_lenet_i8.forward(x=imgs_i8)
-    lbls_nn_i16 = nn_lenet_i16.forward(x=imgs_i16)
-    lbls_nn_i32, nn32_activations = nn_lenet_i32.forward_intermediate(x=imgs_i32)
-
-    i_activation = 0
-    for iact, fact in zip(nn32_activations, nnf64_activations):
-        # The back to float converted integer value
-        dq_iact = nnquant.dequantize_vector(iact, min_value=-INT_MAX_VAL, max_value=INT_MAX_VAL)
-        plot_network_parameter_histogram([dq_iact, fact])
-        plt.savefig(f'activation_hist_layer{i_activation}.png')
-        i_activation += 1
-
-    lbls_nn_i8 = lbls_nn_i8.argmax(axis=1)
-    lbls_nn_i16 = lbls_nn_i16.argmax(axis=1)
-    lbls_nn_i32 = lbls_nn_i32.argmax(axis=1)
-
-    print("Keras | F64 | F32 | F16 | I32 | I16 | I8 ")
-    print("-----------------------------------------")
-    for i in range(lbls_nn_i8.shape[0]):
-        print(" {}     {}   {}   {}  {}   {}   {} ".format(lbls_keras[i], lbls_nn_f64[i], lbls_nn_f32[i],
-                                                                 lbls_nn_f16[i],
-                                                                 lbls_nn_i32[i], lbls_nn_i16[i], lbls_nn_i8[i]))
+"""
 
 
 def train_keras(save_dir, IMG_HEIGHT=28, IMG_WIDTH=28):
@@ -152,4 +254,4 @@ def train_keras(save_dir, IMG_HEIGHT=28, IMG_WIDTH=28):
 
 
 if __name__ == '__main__':
-    main()
+    print("Hello")
