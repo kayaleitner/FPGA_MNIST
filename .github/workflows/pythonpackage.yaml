@@ -7,9 +7,9 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        # os: [ubuntu-latest, windows-latest, macOS-latest]
-        os: [ubuntu-latest, macOS-latest]
-        python-version: [3.6, 3.7]
+        os: [ubuntu-latest, windows-latest, macOS-latest]
+        # os: [ubuntu-latest, macOS-latest]
+        python-version: [3.4, 3.6, 3.7, 3.8]
 
     steps:
     - uses: actions/checkout@v1
@@ -63,9 +63,9 @@ jobs:
       run: |
         cd python
         # Use the minigw32 compiler because Microsoft is not able to implement the C standard
-        python setup.py build_ext  --global-option --compiler=mingw32 --build-lib .
+        # python setup.py build_ext  --global-option --compiler=mingw32 --build-lib .
         python setup.py build
-        python setup.py sdist bdist_wheel
+        python setup.py build_ext sdist bdist_wheel
         # tox
         # pytest Tensorflow perevents any
 
@@ -80,7 +80,7 @@ jobs:
     - name: Upload Python Package
       uses: actions/upload-artifact@v1
       with:
-         name: NeuralNetwork-${{ matrix.os }}
+         name: NeuralNetwork-${{ matrix.os }}-${{ matrix.python-version }}
          path: python/dist
 
 

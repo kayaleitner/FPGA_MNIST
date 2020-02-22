@@ -24,7 +24,7 @@ def train(nepochs=DEFAULT_EPOCHS, batch_size=BATCH_SIZE, plot_history=DEFAULT_PL
     (x_train, y_train), (x_test, y_test) = keras.datasets.mnist.load_data()
     x_train, x_test = x_train / 255.0, x_test / 255.0
 
-    # Define Constriants (useful for quantization)
+    # Define Constraints (useful for quantization)
     kernel_constraint = keras.constraints.max_norm(max_value=1)
 
     """
