@@ -121,7 +121,7 @@ for i in range(0, CO_L1):
     if len(i_str) == 1:
         i_str = "0" + i_str
     file_name_in_current = file_name_pool_in.replace("{I}", i_str)
-    file_name_out_current = file_name_pool_out.replace("{I}", str(i))
+    file_name_out_current = file_name_pool_out.replace("{I}", i_str)
     pool_input_file = open(file_name_in_current, "r")
     pool_output_file = open(file_name_out_current, "w")
     
@@ -157,7 +157,10 @@ file_name_in = file_name_pool_out
 test_array = np.ndarray((CI_L2, NUMBER_OF_TEST_BLOCKS, BLOCK_SIZE), dtype=np.uint8)
     
 for i in range(0, CI_L2):
-    file_name_in_current = file_name_in.replace("{I}", str(i))
+    i_str = str(i)
+    if len(i_str) == 1:
+        i_str = "0" + i_str
+    file_name_in_current = file_name_in.replace("{I}", i_str)
     data = np.loadtxt(file_name_in_current, dtype=np.uint8)
     test_array[i] = chunk_array(data, NUMBER_OF_TEST_BLOCKS)
 
