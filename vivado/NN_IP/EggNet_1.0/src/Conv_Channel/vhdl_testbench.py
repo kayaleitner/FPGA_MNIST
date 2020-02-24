@@ -218,8 +218,8 @@ def gen_testdata(blocksize,blocknumber,chans,filename="testdata",drange=255,dtyp
 
     """
     random_data = np.zeros((blocknumber,blocksize,chans),dtype=dtype)
-    with open("tmp/"+ filename +".txt","a+") as f:
-        for k in range(chans):
+    for k in range(chans):
+        with open("tmp/"+ filename + str(k) + ".txt","a+") as f:
             for i in range(blocknumber):
                 for j in range(blocksize):
                     random_data[i,j,k] = random.randrange(drange)
