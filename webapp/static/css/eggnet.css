@@ -1,7 +1,8 @@
 .heading {
-    background-color: grey;
+    background-color: lightblue;
     padding: .2em;
 }
+
 .heading .cont {
     margin: 0 20vw;
     text-align: center;
@@ -15,7 +16,7 @@
 }
 
 .image-list {
-    width: 20rem;
+    width: 10rem;
     height: 72vh;
     overflow-y: scroll;
 }

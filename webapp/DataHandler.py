@@ -1,4 +1,5 @@
 import os, wget
+import subprocess
 import numpy as np
 import idx2numpy
 

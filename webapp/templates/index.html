@@ -14,10 +14,12 @@
 
 <div class="container main">
     <div class="row">
+    </div>
+    <div class="row">
     <div class="column image-list">
         <ul class="images list-group">
             {% for  n in images %}
-            <li class="list-group-item"> Image {{ loop.index }}</li>
+            <li class="list-group-item"><a href="/index/{{ loop.index }}"> Image {{ loop.index }} </a></li>
             {% endfor %}
         </ul>
 
@@ -38,10 +40,13 @@
                     <input type = "submit" value="Upload">
                 </form>
             </div>
-    </div>
-    </div>
-</div>
-<div class="row footer">
+            <div id="img-fig" style="height: 70px;">
+                {% if info %}
+                {{ info|safe }}
+                {% endif %}
+            </div>
 
+    </div>
+    </div>
 </div>
 {% endblock %}

@@ -1,8 +1,10 @@
-from flask import Flask, render_template, jsonify, redirect
+from flask import Flask, render_template, jsonify, redirect, request
 from flask_bootstrap import Bootstrap
+from matplotlib import pyplot as plt
+import mpld3
 
 
-import fpga
+#import fpga
 import api
 from DataHandler import DataHandler
 from forms import DataToFPGA
@@ -15,23 +17,41 @@ app.config['SECRET_KEY'] = 'eggs-are-awesome'
 DataHandler = DataHandler(app.root_path)
 
 
+@app.route('/')
 @app.route('/index')
 def index():
-    os_stats = fpga.get_system_stats()
     form = DataToFPGA()
     if form.validate_on_submit():
         pass
-        #DataHander.sendToFPGA(form.start, form.end)
-    return render_template('index.html', sys_state=os_stats, images=DataHandler.testImageData, labels=DataHandler.testLabelData, form=form)
+    return render_template('index.html', images=DataHandler.testImageData, labels=DataHandler.testLabelData,
+                            form=form)
 
 
 @app.route('/index/upload', methods=['POST'])
 def upload():
     #do something
-    return redirect('/index')
+    return redirect('/')
+
+@app.route('/index/<value>')
+def image_json(value):
+    form = DataToFPGA()
+    if form.validate_on_submit():
+        pass
+    info = mpld3.fig_to_html(plt.imshow(DataHandler.testImageData[int(value) - 1]).figure)
+    return render_template('index.html', images=DataHandler.testImageData, labels=DataHandler.testLabelData,
+                           form=form, info=info)
 
 
-@app.route('/')
+@app.route('/api/get_image_json', methods=['POST'])
+def get_image_json():
+    data = request.get_json()
+    if 0 <= data['index'] < 10000:
+        return mpld3.fig_to_json(plt.imshow(DataHandler.testImageData[data['index']]).figure)
+    else:
+        return {'error': 'index not in range 0 to 9999'}
+
+
+@app.route('/admin')
 def admin():
     os_stats = fpga.get_system_stats()
     return render_template('admin.html', sys_stats=os_stats)

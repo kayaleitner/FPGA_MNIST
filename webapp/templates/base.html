@@ -12,8 +12,8 @@
 
     {%- block styles %}
     <!-- Bootstrap -->
-    <link href="static/css/bootstrap.css" rel="stylesheet">
-    <link href="static/css/eggnet.css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/bootstrap.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/eggnet.css') }}" rel="stylesheet">
     {%- endblock styles %}
     {%- endblock head %}
   </head>
@@ -26,7 +26,10 @@
 
     {% block scripts %}
     <script src="{{ url_for('static', filename='plugins/jquery/jquery.min.js') }}" type="text/javascript"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
     <script src="{{ url_for('static', filename='plugins/bootstrap/js/bootstrap.bundle.min.js') }}" type="text/javascript"></script>
+    <script src="{{ url_for('static', filename='js/d3.v3.min.js') }}" type="text/javascript"></script>
+    <script src="{{ url_for('static', filename='js/mpld3.v0.3.min.js') }}" type="text/javascript"></script>
     {%- endblock scripts %}
     {%- endblock body %}
   </body>
