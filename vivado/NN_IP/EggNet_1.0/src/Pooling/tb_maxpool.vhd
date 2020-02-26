@@ -136,13 +136,14 @@ begin
 			while s_Ready_o /= '1' loop
 				s_Valid_i <= '0';
 				s_S_layer_tdata_i <= (others => '0');
+				s_Last_i <= '0';
 				wait until rising_edge(s_Clk_i);
 			end loop;
 			s_Valid_i <= '1';
 			for I in 0 to CHANNEL_NUMBER - 1 loop
 				s_S_layer_tdata_i((I+1)*DATA_WIDTH - 1 downto I*DATA_WIDTH) <= std_logic_vector(to_unsigned(input(I)(J), DATA_WIDTH));
 			end loop;
-			if K mod LAYER_WIDTH = 0 then
+			if K = LAYER_WIDTH then
 				K := 1;
 				s_Last_i <= '1';
 			else
