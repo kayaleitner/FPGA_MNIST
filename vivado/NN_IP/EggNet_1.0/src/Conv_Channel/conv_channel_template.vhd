@@ -99,7 +99,10 @@ begin
 		if n_Res_i = '0' then
 			Y_o <= (others => '0');
             Valid_o <= '0';
+			Last_o <= '0';
+			Ready_o <= '0';
 			start_addition <= '0';
+			is_last <= '0';
 		elsif rising_edge(Clk_i) then
             Valid_o <= '0';
 			if start_addition = '1' and Ready_i = '1' then
