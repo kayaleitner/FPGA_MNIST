@@ -46,7 +46,9 @@ begin
 		Valid_i => s_Valid_i,
 		Valid_o => s_Valid_o,
 		X_i => s_X_i,
-		Y_o => s_Y_o
+		Y_o => s_Y_o,
+		Last_i => '0',
+		Ready_i => '1'
 	);
   
 	-- Generates the clock signal

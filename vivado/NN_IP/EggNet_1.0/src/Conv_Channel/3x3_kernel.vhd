@@ -9,7 +9,8 @@ entity Kernel3x3 is
 	generic(
 		BIT_WIDTH_IN : integer := 8;
 		BIT_WIDTH_OUT : integer := 20;
-		WEIGHT : weight_array_t := (0,0,0,0,0,0,0,0,0)
+		WEIGHT : weight_array_t := (0,0,0,0,0,0,0,0,0);
+		WEIGHT_WIDTH : integer := 8
 	);
 	port(
 		Clk_i : in std_logic;
@@ -34,7 +35,7 @@ begin
 			for I in 0 to 8 loop
 				temp(BIT_WIDTH_IN) := '0';
 				temp(BIT_WIDTH_IN - 1 downto 0) := signed(X_i((I+1)*BIT_WIDTH_IN - 1 downto I*BIT_WIDTH_IN));
-				M_out(I) := resize(to_signed(WEIGHT(I), BIT_WIDTH_IN) * temp, BIT_WIDTH_OUT+1);
+				M_out(I) := resize(to_signed(WEIGHT(I), WEIGHT_WIDTH) * temp, BIT_WIDTH_OUT+1);
 			end loop;
 			temp_out := M_out(0) + M_out(1) + M_out(2) + M_out(3) + M_out(4) + M_out(5) + M_out(6) + M_out(7) + M_out(8);
 			Y_o <= temp_out(BIT_WIDTH_OUT-1 downto 0);

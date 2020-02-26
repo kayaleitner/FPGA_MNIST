@@ -12,13 +12,18 @@ entity ConvChannelTemplate is
 		KERNEL_WIDTH_OUT : integer := 20;
 		BIT_WIDTH_OUT : integer := 8;
 		N : integer := 2;
-		OUTPUT_MSB : integer := 15
+		OUTPUT_MSB : integer := 15;
+		BIAS : integer := 0
 	);
 	port(
 		Clk_i : in std_logic;
 		n_Res_i : in std_logic;
 		Valid_i : in std_logic;
 		Valid_o : out std_logic;
+		Last_i : in std_logic;
+		Last_o : out std_logic;
+		Ready_i : in std_logic;
+		Ready_o : out std_logic;
 		X_i : in std_logic_vector(N*BIT_WIDTH_IN*KERNEL_SIZE - 1 downto 0);
 		Y_o : out unsigned(BIT_WIDTH_OUT - 1 downto 0)
 	);
@@ -26,7 +31,7 @@ end ConvChannelTemplate;
 
 architecture beh of ConvChannelTemplate is
 	
-	constant SUM_WIDTH : integer := KERNEL_WIDTH_OUT + integer(ceil(log2(real(N))));
+	constant SUM_WIDTH : integer := KERNEL_WIDTH_OUT + integer(ceil(log2(real(N)))) + 1;
 	
     signal s_add_out : signed(SUM_WIDTH-1 downto 0);
 	signal K_out : signed(N*KERNEL_WIDTH_OUT - 1 downto 0);
@@ -66,8 +71,13 @@ architecture beh of ConvChannelTemplate is
 	end function ternary_adder_tree;
 	
 	signal start_addition : std_logic := '0';
+	signal kernel_valid_i : std_logic;
+	signal is_last : std_logic := '0';
 
 begin
+	Ready_o <= Ready_i;
+	kernel_valid_i <= Valid_i and Ready_i;
+
 	kernels_gen : for I in 0 to N-1 generate
 		krnl : entity Kernel3x3 generic map(
 			BIT_WIDTH_IN,
@@ -76,7 +86,7 @@ begin
 		) port map(
 			Clk_i, 
 			n_Res_i, 
-			Valid_i, 
+			kernel_valid_i, 
 			X_i((I+1)*BIT_WIDTH_IN*KERNEL_SIZE - 1 downto I*BIT_WIDTH_IN*3*3), 
 			K_out((I+1)*KERNEL_WIDTH_OUT - 1 downto I*KERNEL_WIDTH_OUT)
 		); 
@@ -92,9 +102,9 @@ begin
 			start_addition <= '0';
 		elsif rising_edge(Clk_i) then
             Valid_o <= '0';
-			if start_addition = '1' then
+			if start_addition = '1' and Ready_i = '1' then
 				start_addition <= '0';
-				add_out := ternary_adder_tree(term_vector);
+				add_out := ternary_adder_tree(term_vector) + to_signed(BIAS, SUM_WIDTH);
 				s_add_out <= add_out;
 				if add_out(SUM_WIDTH-1) = '1' then
 				    Y_o <= (others => '0');
@@ -104,9 +114,16 @@ begin
 				    Y_o <= unsigned(std_logic_vector(add_out(OUTPUT_MSB downto OUTPUT_MSB-BIT_WIDTH_OUT+1)));
 				end if;
 				Valid_o <= '1';
+				if is_last = '1' then
+					Last_o <= '1';
+				else
+					Last_o <= '0';
+				end if;
+				is_last <= '0';
 			end if;
-			if Valid_i = '1' then
-				start_addition <= '1';
+			if kernel_valid_i = '1' then
+				start_addition <= '1'; -- in next cycle
+				is_last <= Last_i;
 			end if;
 		end if;
 	end process;

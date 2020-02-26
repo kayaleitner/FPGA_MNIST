@@ -80,7 +80,7 @@ if __name__ == '__main__':
     entity_str = \
 "\tconvchan{I}" + " : entity " + "ConvChannel{J} " + "port map(\n\
 \t\tClk_i, n_Res_i,\n\
-\t\tValid_i, Valid_o,\n\
+\t\tValid_i, Valid_o, Last_i, Last_o, Ready_i, Ready_o,\n\
 \t\tX_i,\n\
 \t\tY_o({I+1}*BIT_WIDTH_OUT - 1 downto {I}*BIT_WIDTH_OUT)\n\
 \t); \n\n"

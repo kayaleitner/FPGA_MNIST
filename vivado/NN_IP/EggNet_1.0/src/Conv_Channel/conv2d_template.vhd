@@ -15,6 +15,10 @@ entity Conv2DTemplate is
 		n_Res_i : in std_logic;
 		Valid_i : in std_logic;
 		Valid_o : out std_logic;
+		Last_i : in std_logic;
+		Last_o : out std_logic;
+		Ready_i : in std_logic;
+		Ready_o : out std_logic;
 		X_i : in std_logic_vector(INPUT_CHANNELS*BIT_WIDTH_IN*KERNEL_SIZE - 1 downto 0);
 		Y_o : out unsigned(OUTPUT_CHANNELS*BIT_WIDTH_OUT - 1 downto 0)
 	);
