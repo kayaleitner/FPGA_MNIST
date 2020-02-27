@@ -17,8 +17,8 @@ architecture Behavioral of tb_NN is
 	type t_pixel_array is array (0 to INPUT_COUNT - 1) of integer;
 	
 	signal s_Clk_i, s_n_Res_i, s_Valid_i, s_Valid_o : std_logic;
-	signal s_Data_i : std_logic_vector(BIT_WIDTH_IN*INPUT_CHANNELS*KERNEL_SIZE - 1 downto 0);
-	signal s_Data_o : unsigned(OUTPUT_CHANNELS*BIT_WIDTH_OUT - 1 downto 0);
+	signal s_Data_i : std_logic_vector(INPUT_COUNT * VECTOR_WIDTH -1 downto 0);
+	signal s_Data_o : std_logic_vector(OUTPUT_COUNT * VECTOR_WIDTH -1 downto 0);
 	signal sim_ended : std_logic := '0';
 	
 	file input_file : text;
@@ -60,7 +60,6 @@ begin
 	end process; 
 	
 	get_output : process(s_Clk_i, sim_ended)
-		variable output : t_output_array;
 		variable output_line : line;
         variable file_name_out : string(1 to 17) := "tmp/nn_output.txt";
 	begin
@@ -83,7 +82,6 @@ begin
 	begin
 		
 		for I in 0 to INPUT_COUNT - 1 loop
-			file_name(19) := char_num(I+1);
             file_open(input_file, file_name_in, read_mode);
 			K := 0;
             while not endfile(input_file) loop
@@ -111,4 +109,4 @@ begin
 		sim_ended <= '1';
 		wait;
 	end process;
-end beh;
+end Behavioral;

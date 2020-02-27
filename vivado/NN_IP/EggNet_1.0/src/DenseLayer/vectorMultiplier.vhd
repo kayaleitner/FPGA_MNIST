@@ -24,8 +24,8 @@ use IEEE.STD_LOGIC_1164.ALL;
 -- arithmetic functions with Signed or Unsigned values
 use IEEE.NUMERIC_STD.ALL;
 use ieee.std_logic_unsigned.all;
-use ieee.math_real."ceil";
-use ieee.math_real."log2";
+use ieee.math_real.ceil;
+use ieee.math_real.log2;
 
 
 LIBRARY work;

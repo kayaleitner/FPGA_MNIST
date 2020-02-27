@@ -37,7 +37,7 @@ architecture Behavioral of NeuralNetwork is
 	signal s_L1_Rd_addr_i : std_logic_vector(integer(ceil(log2(real(OUTPUT_COUNT_L1))))-1 downto 0);
 	signal s_L2_Rd_addr_i : std_logic_vector(integer(ceil(log2(real(OUTPUT_COUNT_L2))))-1 downto 0);
 	signal s_L1_Finished_o, s_L2_Finished_o : std_logic;
-	signal s_L1_Rd_en_i, s_L1_Rd_en_i : std_logic;
+	signal s_L1_Rd_en_i, s_L2_Rd_en_i : std_logic;
 
 begin
     dense_layer_1 : entity work.layer
@@ -54,10 +54,10 @@ begin
 		Data_o => s_L1_Data_o,
 		Rd_addr_i => s_L1_Rd_addr_i,
 		Finished_o => s_L1_Finished_o,
-		Rd_en_i => s_L1_Rd_addr_i
+		Rd_en_i => s_L1_Rd_en_i
 	);
 	
-    dense_layer_1 : entity work.layer
+    dense_layer_2 : entity work.layer
     generic map(
 		VECTOR_WIDTH  => VECTOR_WIDTH,
         INPUT_COUNT   => INPUT_COUNT_L2,
@@ -71,7 +71,7 @@ begin
 		Data_o => s_L2_Data_o,
 		Rd_addr_i => s_L2_Rd_addr_i,
 		Finished_o => s_L2_Finished_o,
-		Rd_en_i => s_L2_Rd_addr_i
+		Rd_en_i => s_L2_Rd_en_i
 	);
 	
 end architecture;
