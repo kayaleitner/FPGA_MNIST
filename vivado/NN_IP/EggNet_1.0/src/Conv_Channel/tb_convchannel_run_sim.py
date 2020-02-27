@@ -25,6 +25,40 @@ def chunk_array(seq, num):
 def quantize(a):
     return min(max(int(a/0.002),-128), 127)
 
+# %% Pooling function
+    
+def pool(CO, file_name_pool_in, file_name_pool_out, width):
+    buffer = np.ndarray((2,width), dtype=int)
+    for i in range(0, CO):
+        i_str = str(i)
+        if len(i_str) == 1:
+            i_str = "0" + i_str
+        file_name_in_current = file_name_pool_in.replace("{I}", i_str)
+        file_name_out_current = file_name_pool_out.replace("{I}", i_str)
+        pool_input_file = open(file_name_in_current, "r")
+        pool_output_file = open(file_name_out_current, "w")
+        
+        buf_i = 0
+        buf_j = 0
+        
+        for line in pool_input_file:
+            buffer[buf_j][buf_i] = int(line)
+            if buf_i != width - 1:
+                buf_i += 1
+            elif buf_j != 1:
+                buf_j += 1
+                buf_i = 0
+            else:
+                for x in range(0, int(width/2)):
+                    vals = [buffer[0][x*2], buffer[0][x*2+1], buffer[1][x*2], buffer[1][x*2+1]]
+                    max_val = max(vals)
+                    pool_output_file.write(str(max_val) + "\n")
+                buf_i = 0
+                buf_j = 0
+        
+        pool_input_file.close()
+        pool_output_file.close()
+
 # %% parameters
 KEEP_TEMPORARY_FILES = True
 KERNEL_SIZE = 3
@@ -110,41 +144,9 @@ for i in range(0, CO_L1):
 
 print("Simulation and emulation output the same for conv2d0")
 
-# %% Pooling
+# %% Pooling after layer 1
 
-file_name_pool_in = file_name_sim
-file_name_pool_out = "tmp/pool_output{I}.txt"
-
-buffer = np.ndarray((2,IMG_WIDTH), dtype=int)
-for i in range(0, CO_L1):
-    i_str = str(i)
-    if len(i_str) == 1:
-        i_str = "0" + i_str
-    file_name_in_current = file_name_pool_in.replace("{I}", i_str)
-    file_name_out_current = file_name_pool_out.replace("{I}", i_str)
-    pool_input_file = open(file_name_in_current, "r")
-    pool_output_file = open(file_name_out_current, "w")
-    
-    buf_i = 0
-    buf_j = 0
-    
-    for line in pool_input_file:
-        buffer[buf_j][buf_i] = int(line)
-        if buf_i != IMG_WIDTH - 1:
-            buf_i += 1
-        elif buf_j != 1:
-            buf_j += 1
-            buf_i = 0
-        else:
-            for x in range(0, int(IMG_WIDTH/2)):
-                vals = [buffer[0][x*2], buffer[0][x*2+1], buffer[1][x*2], buffer[1][x*2+1]]
-                max_val = max(vals)
-                pool_output_file.write(str(max_val) + "\n")
-            buf_i = 0
-            buf_j = 0
-    
-    pool_input_file.close()
-    pool_output_file.close()
+pool(CO_L1, file_name_sim, "tmp/pool_output{I}.txt", IMG_WIDTH)
 
 #New parameters after pooling
 IMG_WIDTH //= 2
@@ -152,7 +154,7 @@ IMG_HIGTH //= 2
 BLOCK_SIZE = IMG_WIDTH*IMG_HIGTH
 
 # %% Get input for layer 2 from output of layer 1
-file_name_in = file_name_pool_out
+file_name_in = "tmp/pool_output{I}.txt"
 
 test_array = np.ndarray((CI_L2, NUMBER_OF_TEST_BLOCKS, BLOCK_SIZE), dtype=np.uint8)
     
@@ -232,6 +234,63 @@ for i in range(0, CO_L2):
         exit
 
 print("Simulation and emulation output the same for conv2d1")
+
+
+# %% Pooling after layer 2
+
+pool(CO_L2, file_name_sim, "tmp/dense_layer_input{I}.txt", IMG_WIDTH)
+
+#New parameters after pooling
+IMG_WIDTH //= 2
+IMG_HIGTH //= 2
+BLOCK_SIZE = IMG_WIDTH*IMG_HIGTH
+
+# %% Get input for dense layer
+
+file_nn = open("tmp/nn_input.txt", "w")
+
+for i in range(0, CO_L2):
+    i_str = str(i)
+    if len(i_str) == 1:
+        i_str = "0" + i_str
+    file_name = "tmp/dense_layer_input{I}.txt"
+    file_name = file_name.replace("{I}", i_str)
+    input_file = open(file_name, "r")
+    input_lines = input_file.readlines()
+    input_lines_chunked = chunk_array(input_lines, NUMBER_OF_TEST_BLOCKS)
+    file_nn.writelines(input_lines_chunked[0])
+    input_file.close()
+    
+file_nn.close()
+
+# %% Get output for dense layer
+
+denselayer_1_file_name = "../../../../../net/np/k_14_dense_1_0.txt"
+denselayer_2_file_name = "../../../../../net/np/k_17_dense_2_0.txt"
+
+DL1_INPUT_NEURONS = 1568
+DL1_OUTPUT_NEURONS = 32
+DL2_INPUT_NEURONS = 32
+DL2_OUTPUT_NEURONS = 10
+
+dl1_weights_file = open(denselayer_1_file_name, 'r')
+dl1_weights = np.array(list(map(quantize, np.loadtxt(dl1_weights_file)))).reshape((DL1_INPUT_NEURONS, DL1_OUTPUT_NEURONS))
+dl1_weights_file.close()
+
+dl2_weights_file = open(denselayer_2_file_name, 'r')
+dl2_weights = np.array(list(map(quantize, np.loadtxt(dl2_weights_file)))).reshape((DL2_INPUT_NEURONS, DL2_OUTPUT_NEURONS))
+dl2_weights_file.close()
+
+file_nn = open("tmp/nn_input.txt", "r")
+denselayer_input = np.loadtxt(file_nn, dtype=np.int32)
+file_nn.close()
+
+dl1_output = np.matmul(denselayer_input, dl1_weights)
+dl1_output >>= 8
+dl1_output = np.clip(dl1_output, a_min = 0, a_max = 255)
+dl2_output = np.matmul(dl1_output, dl2_weights)
+dl2_output >>= 8
+dl2_output = np.clip(dl2_output, a_min = 0, a_max = 255)
 
 # %% delete tmp folder 
 if not KEEP_TEMPORARY_FILES:

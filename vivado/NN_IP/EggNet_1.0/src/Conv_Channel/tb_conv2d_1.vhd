@@ -103,7 +103,6 @@ begin
 	set_input : process
 	    variable channel_input : t_channel_array;
         variable input_line : line;
-        variable output_line : line;
         variable input_int : integer;
         variable file_name : string(1 to 26) := "tmp/conv2d_1_c00input0.txt";
 		variable K : integer := 0;
