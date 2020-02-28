@@ -327,6 +327,8 @@ component MemCtrl_3x3 is
   signal layer_properties       : STATUS_ARR; 
   signal axi_layer_properties   : std_logic_vector(C_S00_AXI_DATA_WIDTH-1 downto 0);
   signal axi_status             : std_logic_vector(C_S00_AXI_DATA_WIDTH-1 downto 0);
+  signal all_running            : std_logic;
+  
   
   signal l1_s_tready            : std_logic;
   
@@ -510,6 +512,19 @@ EggNet_v1_0_S00_AXI_inst : EggNet_v1_0_S00_AXI
   status(0)(7 downto 0) <= (others => '0'); -- find something usefull here
   status(0)(15 downto 8) <= (others => '0'); -- Memory Controller Address = 0 for overall status. DO NOT CHANGE!
   status(0)(31 downto 16) <= x"F0F0"; -- find something usefull here 
+  Running_flag: rprocess(s00_axi_aclk,s00_axi_aresetn) is 
+    variable running : std_logic;
+  begin 
+    if s00_axi_aresetn = '0' then 
+      all_running <= '0';
+    elsif rising_edge(s00_axi_aclk) then 
+      running := '0';
+      for i in 1 to MEM_CTRL_NUMBER loop 
+        running := running and status(i)(17);
+      end loop; 
+      all_running <= running;  
+    end if;
+  end process; 
   
   Dbg_ctrl: process(s00_axi_aclk,s00_axi_aresetn) is 
   begin 

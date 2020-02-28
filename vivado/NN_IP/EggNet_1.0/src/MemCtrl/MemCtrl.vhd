@@ -153,7 +153,7 @@ signal wr_invalid_block :std_logic;
 
 begin
 
--- ********************* Layer informaiton *********************************************************
+-- ********************* Layer and status informaiton **********************************************
 Layer_properties_o(11 downto 0) <= std_logic_vector(to_unsigned(LAYER_WIDTH-1,12)); -- Since 0 size is not possible 0 means size 1 
 Layer_properties_o(23 downto 12) <= std_logic_vector(to_unsigned(LAYER_HIGHT-1,12)); -- Since 0 size is not possible 0 means size 1
 Layer_properties_o(31 downto 24) <= std_logic_vector(to_unsigned(IN_CHANNEL_NUMBER-1,8)); -- Since 0 size is not possible 0 means size 1; 
@@ -162,6 +162,7 @@ Status_o(15 downto 8) <=  std_logic_vector(to_unsigned(MEM_CTRL_ADDR,8));
 Status_o(16) <= dbg_error;
 Status_o(17) <= dbg_active;
 Status_o(31 downto 18) <= (others => '0'); -- Add usefull informaiton
+
 -- ********************* Block control *************************************************************
 BlockControl: process(Layer_clk_i,Layer_aresetn_i)
 begin
