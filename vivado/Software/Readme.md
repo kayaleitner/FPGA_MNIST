@@ -31,3 +31,44 @@ Then copy the sysroots folder to your SDK project workspace
 10. select destination folder for your application (example: /tmp/dma-proxy.elf)
 10. Press run
 
+## Cross-Compile with CMAKE
+
+### Setup Compiler Toolchain
+
+Install the required compiler toolchain, which should be already installed if you use the Xilinx SDK. Alternative download the GNU compile utils for `arm-linux-gnueabihf`
+
+Additionally you will need:
+
+- SWIG, >4.0
+- CMake, >3.10
+
+### Setup Environment
+
+To successfully cross compile the Linux Environment must be replicated on the host machine. Therefore all contents of the `/usr/` and `/lib/` folders should be copied.
+This location of this folder must then be passed to CMake via a parameter or by modifing the toolchain file.
+An example toolchain file which should work is provided in `cmake\xillinx-win-to-armv7-linux.cmake`.
+
+### Preperations for the python wrapper
+
+Run Swig and create a wrapper file
+
+```bash
+cd eggnet
+swig -python eggnet.i
+```
+
+This should create a `eggnet_wrap.c` file and a `EggNetDriverCore.py`. The first one must be compiled using the toolchain and linked against the python version that should be used. The second one is a simple proxy file to make calling provided funtions more pythonic, e.g. by using keyword args.
+
+### Build
+
+First create a folder to build the setup:
+
+```bash
+
+mkdir build
+cd build
+
+cmake .. -T path/to/toolchain.cmake
+cmake --build . name-of-target
+
+```

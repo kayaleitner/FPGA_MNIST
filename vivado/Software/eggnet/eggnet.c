@@ -1,6 +1,6 @@
 #include "eggnet.h"
 #include <stdlib.h>
-#include <pthread/pthread.h>
+#include <pthread.h>
 
 
 #define DRIVER_KEXT_NAME "dma-proxy.ko"
