@@ -41,7 +41,8 @@ Generic (  VECTOR_WIDTH   : integer := 8;
            INPUT_COUNT    : integer := 1568;
            OUTPUT_COUNT   : integer := 32;
            ROM_FILE       : string  := "rom_content.mif");
-Port ( --reset_i : in  STD_LOGIC;
+Port ( 
+      Reset_i : in STD_LOGIC;
       Clk_i : in  STD_LOGIC;
       Start_i : in  STD_LOGIC;
       Rd_en_o : out  STD_LOGIC;
@@ -55,12 +56,12 @@ end layer;
 
 architecture Behavioral of layer is
 
-    signal s_weight_data : array_type(OUTPUT_COUNT-1 downto 0)(VECTOR_WIDTH-1 downto 0);
-    signal s_weight_data_vector : std_logic_vector((VECTOR_WIDTH*OUTPUT_COUNT)-1 downto 0);
-    signal s_weight_addr : std_logic_vector(integer(ceil(log2(real(INPUT_COUNT))))-1 downto 0);
-    signal s_multiplier_output : array_type(OUTPUT_COUNT-1 downto 0)((2*VECTOR_WIDTH + integer(ceil(log2(real(INPUT_COUNT)))))-1 downto 0);
-    signal s_write_multiplier_output : std_logic;
-    signal s_sending : std_logic:='0';
+    signal s_weight_data : array_type(OUTPUT_COUNT-1 downto 0)(VECTOR_WIDTH-1 downto 0) := (others => (others => '0'));
+    signal s_weight_data_vector : std_logic_vector((VECTOR_WIDTH*OUTPUT_COUNT)-1 downto 0) := (others => '0');
+    signal s_weight_addr : std_logic_vector(integer(ceil(log2(real(INPUT_COUNT))))-1 downto 0) := (others => '0');
+    signal s_multiplier_output : array_type(OUTPUT_COUNT-1 downto 0)((2*VECTOR_WIDTH + integer(ceil(log2(real(INPUT_COUNT)))))-1 downto 0) := (others => (others => '0'));
+    signal s_write_multiplier_output : std_logic := '0';
+    signal s_sending : std_logic := '0';
 
 begin
 
@@ -91,6 +92,7 @@ begin
                     OUTPUT_COUNT => OUTPUT_COUNT)
     port map
     (
+		Reset_i => Reset_i,
         Clk_i => Clk_i,
         Rd_en_o => Rd_en_o,
         Data_i => Data_i,
@@ -102,7 +104,14 @@ begin
     );
     
     
-    Data_o <= s_multiplier_output(to_integer(unsigned(Rd_addr_i)));
+	process(Rd_addr_i, Rd_en_i)
+	begin
+		if Rd_en_i = '1' then
+			Data_o <= s_multiplier_output(to_integer(unsigned(Rd_addr_i)));
+		else
+			Data_o <= (others => '0');
+		end if;
+	end process;
     Finished_o <= s_write_multiplier_output;
 
 end Behavioral;

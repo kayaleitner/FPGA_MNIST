@@ -38,14 +38,16 @@ entity multiplier is
 end multiplier;
 
 architecture Behavioral of multiplier is
-
-    signal s_result : std_logic_vector(VECTOR_WIDTH*2-1 downto 0);
-
 begin
-    
-    -- just a quick test multiplier
-    s_result<=A_in*B_in;
-    C_out<=s_result(VECTOR_WIDTH*2-1 downto 0);
+    calc : process(A_in, B_in)
+		variable temp : signed(VECTOR_WIDTH downto 0);
+		variable temp_out : signed(VECTOR_WIDTH*2 downto 0);
+	begin
+		temp(VECTOR_WIDTH) := '0';
+		temp(VECTOR_WIDTH - 1 downto 0) := signed(A_in);
+		temp_out := signed(B_in)*temp;
+		C_out <= std_logic_vector(temp_out(VECTOR_WIDTH*2-1 downto 0));
+	end process;
 
 end Behavioral;
 

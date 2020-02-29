@@ -40,7 +40,7 @@ entity romModule is
 				);
     Port ( clk_i : in  STD_LOGIC;
            address_i : in  STD_LOGIC_VECTOR (integer(ceil(log2(real(DATA_DEPTH))))-1 downto 0);
-           data_o : out  STD_LOGIC_VECTOR (DATA_WIDTH-1 downto 0)
+           data_o : out  STD_LOGIC_VECTOR (DATA_WIDTH-1 downto 0) := (others => '0')
 			  );
 end romModule;
 

@@ -41,6 +41,7 @@ entity vectorMultiplier is
 	           INPUT_COUNT : integer := 4;
 			   OUTPUT_COUNT : integer := 4);
     Port ( 
+			  Reset_i : in std_logic;
 			  Clk_i : in std_logic;
 			  Rd_en_o : out std_logic;
 			  Data_i : in std_logic_vector(VECTOR_WIDTH-1 downto 0);
@@ -148,7 +149,9 @@ begin
                     Rd_en_o <= '0';
                     Write_data_o <= '1';
                     
-                    state <= idle;	
+					if Reset_i = '1' then
+						state <= idle;	
+					end if;
                     
             end case;
         end if;	

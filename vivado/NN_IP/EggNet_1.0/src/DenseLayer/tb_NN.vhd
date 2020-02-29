@@ -17,7 +17,7 @@ architecture Behavioral of tb_NN is
 	type t_pixel_array is array (0 to INPUT_COUNT - 1) of integer;
 	
 	signal s_Clk_i, s_n_Res_i, s_Valid_i, s_Valid_o : std_logic;
-	signal s_Data_i : std_logic_vector(INPUT_COUNT * VECTOR_WIDTH -1 downto 0);
+	signal s_Data_i : std_logic_vector(VECTOR_WIDTH -1 downto 0);
 	signal s_Data_o : std_logic_vector(OUTPUT_COUNT * VECTOR_WIDTH -1 downto 0);
 	signal sim_ended : std_logic := '0';
 	
@@ -65,8 +65,8 @@ begin
 	begin
 		if s_Valid_o = '1' and rising_edge(s_Clk_i) then
 			file_open(output_file, file_name_out, write_mode);
-			for I in 0 to INPUT_COUNT - 1 loop
-				write(output_line, s_Data_o((I+1)*VECTOR_WIDTH - 1 downto I*VECTOR_WIDTH));
+			for I in 0 to OUTPUT_COUNT - 1 loop
+				write(output_line, to_integer(unsigned(s_Data_o((I+1)*VECTOR_WIDTH - 1 downto I*VECTOR_WIDTH))));
 				writeline(output_file, output_line);
 			end loop;
 			file_close(output_file);
@@ -81,17 +81,15 @@ begin
 		variable K : integer := 0;
 	begin
 		
-		for I in 0 to INPUT_COUNT - 1 loop
-            file_open(input_file, file_name_in, read_mode);
-			K := 0;
-            while not endfile(input_file) loop
-                readline(input_file, input_line);
-                read(input_line, input_int);
-				layer_input(K) := input_int;
-				K := K + 1;
-            end loop;
-            file_close(input_file);
+		file_open(input_file, file_name_in, read_mode);
+		K := 0;
+		while not endfile(input_file) loop
+			readline(input_file, input_line);
+			read(input_line, input_int);
+			layer_input(K) := input_int;
+			K := K + 1;
 		end loop;
+		file_close(input_file);
 		
 		s_Data_i <= (others => '0');
 		s_Valid_i <= '0';
@@ -99,12 +97,15 @@ begin
 		for J in 0 to INPUT_COUNT - 1 loop
 			wait until rising_edge(s_Clk_i);
 			s_Valid_i <= '1';
-			s_Data_i <= std_logic_vector(to_unsigned(layer_input(K), VECTOR_WIDTH));
+			s_Data_i <= std_logic_vector(to_unsigned(layer_input(J), VECTOR_WIDTH));
 		end loop;
 		wait until rising_edge(s_Clk_i);
 		s_Valid_i <= '0';
 		s_Data_i <= (others => '0');
 		wait until rising_edge(s_Clk_i);
+		for I in 0 to 2000 loop
+			wait until rising_edge(s_Clk_i);
+		end loop;
 		wait until rising_edge(s_Clk_i);
 		sim_ended <= '1';
 		wait;

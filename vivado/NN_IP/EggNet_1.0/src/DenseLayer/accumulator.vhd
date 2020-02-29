@@ -42,7 +42,7 @@ end accumulator;
 
 architecture Behavioral of accumulator is
 
-    signal s_accumulated : std_logic_vector(OUTPUT_WIDTH-1 downto 0):=(others=>'0');
+    signal s_accumulated : std_logic_vector(OUTPUT_WIDTH-1 downto 0) := (others => '0');
 
 begin
 
