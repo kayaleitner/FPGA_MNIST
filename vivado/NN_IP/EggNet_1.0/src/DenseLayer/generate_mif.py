@@ -6,7 +6,7 @@ def quantize(a):
 
 def get_binstr(a):
     binstr = list(format(abs(a), '08b'))
-    if(dl1_weights[i][j] < 0):
+    if(a < 0):
         for k in range(0, len(binstr)):
             if(binstr[k] == '1'):
                 binstr[k] = '0'
@@ -66,7 +66,7 @@ dl2_mif_file = open(dl2_mif_file_name, 'w')
 
 for i in range(0, DL2_INPUT_NEURONS):
     line = ""
-    for j in range(0, DL2_OUTPUT_NEURONS):
+    for j in reversed(range(0, DL2_OUTPUT_NEURONS)):
         binstr = get_binstr(dl2_weights[i][j])
         line += binstr
     dl2_mif_file.write(line + "\n")

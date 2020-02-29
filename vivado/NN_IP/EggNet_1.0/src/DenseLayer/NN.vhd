@@ -195,6 +195,7 @@ begin
 					s_L2_Start_i <= '1';
 				end if;
 			when ST_WAIT_L2 => 
+				s_L1_Reset_i <= '1';
 				Ready_o <= '0';
 				data_cnt_L2_next <= 0;
 			when ST_OUTPUT =>
@@ -214,7 +215,6 @@ begin
 				Valid_o <= '1';
 				Data_o <= Data_o_reg;
 				data_cnt_out_next <= 0;
-				s_L1_Reset_i <= '1';
 				s_L2_Reset_i <= '1';
 		end case;
 	end process;
