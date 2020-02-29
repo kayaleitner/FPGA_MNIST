@@ -41,7 +41,8 @@ entity vectorMultiplier is
 	           INPUT_COUNT : integer := 4;
 			   OUTPUT_COUNT : integer := 4);
     Port ( 
-			  Reset_i : in std_logic;
+			  Resetn_i : in std_logic;
+			  Reset_calculation_i : in std_logic;
 			  Clk_i : in std_logic;
 			  Rd_en_o : out std_logic;
 			  Data_i : in std_logic_vector(VECTOR_WIDTH-1 downto 0);
@@ -57,10 +58,15 @@ architecture Behavioral of vectorMultiplier is
 
     signal s_multiplied : array_type(OUTPUT_COUNT-1 downto 0)(2*VECTOR_WIDTH-1 downto 0);
     
-    type state_type is (idle, calculating, wait_calculation, write_data);
-    signal state : state_type := idle;
+    type state_type is (
+		ST_IDLE, 
+		ST_CALCULATING, 
+		ST_WAIT_CALCULATION, 
+		ST_WRITE_DATA
+	);
+    signal state, state_next : state_type := ST_IDLE;
     
-    signal s_counter : std_logic_vector(integer(ceil(log2(real(INPUT_COUNT))))-1 downto 0) := (others=>'0');
+    signal s_counter, s_counter_next : std_logic_vector(integer(ceil(log2(real(INPUT_COUNT))))-1 downto 0) := (others=>'0');
     
     signal s_enable_accumulation : std_logic := '0';
     
@@ -99,63 +105,79 @@ begin
         );
     end generate generateMultipliers;
     
-    Weights_address_o <= s_counter;
+    Weights_address_o <= s_counter_next;
     
     -- Finite state machine, that controls the calculation of all pixels.
-    FSM : process(Clk_i)
+    FSM : process(state, Start_calculation_i, s_counter, Reset_calculation_i)
     begin
-        if(rising_edge(Clk_i))then
-            case state is
-                
-                -- FSM is in idle state until it receives a signal to start calculations.
-                when idle =>
-                    s_enable_accumulation <= '0';
-                    s_reset_accumulators <= '1';
-                    Rd_en_o <= '0';
-                    Write_data_o <= '0';
-                    
-                    s_counter <= (others=>'0');
-                    
-                    if(Start_calculation_i='1')then
-                        state <= calculating;
-                    end if;
-                
-                -- FSM is in this state until all of the pixels have been calculated.
-                when calculating =>
-                    s_enable_accumulation <= '1';
-                    s_reset_accumulators <= '0';
-                    Rd_en_o <= '1';
-                    Write_data_o <= '0';
-                    
-                    if(s_counter = INPUT_COUNT-1)then
-                        state <= wait_calculation;
-                    else
-                        s_counter <= s_counter + '1';
-                    end if;
-                
-                -- This state is to wait the calculation of the last pixel.
-                when wait_calculation =>
-                    s_enable_accumulation <= '0';
-                    s_reset_accumulators <= '0';
-                    Rd_en_o <= '0';
-                    Write_data_o <= '0';
-                    
-                    state <= write_data;
-                
-                -- Write_data_o is pulsed, to notify that calculation is finished
-                when write_data =>
-                    s_enable_accumulation <= '0';
-                    s_reset_accumulators <= '0';
-                    Rd_en_o <= '0';
-                    Write_data_o <= '1';
-                    
-					if Reset_i = '1' then
-						state <= idle;	
-					end if;
-                    
-            end case;
-        end if;	
+		state_next <= state;
+		s_counter_next <= s_counter;
+	
+		case state is
+
+			-- FSM is in idle state until it receives a signal to start calculations.
+			when ST_IDLE =>
+				s_enable_accumulation <= '0';
+				s_reset_accumulators <= '1';
+				Rd_en_o <= '0';
+				Write_data_o <= '0';
+				
+				s_counter_next <= (others=>'0');
+				
+				if(Start_calculation_i='1')then
+					s_enable_accumulation <= '1';
+					s_reset_accumulators <= '0';
+					Rd_en_o <= '1';
+					state_next <= ST_CALCULATING;
+					s_counter_next <= s_counter + '1';
+				end if;
+			
+			-- FSM is in this state until all of the pixels have been calculated.
+			when ST_CALCULATING =>
+				s_enable_accumulation <= '1';
+				s_reset_accumulators <= '0';
+				Rd_en_o <= '1';
+				Write_data_o <= '0';
+				
+				if(s_counter = INPUT_COUNT-1)then
+					state_next <= ST_WAIT_CALCULATION;
+				else
+					s_counter_next <= s_counter + '1';
+				end if;
+			
+			-- This state is to wait the calculation of the last pixel.
+			when ST_WAIT_CALCULATION =>
+				s_enable_accumulation <= '0';
+				s_reset_accumulators <= '0';
+				Rd_en_o <= '0';
+				Write_data_o <= '0';
+				
+				state_next <= ST_WRITE_DATA;
+			
+			-- Write_data_o is pulsed, to notify that calculation is finished
+			when ST_WRITE_DATA =>
+				s_enable_accumulation <= '0';
+				s_reset_accumulators <= '0';
+				Rd_en_o <= '0';
+				Write_data_o <= '1';
+				
+				if Reset_calculation_i = '1' then
+					state_next <= ST_IDLE;	
+				end if;
+				
+		end case;
     end process;
+	
+	sync: process(Clk_i)
+	begin
+		if Resetn_i = '0' then
+			state <= ST_IDLE;
+			s_counter <= s_counter_next;
+		elsif rising_edge(Clk_i) then
+			state <= state_next;
+			s_counter <= s_counter_next;
+		end if;
+	end process;
 
 end Behavioral;
 

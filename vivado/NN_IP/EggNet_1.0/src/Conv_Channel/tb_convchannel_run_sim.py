@@ -286,6 +286,7 @@ denselayer_input = np.loadtxt(file_nn, dtype=np.int32)
 file_nn.close()
 
 dl1_output = np.matmul(denselayer_input, dl1_weights)
+dl1_test_output = dl1_output
 dl1_output >>= 8
 dl1_output = np.clip(dl1_output, a_min = 0, a_max = 255)
 dl2_output = np.matmul(dl1_output, dl2_weights)

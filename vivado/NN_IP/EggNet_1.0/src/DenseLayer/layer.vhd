@@ -42,7 +42,8 @@ Generic (  VECTOR_WIDTH   : integer := 8;
            OUTPUT_COUNT   : integer := 32;
            ROM_FILE       : string  := "rom_content.mif");
 Port ( 
-      Reset_i : in STD_LOGIC;
+	  Resetn_i : in STD_LOGIC;
+      Reset_calculation_i : in STD_LOGIC;
       Clk_i : in  STD_LOGIC;
       Start_i : in  STD_LOGIC;
       Rd_en_o : out  STD_LOGIC;
@@ -92,7 +93,8 @@ begin
                     OUTPUT_COUNT => OUTPUT_COUNT)
     port map
     (
-		Reset_i => Reset_i,
+		Resetn_i => Resetn_i,
+		Reset_calculation_i => Reset_calculation_i,
         Clk_i => Clk_i,
         Rd_en_o => Rd_en_o,
         Data_i => Data_i,

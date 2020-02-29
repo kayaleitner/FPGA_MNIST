@@ -67,7 +67,8 @@ begin
         OUTPUT_COUNT  => OUTPUT_COUNT_L1,
 		ROM_FILE      => "dense_layer_1.mif")
     port map(
-		Reset_i => s_L1_Reset_i,
+		Resetn_i => Resetn_i,
+		Reset_calculation_i => s_L1_Reset_i,
 		Clk_i => Clk_i,
 		Start_i => s_L1_Start_i,
 		Rd_en_o => s_L1_Rd_en_o,
@@ -85,7 +86,8 @@ begin
         OUTPUT_COUNT  => OUTPUT_COUNT_L2,
 		ROM_FILE      => "dense_layer_2.mif")
     port map(
-		Reset_i => s_L2_Reset_i,
+		Resetn_i => Resetn_i,
+		Reset_calculation_i => s_L2_Reset_i,
 		Clk_i => Clk_i,
 		Start_i => s_L2_Start_i,
 		Rd_en_o => s_L2_Rd_en_o,

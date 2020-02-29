@@ -23,6 +23,10 @@ def get_binstr(a):
 denselayer_1_file_name = "../../../../../net/np/k_14_dense_1_0.txt"
 denselayer_2_file_name = "../../../../../net/np/k_17_dense_2_0.txt"
 
+INPUT_IMAGE_WIDTH = 7
+INPUT_IMAGE_HIGHT = 7
+INPUT_IMAGE_SIZE = INPUT_IMAGE_WIDTH*INPUT_IMAGE_HIGHT
+CL2_OUTPUT_CHANNELS = 32
 DL1_INPUT_NEURONS = 1568
 DL1_OUTPUT_NEURONS = 32
 DL2_INPUT_NEURONS = 32
@@ -31,6 +35,15 @@ DL2_OUTPUT_NEURONS = 10
 dl1_weights_file = open(denselayer_1_file_name, 'r')
 dl1_weights = np.array(list(map(quantize, np.loadtxt(dl1_weights_file)))).reshape((DL1_INPUT_NEURONS, DL1_OUTPUT_NEURONS))
 dl1_weights_file.close()
+
+permutation = [None]*DL1_INPUT_NEURONS
+
+for j in range(0, INPUT_IMAGE_SIZE):
+    for i in range(0, CL2_OUTPUT_CHANNELS):
+        permutation[j*CL2_OUTPUT_CHANNELS + i] = i*INPUT_IMAGE_SIZE + j
+idx = np.empty_like(permutation)
+idx[permutation] = np.arange(len(permutation))
+dl1_weights_permutated = dl1_weights[idx,:]
 
 dl2_weights_file = open(denselayer_2_file_name, 'r')
 dl2_weights = np.array(list(map(quantize, np.loadtxt(dl2_weights_file)))).reshape((DL2_INPUT_NEURONS, DL2_OUTPUT_NEURONS))
