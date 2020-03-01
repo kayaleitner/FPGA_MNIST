@@ -1,7 +1,7 @@
 import os
 import unittest
 from NeuralNetwork.Reader.Mnist2Numpy import MnistDataReader, MnistDataDownloader, DataSetType
-
+from NeuralNetwork.Reader.MNIST import Dataset
 
 class Mnist2NumpyTestCase(unittest.TestCase):
 
@@ -46,6 +46,16 @@ class Mnist2NumpyTestCase(unittest.TestCase):
         except URLError as err:
             import logging
             logging.warning("There was an errror downloading stuff: ", err)
+
+class DatasetTestCase(unittest.TestCase):
+
+    def test_train(self):
+        mnist = Dataset()
+
+        lbls = mnist.train_labels()
+        imgs = mnist.train_images()
+
+
 
 
 if __name__ == '__main__':

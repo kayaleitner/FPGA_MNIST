@@ -90,50 +90,20 @@ nn_lenet_f16 = nn_lenet_f64.cast(new_dtype=np.float16)
 imgs_float = imgs.astype(dtype=np.float) / 256
 lbls_keras = keras_lenet(inputs=imgs_float)
 
+
+net_fpi = nn.Network.FpiLeNet(nn_lenet_f64, target_bits=8, fraction_bits=4)
+net_fpi4 = nn.Network.FpiLeNet(nn_lenet_f64, target_bits=4, fraction_bits=1)
+
 a_max = 2 ** 3 - 1
 a_min = -2 ** 3
 scale = 1 / 2 ** 4
-
-qk1 = np.clip(nn_lenet_f64.cn1.kernel / scale, a_max=a_max, a_min=a_min).astype(np.int8)
-qb1 = np.clip(nn_lenet_f64.cn1.bias / scale, a_max=a_max, a_min=a_min).astype(np.int8)
-qk2 = np.clip(nn_lenet_f64.cn2.kernel / scale, a_max=a_max, a_min=a_min).astype(np.int8)
-qb2 = np.clip(nn_lenet_f64.cn2.bias / scale, a_max=a_max, a_min=a_min).astype(np.int8)
-
-qw3 = np.clip(nn_lenet_f64.fc1.W / scale, a_max=a_max, a_min=a_min).astype(np.int8)
-qb3 = np.clip(nn_lenet_f64.fc1.b / scale, a_max=a_max, a_min=a_min).astype(np.int8)
-qw4 = np.clip(nn_lenet_f64.fc2.W / scale, a_max=a_max, a_min=a_min).astype(np.int8)
-qb4 = np.clip(nn_lenet_f64.fc2.b / scale, a_max=a_max, a_min=a_min).astype(np.int8)
-
-ni3 = nn_lenet_f64.fc1.input_size
-no3 = nn_lenet_f64.fc1.output_size
-ni4 = nn_lenet_f64.fc2.input_size
-no4 = nn_lenet_f64.fc2.output_size
-
 imgs_i8 = np.clip(imgs_float / scale, a_min=a_min, a_max=a_max)
 
-layers = [
-    nn.Layer.ReshapeLayer(newshape=(-1, 28, 28, 1)),
-    nn.Layer.Conv2dLayer(in_channels=1, out_channels=3, kernel_size=3, kernel_init_weights=qk1, bias_init_weights=qb1,
-                         use_bias=True),
-    nn.Layer.ShiftLayer(target_bits=8, target_frac_bits=4, source_bits=16, source_frac_bits=8),
-    nn.Layer.ReluActivationLayer(),
-    nn.Layer.MaxPool2dLayer(),
-    nn.Layer.Conv2dLayer(in_channels=3, out_channels=9, kernel_size=3, kernel_init_weights=qk2, bias_init_weights=qb2,
-                         use_bias=True),
-    nn.Layer.ShiftLayer(target_bits=8, target_frac_bits=4, source_bits=16, source_frac_bits=8),
-    nn.Layer.ReluActivationLayer(),
-    nn.Layer.MaxPool2dLayer(),
-    nn.Layer.FlattenLayer(),
-    nn.Layer.BreakpointLayer(enabled=False),
-    nn.Layer.FullyConnectedLayer(input_size=ni3, output_size=no3, dtype=np.int16, weights=qw3, bias=qb3),
-    nn.Layer.ShiftLayer(target_bits=8, target_frac_bits=4, source_bits=16, source_frac_bits=8),
-    nn.Layer.ReluActivationLayer(),
-    nn.Layer.FullyConnectedLayer(input_size=ni4, output_size=no4, dtype=np.int16, weights=qw4, bias=qb4),
-    nn.Layer.ShiftLayer(target_bits=8, target_frac_bits=4, source_bits=16, source_frac_bits=8),
-    nn.Layer.SoftmaxLayer()
-]
+a_max = 2 ** 2 - 1
+a_min = -2 ** 2
+scale = 1 / 2 ** 1
+imgs_i4 = np.clip(imgs_float / scale, a_min=a_min, a_max=a_max)
 
-net_fpi = nn.Network.Network(layers)
 
 lbls_keras = lbls_keras.numpy().argmax(axis=1)
 
@@ -154,6 +124,7 @@ lbls_nn_f32 = nn_lenet_f32.forward(inputs=imgs_float).argmax(axis=1)
 lbls_nn_f16 = nn_lenet_f16.forward(inputs=imgs_float).argmax(axis=1)
 
 lbls_nn_i8, nni8_activations = net_fpi.forward_intermediate(inputs=imgs_i8)
+lbls_nn_i4, nni4_activations = net_fpi4.forward_intermediate(inputs=imgs_i4)
 
 # lbls_nn_i32, nn32_activations = nn_lenet_i32.forward_intermediate(x=imgs_i32)
 
@@ -167,14 +138,15 @@ lbls_nn_i8, nni8_activations = net_fpi.forward_intermediate(inputs=imgs_i8)
 #     i_activation += 1
 
 lbls_nn_i8 = lbls_nn_i8.argmax(axis=1)
+lbls_nn_i4 = lbls_nn_i4.argmax(axis=1)
 # lbls_nn_i16 = lbls_nn_i16.argmax(axis=1)
 # lbls_nn_i32 = lbls_nn_i32.argmax(axis=1)
 
-print(" True  | Keras | F64 | F32 | F16 | I8")
+print(" True  | Keras | F64 | F32 | F16 | I8 | I4")
 print("-----------------------------------------")
 for i in range(lbls_nn_i8.shape[0]):
-    print("{:^7}|{:^7}|{:^5}|{:^5}|{:^5}|{:^5}".format(lbls[i, 0], lbls_keras[i], lbls_nn_f64[i],
-                                                       lbls_nn_f32[i], lbls_nn_f16[i], lbls_nn_i8[i]))
+    print("{:^7}|{:^7}|{:^5}|{:^5}|{:^5}|{:^5}|{:^5}".format(lbls[i, 0], lbls_keras[i], lbls_nn_f64[i],
+                                                       lbls_nn_f32[i], lbls_nn_f16[i], lbls_nn_i8[i], lbls_nn_i4[i]))
 
 """
 Latest Result:

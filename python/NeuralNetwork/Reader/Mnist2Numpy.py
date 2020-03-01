@@ -43,7 +43,7 @@ class MnistDataDownloader:
         else:
             self.mnist_downloaded = False
 
-    def download_mnist(self):
+    def _download_mnist(self):
         if self.folder_path is None:
             tmp_path = tempfile.gettempdir()
         else:
@@ -71,7 +71,7 @@ class MnistDataDownloader:
         if self.mnist_downloaded:
             self.create_datapaths()
         else:
-            self.download_mnist()
+            self._download_mnist()
 
         if dataset_type == DataSetType.TRAIN:
             return self.datapaths[0], self.datapaths[1]
