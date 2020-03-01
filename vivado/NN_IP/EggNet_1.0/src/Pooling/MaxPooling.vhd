@@ -50,6 +50,7 @@ architecture Behavioral of MaxPooling is
   signal s_ready        : std_logic;
   signal m_tvalid       : std_logic;
   signal last : std_logic;
+  signal s_opt1, s_opt2, s_opt3, s_opt4 : std_logic_vector(DATA_WIDTH-1 downto 0) := (others => '0');
   
 begin 
 
@@ -73,10 +74,7 @@ begin
   pooling: process(state, S_layer_tvalid_i, S_layer_tdata_i, S_layer_tkeep_i, S_layer_tlast_i, M_layer_tready_i)
     variable col_cnt  : integer; 
     variable row_cnt  : integer;
-    variable opt1 : std_logic_vector(DATA_WIDTH-1 downto 0);
-    variable opt2 : std_logic_vector(DATA_WIDTH-1 downto 0);
-    variable opt3 : std_logic_vector(DATA_WIDTH-1 downto 0);
-    variable opt4 : std_logic_vector(DATA_WIDTH-1 downto 0);
+    variable opt1, opt2, opt3, opt4 : std_logic_vector(DATA_WIDTH-1 downto 0);
   begin
     if Layer_aresetn_i = '0' then 
       m_tvalid <= '0';
@@ -139,6 +137,10 @@ begin
 			    opt2 := fifo_out(i);
 			    opt3 := pool_buffer_0(i);
 			    opt4 := pool_buffer_1(i);
+				s_opt1 <= opt1;
+				s_opt2 <= opt2;
+				s_opt3 <= opt3;
+				s_opt4 <= opt4;
                 if unsigned(opt1) > unsigned(opt2) and unsigned(opt1) > unsigned(opt3) and unsigned(opt1) > unsigned(opt4) then
 				  M_layer_tdata_o(((i+1)*DATA_WIDTH)-1 downto (i*DATA_WIDTH)) <= opt1;
                 elsif unsigned(opt2) > unsigned(opt3) and unsigned(opt2) > unsigned(opt4) and unsigned(opt2) > unsigned(opt1) then

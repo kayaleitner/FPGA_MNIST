@@ -100,11 +100,11 @@ begin
 			Y_o <= (others => '0');
             Valid_o <= '0';
 			Last_o <= '0';
-			Ready_o <= '0';
 			start_addition <= '0';
 			is_last <= '0';
 		elsif rising_edge(Clk_i) then
             Valid_o <= '0';
+			Last_o <= '0';
 			if start_addition = '1' and Ready_i = '1' then
 				start_addition <= '0';
 				add_out := ternary_adder_tree(term_vector) + to_signed(BIAS, SUM_WIDTH);
