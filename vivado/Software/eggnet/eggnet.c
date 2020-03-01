@@ -31,9 +31,9 @@ egg_error_t egg_init_network(const char *ip_name, struct network_t *net)
 	#ifndef NDEBUG
 		print_network();
 	#endif
-	return EGG_ERROR_NONE;
+	return code;
 	error:
-		return EGG_ERROR_INIT_FAILDED;
+		return code;
 }
 
 /**
@@ -58,20 +58,30 @@ egg_error_t egg_close_network()
 }
 
 
-/**
- * Executes the EggNet in forward (inference) mode
- * @param image_buffer A pointer to memory image buffer
- * @param batch number of batches
- * @param height image height, 28 for MNIST
- * @param width image width, 28 for MNIST
- * @param channels image channels, which is 1 for grayscale (like MNIST) or 3 for RGB
- * @param results a buffer where to store the results, must be [batch x 10]
- * @return error code
- */
-egg_error_t egg_forward(const uint8_t *image_buffer, int batch, int height, int width, int channels, int *results)
-{
-	// Check if debug flag is off;
+
+
+egg_error_t egg_forward(const uint8_t *image_buffer, int batch, int height, int width, int channels, 
+                        int **results, int *batch_out, int *n) {
+
+	egg_error_t return_value = EGG_ERROR_NONE;
+	
+	CHECK_AND_SET(results != NULL && batch_out != NULL && n != NULL && image_buffer != NULL,
+		return_value, EGG_ERROR_NULL_PTR, "Invalid input arg");
+
+	// allocate 
+	int *_results = calloc(10 * batch, sizeof(int));
+
+
+
+
+	*results = _results;
+	*n = 10;
+	*batch_out = batch;
+
+error:
+	return return_value;			
 }
+
 
 /**********************************************************************************************************************
  *

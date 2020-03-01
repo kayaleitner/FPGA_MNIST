@@ -108,15 +108,15 @@ struct egg_send_image_thread_args {
 
 void *egg_tx_thread(void *args)
 {
-	int batch_size = ((struct egg_send_image_thread_args) args).batch_size;
-	uint8_t *image_buffer = ((struct egg_send_image_thread_args) args).image_buffer;
+	int batch_size = ((struct egg_send_image_thread_args *) args)->batch_size;
+	uint8_t *image_buffer = ((struct egg_send_image_thread_args *) args)->image_buffer;
 
 	/* Set up the length for the DMA transfer and initialize the transmit
  	 * buffer to a known pattern.
  	 */
 
 	pthread_mutex_lock(&buffer_write_lock); // ensures that interface to dma-proxy is used by only one thread
-	for (int b=0;b<batch;b++)
+	for (int b=0;b<batch_size;b++)
 	{
 		CHECK(send_single_image_sync(IMG_GET(b,0,0,0)) == EGG_ERROR_NONE,"Proxy tx transfer error\n");
 	}
@@ -141,7 +141,7 @@ egg_error_t egg_send_single_image_async(uint8_t *image_buffer, int batch_size, p
 	args->batch_size = batch_size;
 	args->image_buffer = image_buffer;
 
-	pthread_create(&tid, NULL, egg_tx_thread, args);
+	pthread_create(&tid, NULL, egg_tx_thread, (void *) args);
 }
 
 void *tx_image_batch(int dma_count, uint8_t *image_buffer,  int batch, int height, int width, int channels)
@@ -152,7 +152,7 @@ void *tx_image_batch(int dma_count, uint8_t *image_buffer,  int batch, int heigh
  	 * buffer to a known pattern.
  	 */
 	pthread_mutex_lock(&buffer_write_lock); // ensures that interface to dma-proxy is used by only one thread
-	tx_proxy_interface_p->length = batch * width * heigth * channels;
+	tx_proxy_interface_p->length = batch * width * height * channels;
 		int i = 0;
 		for (int b = 0; b < batch; b++) {
 		    for (int h = 0; h < height; h++) {

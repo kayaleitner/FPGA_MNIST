@@ -50,7 +50,7 @@ egg_error_t egg_close_uio()
 	close(uio.info->fd);
 	uio.number = 0;
 	free(uio.info);
-	uio.ptr_to_mmap_addr = Null;
+	uio.ptr_to_mmap_addr = NULL;
 	return EGG_ERROR_NONE;
 	error:
 		return EGG_ERROR_UDEF;
@@ -102,11 +102,12 @@ egg_error_t egg_update_memctrl_addr(uint8_t addr)
 		return EGG_ERROR_DEVICE_COMMUNICATION_FAILED;
 }
 
+
 /**
  * Free network
  * @return Error code
  */
-egg_error_t egg_free_network()
+egg_error_t egg_free_network(network_t* net);
 {
 	CHECK(network.layer_number > 0,"Network not initialized! Nothing to free!");
 	for(int i=0; i < network.layer_number;i++)

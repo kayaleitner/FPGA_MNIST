@@ -46,16 +46,31 @@ egg_error_t egg_init_network(const char *ip_name, struct network_t *net);
 egg_error_t egg_close_network();
 
 /**
- * Executes the EggNet in forward (inference) mode
+ * 
+ * @param image_buffer 
+ * @param batch 
+ * @param height 
+ * @param width 
+ * @param channels 
+ * @param results 
+ * @return error code
+ */
+
+/**
+ * @brief Executes the EggNet in forward (inference) mode
+ * 
  * @param image_buffer A pointer to memory image buffer
  * @param batch number of batches
  * @param height image height, 28 for MNIST
  * @param width image width, 28 for MNIST
  * @param channels image channels, which is 1 for grayscale (like MNIST) or 3 for RGB
- * @param results a buffer where to store the results, must be [batch x 10]
- * @return error code
+ * @param [out]results a pointer to buffer-ptr where to store the results, must be [batch x 10]
+ * @param [out] batch_out pointer to output value
+ * @param [out]n 
+ * @return egg_error_t 
  */
-egg_error_t egg_forward(const uint8_t *image_buffer, int batch, int height, int width, int channels, int *results);
+egg_error_t egg_forward(const uint8_t *image_buffer, int batch, int height, int width, int channels, 
+                        int **results, int *batch_out, int *n);
 
 
 /**********************************************************************************************************************
