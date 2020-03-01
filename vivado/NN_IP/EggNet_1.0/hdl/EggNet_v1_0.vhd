@@ -74,7 +74,10 @@ entity EggNet_v1_0 is
 		m00_axis_tdata	: out std_logic_vector(C_M00_AXIS_TDATA_WIDTH-1 downto 0);
 		m00_axis_tkeep	: out std_logic_vector((C_M00_AXIS_TDATA_WIDTH/8)-1 downto 0);
 		m00_axis_tlast	: out std_logic;
-		m00_axis_tready	: in std_logic
+		m00_axis_tready	: in std_logic;
+    
+    -- Interrupts 
+    Res_itrp_o : out std_logic
     
     
     ;ila_s00_axis_tready	: out std_logic;
@@ -197,7 +200,8 @@ component MemCtrl_3x3 is
       Dbg_enable_i     : in std_logic;     
       -- Status
       Layer_properties_o : out std_logic_vector(C_S00_AXI_DATA_WIDTH-1 downto 0);
-      Status_o : out std_logic_vector(C_S00_AXI_DATA_WIDTH-1 downto 0) );
+      Status_o : out std_logic_vector(C_S00_AXI_DATA_WIDTH-1 downto 0));
+      
   end component MemCtrl_3x3;
 
   component ShiftRegister_3x3 is
@@ -512,17 +516,18 @@ EggNet_v1_0_S00_AXI_inst : EggNet_v1_0_S00_AXI
   status(0)(7 downto 0) <= (others => '0'); -- find something usefull here
   status(0)(15 downto 8) <= (others => '0'); -- Memory Controller Address = 0 for overall status. DO NOT CHANGE!
   status(0)(31 downto 16) <= x"F0F0"; -- find something usefull here 
-  Running_flag: rprocess(s00_axi_aclk,s00_axi_aresetn) is 
-    variable running : std_logic;
+  
+  Running_flag: process(s00_axi_aclk,s00_axi_aresetn) is 
+    variable debugging : std_logic;
   begin 
     if s00_axi_aresetn = '0' then 
-      all_running <= '0';
+      debugging := '0';
     elsif rising_edge(s00_axi_aclk) then 
-      running := '0';
+      debugging := '0';
       for i in 1 to MEM_CTRL_NUMBER loop 
-        running := running and status(i)(17);
+        debugging := debugging and status(i)(17);
       end loop; 
-      all_running <= running;  
+      all_running <= not debugging;  
     end if;
   end process; 
   
@@ -545,7 +550,8 @@ EggNet_v1_0_S00_AXI_inst : EggNet_v1_0_S00_AXI
   m00_axis_tkeep <= (others => '1');
   m00_axis_tlast <= l1_s_conv_tlast;
   l1_s_conv_tready <= m00_axis_tready;
-
+  
+  Res_itrp_o <= l1_s_conv_tlast;
 	-- User logic ends
 
 end arch_imp;
