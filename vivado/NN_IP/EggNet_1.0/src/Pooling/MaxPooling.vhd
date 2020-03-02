@@ -75,7 +75,7 @@ begin
   S_layer_tready_o <= s_ready and M_layer_tready_i and not(S_layer_tlast_i);
   fifo_wr <= s_ready and ready_latched and S_layer_tvalid_i; 
 
-  pooling: process(state, S_layer_tvalid_i, S_layer_tdata_i, S_layer_tkeep_i, S_layer_tlast_i, M_layer_tready_i, last, ready_latched)
+  pooling: process(state, S_layer_tvalid_i, S_layer_tdata_i, S_layer_tkeep_i, S_layer_tlast_i, M_layer_tready_i, last, ready_latched, output_en)
     variable col_cnt  : integer; 
     variable row_cnt  : integer;
     variable opt1, opt2, opt3, opt4 : std_logic_vector(DATA_WIDTH-1 downto 0);

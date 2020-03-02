@@ -26,14 +26,17 @@ architecture Behavioral of Serializer is
 	signal serialize : std_logic;
 	signal output_counter : integer range 0 to INPUT_CHANNELS - 1 := 0;
 	signal is_last : std_logic;
+	signal s_Valid_o : std_logic;
 begin
+	
+	Valid_o <= s_Valid_o;
+	Ready_o <= not(s_Valid_o) and Ready_i and not(Valid_i);
 
 	output: process(Clk_i)
 	begin
 		if n_Res_i = '0' then
-			Valid_o <= '0';
+			s_Valid_o <= '0';
 			Last_o <= '0';
-			Ready_o <= '0';
 			Data_o <= (others => '0');
 			serialize <= '0';
 			output_counter <= 0;
@@ -41,29 +44,30 @@ begin
 			Data_i_reg <= (others => '0');
 		elsif rising_edge(Clk_i) then
 			Data_o <= (others => '0');
-			Valid_o <= '0';
+			s_Valid_o <= '0';
 			Last_o <= '0';
 			if serialize = '1' then
-				Ready_o <= '0';
 				if Ready_i = '1' then
 					Data_o <= Data_i_reg((output_counter+1) * VECTOR_WIDTH - 1 downto output_counter*VECTOR_WIDTH);
-					Valid_o <= '1';
-				end if;
-				if output_counter = INPUT_CHANNELS - 1 then
-					if is_last = '1' then
-						Last_o <= '1';
+					s_Valid_o <= '1';
+					if output_counter = INPUT_CHANNELS - 1 then
+						if is_last = '1' then
+							Last_o <= '1';
+						end if;
+						serialize <= '0';
 					end if;
-					serialize <= '0';
+					output_counter <= (output_counter + 1) mod INPUT_CHANNELS;
 				end if;
-				output_counter <= (output_counter + 1) mod INPUT_CHANNELS;
 			else
-				Ready_o <= Ready_i;
 				if Valid_i = '1' then
 					is_last <= Last_i;
 					serialize <= '1';
-					Ready_o <= '0';
 					Data_i_reg <= Data_i;
-					output_counter <= (output_counter + 1) mod INPUT_CHANNELS;
+					if Ready_i = '1' then
+						s_Valid_o <= '1';
+						Data_o <= Data_i(VECTOR_WIDTH - 1 downto 0);
+						output_counter <= (output_counter + 1) mod INPUT_CHANNELS;
+					end if;
 				end if;
 			end if;
 		end if;
