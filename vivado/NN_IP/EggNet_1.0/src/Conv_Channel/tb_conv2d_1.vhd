@@ -3,6 +3,7 @@ use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 use std.textio.all;
 use ieee.std_logic_textio.all;
+use ieee.math_real.all;
 use work.kernel_pkg.all;
 use work.Conv2D_1;
 use work.MaxPooling;
@@ -32,16 +33,18 @@ architecture beh of tb_conv2d_1 is
 	signal s_C1_Last_o, s_C1_Last_i, s_C1_Ready_o : std_logic;
 	signal s_C1_X_i : std_logic_vector(BIT_WIDTH_IN*INPUT_CHANNELS*KERNEL_SIZE - 1 downto 0);
 	signal s_C1_Y_o : unsigned(OUTPUT_CHANNELS*BIT_WIDTH_OUT - 1 downto 0);
-	signal sim_ended : std_logic := '0';
-	signal conv2d_done : std_logic := '0';
-	signal pool_done : std_logic := '0';
 	signal s_Pool_Last_o, s_Pool_Valid_o, s_Pool_Ready_o : std_logic;
 	signal s_Pool_Data_o : std_logic_vector((BIT_WIDTH_OUT*OUTPUT_CHANNELS)-1 downto 0);
 	signal s_Serializer_Data_o : std_logic_vector(BIT_WIDTH_OUT-1 downto 0);
 	signal s_Serializer_Ready_o, s_Serializer_Valid_o, s_Serializer_Last_o : std_logic;
+	signal s_Serializer_Ready_i : std_logic;
 	
 	file kernel_file : text;
 	constant char_num : string(1 to 10) := "0123456789";
+	
+	signal sim_ended : std_logic := '0';
+	signal conv2d_done : std_logic := '0';
+	signal pool_done : std_logic := '0';
 	
 begin
   
@@ -84,25 +87,42 @@ begin
 		M_layer_tdata_o => s_Pool_Data_o,
 		M_layer_tkeep_o => open,
 		M_layer_tlast_o => s_Pool_Last_o,
-		M_layer_tready_i => s_Serializer_Ready_o
+		M_layer_tready_i => s_Serializer_Ready_i
 	);
 	
-	uit_2 : entity work.Serializer
-	generic map(
-		VECTOR_WIDTH => BIT_WIDTH_OUT,
-		INPUT_CHANNELS => OUTPUT_CHANNELS
-	) port map(
-		Clk_i => s_Clk_i,
-		n_Res_i => s_n_Res_i,
-		Valid_i => s_Pool_Valid_o,
-		Last_i => s_Pool_Last_o,
-		Ready_i => '1',
-		Valid_o => s_Serializer_Valid_o,
-		Last_o => s_Serializer_Last_o,
-		Ready_o => s_Serializer_Ready_o,
-		Data_i => s_Pool_Data_o,
-		Data_o => s_Serializer_Data_o
-	);
+	-- uit_2 : entity work.Serializer
+	-- generic map(
+		-- VECTOR_WIDTH => BIT_WIDTH_OUT,
+		-- INPUT_CHANNELS => OUTPUT_CHANNELS
+	-- ) port map(
+		-- Clk_i => s_Clk_i,
+		-- n_Res_i => s_n_Res_i,
+		-- Valid_i => s_Pool_Valid_o,
+		-- Last_i => s_Pool_Last_o,
+		-- Ready_i => s_Serializer_Ready_i,
+		-- Valid_o => s_Serializer_Valid_o,
+		-- Last_o => s_Serializer_Last_o,
+		-- Ready_o => s_Serializer_Ready_o,
+		-- Data_i => s_Pool_Data_o,
+		-- Data_o => s_Serializer_Data_o
+	-- );
+  
+	set_ready : process(s_Clk_i)
+		variable seed1 : positive := 1;
+		variable seed2 : positive := 1;
+		variable x : real;
+		variable y : integer;
+	begin
+		if rising_edge(s_Clk_i) then
+			uniform(seed1, seed2, x);
+			y := integer(floor(x * 2.0));
+			if y = 0 then
+				s_Serializer_Ready_i <= '1';
+			else
+				s_Serializer_Ready_i <= '0';
+			end if;
+		end if;
+	end process;
   
 	-- Generates the clock signal
 	clkgen : process
@@ -212,6 +232,7 @@ begin
 		for L in 0 to INPUT_ARRAY_SIZE - 1 loop
 			wait until rising_edge(s_Clk_i);
 			while s_C1_Ready_o = '0' loop
+				--s_C1_Valid_i <= '0';
 				wait until rising_edge(s_Clk_i);
 			end loop;
 			if (L mod IMG_WIDTH) = IMG_WIDTH - 1 then
@@ -227,13 +248,14 @@ begin
 			end loop;
 		end loop;
 		wait until rising_edge(s_Clk_i);
+		s_C1_Last_i <= '0';
 		s_C1_Valid_i <= '0';
 		s_C1_X_i <= (others => '0');
 		for L in 0 to 100 loop
 			wait until rising_edge(s_Clk_i);
 		end loop;
 		conv2d_done <= '1';
-		for L in 0 to 100 loop
+		for L in 0 to 200 loop
 			wait until rising_edge(s_Clk_i);
 		end loop;
 		pool_done <= '1';
