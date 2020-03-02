@@ -49,8 +49,11 @@ architecture Behavioral of MaxPooling is
   signal output_en      : std_logic;
   signal s_ready        : std_logic;
   signal m_tvalid       : std_logic;
-  signal last : std_logic;
   signal s_opt1, s_opt2, s_opt3, s_opt4 : std_logic_vector(DATA_WIDTH-1 downto 0) := (others => '0');
+  signal ready_latched  : std_logic;
+  signal s_st : integer := 0;
+  signal last : std_logic;
+  signal s_in : std_logic_vector(DATA_WIDTH-1 downto 0) := (others => '0');
   
 begin 
 
@@ -69,9 +72,10 @@ begin
   end generate;
   M_layer_tvalid_o <= m_tvalid;
   M_layer_tkeep_o <= (others => '1') when m_tvalid = '1' else (others => '0');
-  S_layer_tready_o <= s_ready and not S_layer_tlast_i;
+  S_layer_tready_o <= s_ready and M_layer_tready_i and not(S_layer_tlast_i);
+  fifo_wr <= s_ready and ready_latched and S_layer_tvalid_i; 
 
-  pooling: process(state, S_layer_tvalid_i, S_layer_tdata_i, S_layer_tkeep_i, S_layer_tlast_i, M_layer_tready_i)
+  pooling: process(state, S_layer_tvalid_i, S_layer_tdata_i, S_layer_tkeep_i, S_layer_tlast_i, M_layer_tready_i, last, ready_latched)
     variable col_cnt  : integer; 
     variable row_cnt  : integer;
     variable opt1, opt2, opt3, opt4 : std_logic_vector(DATA_WIDTH-1 downto 0);
@@ -96,12 +100,14 @@ begin
 	  state_next <= state;
       case(state) is 
         when INIT => 
+		  s_st <= 0;
           fifo_srst <= '1';
           s_ready <= '0'; 
           fifo_rd <= '0';
           state_next <= START; 
           
         when START => 
+		  s_st <= 1;
           fifo_srst <= '0'; 
           s_ready <= '0'; 
           fifo_rd <= '0';     
@@ -109,10 +115,12 @@ begin
           state_next <= FIRST_LINE;
         
         when FIRST_LINE => 
+		  s_st <= 2;
           s_ready <= '1';
           if fifo_wr = '1' then 
 		    if col_cnt = LAYER_WIDTH-1 then 
               col_cnt := 0;
+			  fifo_rd <= '1';
               state_next <= POOL; 
             else 
               fifo_rd <= '0';
@@ -121,42 +129,49 @@ begin
           end if;
 
         when POOL => 
+		  s_st <= 3;
           s_ready <= M_layer_tready_i;
-          fifo_rd <= S_layer_tvalid_i;
-          if fifo_wr = '1' then
+		  fifo_rd <= '0';
+          if last = '1' then 
+            M_layer_tlast_o <= '1';
+            state_next <= START; 
+            fifo_srst <= '1'; 
+            s_ready <= '0';      
+          end if; 
+          if ready_latched = '1' and S_layer_tvalid_i = '1' then
+		    if S_layer_tlast_i /= '1' then
+		      fifo_rd <= '1';
+			end if;
+			s_in <= S_layer_tdata_i(DATA_WIDTH-1 downto 0);
             for i in 0 to CHANNEL_NUMBER-1 loop
               pool_buffer_0(i) <= fifo_out(i);
               pool_buffer_1(i) <= S_layer_tdata_i(((i+1)*DATA_WIDTH)-1 downto (i*DATA_WIDTH));
 			  pool_buffer_2(i) <= pool_buffer_1(i);
             end loop;                        
-            if output_en = '1' or last = '1' then 
+            if output_en = '1' then 
               m_tvalid <= '1';
               -- Pooling for all channels 
               for i in 0 to CHANNEL_NUMBER-1 loop
-			    opt1 := pool_buffer_2(i);
+			    opt1 := S_layer_tdata_i(((i+1)*DATA_WIDTH)-1 downto (i*DATA_WIDTH));
 			    opt2 := fifo_out(i);
 			    opt3 := pool_buffer_0(i);
-			    opt4 := pool_buffer_1(i);
-				s_opt1 <= opt1;
-				s_opt2 <= opt2;
-				s_opt3 <= opt3;
-				s_opt4 <= opt4;
-                if unsigned(opt1) > unsigned(opt2) and unsigned(opt1) > unsigned(opt3) and unsigned(opt1) > unsigned(opt4) then
+				opt4 := pool_buffer_1(i);
+				if i = 0 then
+				  s_opt1 <= opt1;
+				  s_opt2 <= opt2;
+				  s_opt3 <= opt3;
+				  s_opt4 <= opt4;
+				end if;
+                if unsigned(opt1) >= unsigned(opt2) and unsigned(opt1) >= unsigned(opt3) and unsigned(opt1) >= unsigned(opt4) then
 				  M_layer_tdata_o(((i+1)*DATA_WIDTH)-1 downto (i*DATA_WIDTH)) <= opt1;
-                elsif unsigned(opt2) > unsigned(opt3) and unsigned(opt2) > unsigned(opt4) and unsigned(opt2) > unsigned(opt1) then
+                elsif unsigned(opt2) >= unsigned(opt3) and unsigned(opt2) >= unsigned(opt4) and unsigned(opt2) >= unsigned(opt1) then
 				  M_layer_tdata_o(((i+1)*DATA_WIDTH)-1 downto (i*DATA_WIDTH)) <= opt2;
-                elsif unsigned(opt3) > unsigned(opt4) and unsigned(opt3) > unsigned(opt1) and unsigned(opt3) > unsigned(opt2) then
+                elsif unsigned(opt3) >= unsigned(opt4) and unsigned(opt3) >= unsigned(opt1) and unsigned(opt3) >= unsigned(opt2) then
 				  M_layer_tdata_o(((i+1)*DATA_WIDTH)-1 downto (i*DATA_WIDTH)) <= opt3;
 				else
 				  M_layer_tdata_o(((i+1)*DATA_WIDTH)-1 downto (i*DATA_WIDTH)) <= opt4;
 				end if;
               end loop;
-              if last = '1' then 
-                M_layer_tlast_o <= '1';
-                state_next <= START; 
-                fifo_srst <= '1'; 
-                s_ready <= '0';      
-              end if; 
             end if;
             if col_cnt >= LAYER_WIDTH then 
               row_cnt := row_cnt +1;
@@ -164,35 +179,31 @@ begin
             else  
               col_cnt := col_cnt +1;
             end if;
-		  else 
-            for i in 0 to CHANNEL_NUMBER-1 loop
-              pool_buffer_1(i) <= S_layer_tdata_i(((i+1)*DATA_WIDTH)-1 downto (i*DATA_WIDTH));
-		    end loop;
           end if; 
         when others => 
           state_next <= INIT;
-      end case;    
+      end case;  
     end if;
   end process;
   
   sync : process(Layer_clk_i,Layer_aresetn_i)
   begin
-    fifo_wr <= S_layer_tvalid_i and s_ready; 
     if Layer_aresetn_i = '0' then
 	  state <= INIT;
-	  last <= '0';
       output_en <= '0';
+	  ready_latched <= '0';
+	  last <= '0';
 	elsif rising_edge(Layer_clk_i) then
-      if state = POOL then 
-        output_en <= not output_en;
+	  last <= S_layer_tlast_i;
+	  ready_latched <= M_layer_tready_i;
+      if state = POOL then
+        if S_layer_tvalid_i = '1' then	  
+          output_en <= not output_en;
+		end if;
 	  else
         output_en <= '0';
 	  end if;
-	  if state = FIRST_LINE and state_next = POOL then
-        output_en <= '1';
-	  end if;
 	  state <= state_next;
-	  last <= S_layer_tlast_i;
 	end if;
   end process;
 

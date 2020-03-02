@@ -190,9 +190,6 @@ begin
 			while s_C0_Ready_o = '0' loop
 				wait until rising_edge(s_Clk_i);
 			end loop;
-			s_C0_Last_i <= '0';
-			s_C0_X_i <= (others => '0');
-			s_C0_Valid_i <= '0';
 			if (J mod IMG_WIDTH) = IMG_WIDTH - 1 then
 				s_C0_Last_i <= '1';
 			else

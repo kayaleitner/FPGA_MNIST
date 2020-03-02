@@ -3,6 +3,7 @@ use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 use std.textio.all;
 use ieee.std_logic_textio.all;
+use ieee.math_real.all;
 use work.MaxPooling;
 
 entity tb_MaxPooling is
@@ -78,6 +79,23 @@ begin
 		wait;
 	end process; 
 	
+	set_ready : process(s_Clk_i)
+		variable seed1 : positive := 1;
+		variable seed2 : positive := 1;
+		variable x : real;
+		variable y : integer;
+	begin
+		if rising_edge(s_Clk_i) then
+			uniform(seed1, seed2, x);
+			y := integer(floor(x * 2.0));
+			if y = 0 then
+				s_Ready_i <= '1';
+			else
+				s_Ready_i <= '1';
+			end if;
+		end if;
+	end process;
+	
 	get_output : process(s_Clk_i, sim_ended)
 		variable output : t_output_array;
         variable file_name_out : string(1 to 28) := "tmp/pooling_sim_output00.txt";
@@ -85,6 +103,7 @@ begin
 		variable K : integer := 0;
 	begin
 		if s_Valid_o = '1' and rising_edge(s_Clk_i) then
+			--report integer'image(to_integer(unsigned(s_M_layer_tdata_o(DATA_WIDTH - 1 downto 0))));
 			for I in 0 to CHANNEL_NUMBER - 1 loop
 				output(I)(K) := to_integer(unsigned(s_M_layer_tdata_o((I+1)*DATA_WIDTH - 1 downto I*DATA_WIDTH)));
 			end loop;
@@ -126,7 +145,6 @@ begin
 		
 		s_S_layer_tdata_i <= (others => '0');
 		s_Valid_i <= '0';
-		s_Ready_i <= '1';
 		s_Last_i <= '0';
 		wait until rising_edge(s_n_Res_i);
 		wait until rising_edge(s_Ready_o);
@@ -152,6 +170,7 @@ begin
 			end if;
 		end loop;
 		wait until rising_edge(s_Clk_i);
+		s_Last_i <= '0';
 		s_Valid_i <= '0';
 		s_S_layer_tdata_i <= (others => '0');
 		wait until rising_edge(s_Clk_i);

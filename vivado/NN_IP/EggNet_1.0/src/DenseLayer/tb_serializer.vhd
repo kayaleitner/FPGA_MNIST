@@ -19,7 +19,7 @@ architecture Behavioral of tb_Serializer is
 	signal s_Valid_o : std_logic;
 	signal s_Last_o : std_logic;
 	signal s_Ready_o : std_logic;
-	signal s_Data_i : unsigned(INPUT_CHANNELS*VECTOR_WIDTH - 1 downto 0);
+	signal s_Data_i : std_logic_vector(INPUT_CHANNELS*VECTOR_WIDTH - 1 downto 0);
 	signal s_Data_o : std_logic_vector(VECTOR_WIDTH - 1 downto 0);
 	
 	type t_int_2d_array is array(0 to 3, 0 to INPUT_CHANNELS - 1) of integer;
@@ -86,7 +86,7 @@ begin
 			wait until rising_edge(s_Clk_i);
 			s_Valid_i <= '1';
 			for I in 0 to INPUT_CHANNELS - 1 loop
-				s_Data_i((I+1)*VECTOR_WIDTH - 1 downto I*VECTOR_WIDTH) <= to_unsigned(input(J, I), VECTOR_WIDTH);
+				s_Data_i((I+1)*VECTOR_WIDTH - 1 downto I*VECTOR_WIDTH) <= std_logic_vector(to_unsigned(input(J, I), VECTOR_WIDTH));
 			end loop;
 			if J = 3 then
 				s_Last_i <= '1';
