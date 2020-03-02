@@ -1,6 +1,7 @@
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
+use work.STD_FIFO;
 
 entity MaxPooling is
   Generic(
@@ -32,28 +33,15 @@ end MaxPooling;
 
 architecture Behavioral of MaxPooling is
 
-  component fifo_generator_1 IS
-    PORT (
-      clk : IN STD_LOGIC;
-      srst : IN STD_LOGIC;
-      din : IN STD_LOGIC_VECTOR(DATA_WIDTH-1 DOWNTO 0);
-      wr_en : IN STD_LOGIC;
-      rd_en : IN STD_LOGIC;
-      dout : OUT STD_LOGIC_VECTOR(DATA_WIDTH-1 DOWNTO 0);
-      full : OUT STD_LOGIC;
-      empty : OUT STD_LOGIC
-    );
-  END component fifo_generator_1;  
-
-
   type  STATES is (INIT,START,FIRST_LINE,POOL); 
   type  FIFO_TYPE IS ARRAY(CHANNEL_NUMBER-1 downto 0) OF std_logic_vector(DATA_WIDTH-1 downto 0); 
   type  BUFFER_TYPE IS ARRAY(CHANNEL_NUMBER-1 downto 0) OF std_logic_vector(DATA_WIDTH-1 downto 0); 
   
-  signal state        :STATES;
+  signal state, state_next        :STATES;
   
   signal pool_buffer_0  : BUFFER_TYPE;
   signal pool_buffer_1  : BUFFER_TYPE;
+  signal pool_buffer_2  : BUFFER_TYPE;
   signal fifo_out       : FIFO_TYPE;
   signal fifo_srst      : std_logic;
   signal fifo_wr        : std_logic;
@@ -61,30 +49,36 @@ architecture Behavioral of MaxPooling is
   signal output_en      : std_logic;
   signal s_ready        : std_logic;
   signal m_tvalid       : std_logic;
+  signal s_opt1, s_opt2, s_opt3, s_opt4 : std_logic_vector(DATA_WIDTH-1 downto 0) := (others => '0');
+  signal ready_latched  : std_logic;
+  signal s_st : integer := 0;
+  signal last : std_logic;
+  signal s_in : std_logic_vector(DATA_WIDTH-1 downto 0) := (others => '0');
   
 begin 
 
   linebuffer: for i in 0 to CHANNEL_NUMBER-1 generate
-    channelbuffer: fifo_generator_1 
+    channelbuffer: entity work.STD_FIFO 
       port map (
-        clk   => Layer_clk_i,
-        srst  => fifo_srst,
-        din   => S_layer_tdata_i(((i+1)*DATA_WIDTH)-1 downto (i*DATA_WIDTH)),
-        wr_en => fifo_wr,
-        rd_en => fifo_rd,
-        dout  => fifo_out(i),
-        full  => open,
-        empty => open 
+        Clk_i   => Layer_clk_i,
+        Rst_i  => fifo_srst,
+        Data_i   => S_layer_tdata_i(((i+1)*DATA_WIDTH)-1 downto (i*DATA_WIDTH)),
+        WriteEn_i => fifo_wr,
+        ReadEn_i => fifo_rd,
+        Data_o  => fifo_out(i),
+        Full_o  => open,
+        Empty_o => open 
       );  
   end generate;
   M_layer_tvalid_o <= m_tvalid;
   M_layer_tkeep_o <= (others => '1') when m_tvalid = '1' else (others => '0');
-  S_layer_tready_o <= s_ready;
-  fifo_wr <= S_layer_tvalid_i and s_ready; 
+  S_layer_tready_o <= s_ready and M_layer_tready_i and not(S_layer_tlast_i);
+  fifo_wr <= s_ready and ready_latched and S_layer_tvalid_i; 
 
-  pooling: process(Layer_clk_i,Layer_aresetn_i)
+  pooling: process(state, S_layer_tvalid_i, S_layer_tdata_i, S_layer_tkeep_i, S_layer_tlast_i, M_layer_tready_i, last, ready_latched, output_en)
     variable col_cnt  : integer; 
     variable row_cnt  : integer;
+    variable opt1, opt2, opt3, opt4 : std_logic_vector(DATA_WIDTH-1 downto 0);
   begin
     if Layer_aresetn_i = '0' then 
       m_tvalid <= '0';
@@ -93,98 +87,91 @@ begin
       for i in 0 to CHANNEL_NUMBER-1 loop
         pool_buffer_0(i) <= (others => '0');
         pool_buffer_1(i) <= (others => '0');
+		pool_buffer_2(i) <= (others => '0');
       end loop;  
       s_ready <= '0';  
       fifo_rd <= '0';
       fifo_srst <= '0';
-      state <= INIT;
       col_cnt := 0; 
-      output_en <= '0';
-    elsif rising_edge(Layer_clk_i) then 
+    else
+      M_layer_tlast_o  <= '0';
+      M_layer_tdata_o  <= (others => '0');
+      m_tvalid <= '0';
+	  state_next <= state;
       case(state) is 
         when INIT => 
+		  s_st <= 0;
           fifo_srst <= '1';
           s_ready <= '0'; 
           fifo_rd <= '0';
-          state <= START; 
+          state_next <= START; 
           
         when START => 
+		  s_st <= 1;
           fifo_srst <= '0'; 
           s_ready <= '0'; 
-          fifo_rd <= '0';          
-          state <= FIRST_LINE;
+          fifo_rd <= '0';     
+		  col_cnt := 0;
+          state_next <= FIRST_LINE;
         
         when FIRST_LINE => 
+		  s_st <= 2;
           s_ready <= '1';
-          output_en <= '0';
           if fifo_wr = '1' then 
-            if col_cnt = LAYER_WIDTH-1 then 
+		    if col_cnt = LAYER_WIDTH-1 then 
               col_cnt := 0;
-              state <= POOL; 
-              fifo_rd <= '1';
+			  fifo_rd <= '1';
+              state_next <= POOL; 
             else 
-              col_cnt := col_cnt +1;
               fifo_rd <= '0';
+              col_cnt := col_cnt +1;
             end if;  
           end if;
 
         when POOL => 
-          s_ready <= M_layer_tready_i;  
-          if fifo_wr = '1' then 
-            fifo_rd <= '1';
-            output_en <= not output_en;
+		  s_st <= 3;
+          s_ready <= M_layer_tready_i;
+		  fifo_rd <= '0';
+          if last = '1' then 
+            M_layer_tlast_o <= '1';
+            state_next <= START; 
+            fifo_srst <= '1'; 
+            s_ready <= '0';      
+          end if; 
+          if ready_latched = '1' and S_layer_tvalid_i = '1' then
+		    if S_layer_tlast_i /= '1' then
+		      fifo_rd <= '1';
+			end if;
+			s_in <= S_layer_tdata_i(DATA_WIDTH-1 downto 0);
             for i in 0 to CHANNEL_NUMBER-1 loop
               pool_buffer_0(i) <= fifo_out(i);
               pool_buffer_1(i) <= S_layer_tdata_i(((i+1)*DATA_WIDTH)-1 downto (i*DATA_WIDTH));
+			  pool_buffer_2(i) <= pool_buffer_1(i);
             end loop;                        
             if output_en = '1' then 
-              m_tvalid <= '1';               
+              m_tvalid <= '1';
               -- Pooling for all channels 
               for i in 0 to CHANNEL_NUMBER-1 loop
-                -- starting with S_layer_tdata_i because it is the most critical signal in case of timing 
-                if S_layer_tdata_i(((i+1)*DATA_WIDTH)-1 downto (i*DATA_WIDTH)) > pool_buffer_0(i) and
-                   S_layer_tdata_i(((i+1)*DATA_WIDTH)-1 downto (i*DATA_WIDTH)) > fifo_out(i)      and
-                   S_layer_tdata_i(((i+1)*DATA_WIDTH)-1 downto (i*DATA_WIDTH)) > pool_buffer_1(i) then 
-                  -- S_layer_tdata_i is the paximum value 
-                  M_layer_tdata_o(((i+1)*DATA_WIDTH)-1 downto (i*DATA_WIDTH)) <= 
-                                          S_layer_tdata_i(((i+1)*DATA_WIDTH)-1 downto (i*DATA_WIDTH));
-                -- next fifo_out because it is used some where else and therefore timing is more critical
-                elsif fifo_out(i)  > pool_buffer_0(i) and fifo_out(i)  > pool_buffer_1(i) then -- if S_layer_tdata_i is not the maximum value it does not have to be considered in the next stage 
-                  M_layer_tdata_o(((i+1)*DATA_WIDTH)-1 downto (i*DATA_WIDTH)) <= fifo_out(i);
-                -- pool_buffer FF can be freely placed inside the FPGA and therefore timing is not critical
-                elsif pool_buffer_0(i) > pool_buffer_1(i) then -- if fifo_out is not the maximum value it does not have to be considered in the next stage
-                  M_layer_tdata_o(((i+1)*DATA_WIDTH)-1 downto (i*DATA_WIDTH)) <= pool_buffer_0(i);
-                else -- if all others are not the maximum pool_buffer_1 is the maximum value. If some values are equal pool_buffer_1 wins (leads maybe to some issues)
-                  M_layer_tdata_o(((i+1)*DATA_WIDTH)-1 downto (i*DATA_WIDTH)) <= pool_buffer_1(i);  
-                end if;
-              end loop;   
-              if S_layer_tlast_i = '1' then 
-                M_layer_tlast_o <= '1';
-                state <= START; 
-                fifo_srst <= '1'; 
-                s_ready <= '0'; 
-                fifo_rd <= '0';                
-              end if; 
-            else 
-              -- If matrix width is odd 
-              if S_layer_tlast_i = '1' then 
-                M_layer_tlast_o <= '1';
-                m_tvalid <= '1'; 
-                for i in 0 to CHANNEL_NUMBER-1 loop  
-                  if S_layer_tdata_i(((i+1)*DATA_WIDTH)-1 downto (i*DATA_WIDTH)) > fifo_out(i) then 
-                    M_layer_tdata_o(((i+1)*DATA_WIDTH)-1 downto (i*DATA_WIDTH)) <= 
-                                          S_layer_tdata_i(((i+1)*DATA_WIDTH)-1 downto (i*DATA_WIDTH));
-                  else 
-                    M_layer_tdata_o(((i+1)*DATA_WIDTH)-1 downto (i*DATA_WIDTH)) <= fifo_out(i);
-                  end if;
-                end loop;  
-                state <= START; 
-                fifo_srst <= '1'; 
-                s_ready <= '0'; 
-                fifo_rd <= '0';                 
-              else 
-                m_tvalid <= '0'; 
-              end if;
+			    opt1 := S_layer_tdata_i(((i+1)*DATA_WIDTH)-1 downto (i*DATA_WIDTH));
+			    opt2 := fifo_out(i);
+			    opt3 := pool_buffer_0(i);
+				opt4 := pool_buffer_1(i);
+				if i = 0 then
+				  s_opt1 <= opt1;
+				  s_opt2 <= opt2;
+				  s_opt3 <= opt3;
+				  s_opt4 <= opt4;
+				end if;
+                if unsigned(opt1) >= unsigned(opt2) and unsigned(opt1) >= unsigned(opt3) and unsigned(opt1) >= unsigned(opt4) then
+				  M_layer_tdata_o(((i+1)*DATA_WIDTH)-1 downto (i*DATA_WIDTH)) <= opt1;
+                elsif unsigned(opt2) >= unsigned(opt3) and unsigned(opt2) >= unsigned(opt4) and unsigned(opt2) >= unsigned(opt1) then
+				  M_layer_tdata_o(((i+1)*DATA_WIDTH)-1 downto (i*DATA_WIDTH)) <= opt2;
+                elsif unsigned(opt3) >= unsigned(opt4) and unsigned(opt3) >= unsigned(opt1) and unsigned(opt3) >= unsigned(opt2) then
+				  M_layer_tdata_o(((i+1)*DATA_WIDTH)-1 downto (i*DATA_WIDTH)) <= opt3;
+				else
+				  M_layer_tdata_o(((i+1)*DATA_WIDTH)-1 downto (i*DATA_WIDTH)) <= opt4;
+				end if;
+              end loop;
             end if;
             if col_cnt >= LAYER_WIDTH then 
               row_cnt := row_cnt +1;
@@ -192,13 +179,32 @@ begin
             else  
               col_cnt := col_cnt +1;
             end if;
-          else 
-            fifo_rd <= '0';
           end if; 
         when others => 
-          state <= INIT;
-      end case;    
+          state_next <= INIT;
+      end case;  
     end if;
+  end process;
+  
+  sync : process(Layer_clk_i,Layer_aresetn_i)
+  begin
+    if Layer_aresetn_i = '0' then
+	  state <= INIT;
+      output_en <= '0';
+	  ready_latched <= '0';
+	  last <= '0';
+	elsif rising_edge(Layer_clk_i) then
+	  last <= S_layer_tlast_i;
+	  ready_latched <= M_layer_tready_i;
+      if state = POOL then
+        if S_layer_tvalid_i = '1' then	  
+          output_en <= not output_en;
+		end if;
+	  else
+        output_en <= '0';
+	  end if;
+	  state <= state_next;
+	end if;
   end process;
 
 end Behavioral;
