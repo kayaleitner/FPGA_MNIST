@@ -88,11 +88,11 @@ begin
 	begin
 		if rising_edge(s_Clk_i) then
 			uniform(seed1, seed2, x);
-			y := integer(floor(x * 2.0));
+			y := integer(floor(x * 32.0));
 			if y = 0 then
-				s_Ready_i <= '0';
-			else
 				s_Ready_i <= '1';
+			else
+				s_Ready_i <= '0';
 			end if;
 		end if;
 	end process;
