@@ -39,12 +39,12 @@ def perform_fake_quant(weight_dict, target_bits, frac_bits, target_dtype=np.floa
     Performs fake quantization, meaning all values will be rounded to
     their expression
     Args:
-        weight_dict:
-        target_bits:
-        frac_bits:
+        weight_dict: Dictionary containing numpy arrays
+        target_bits: Target bit length of the integer values
+        frac_bits: Target fraction bit width
 
     Returns:
-
+        Dictionary with original keys, containing quantized values
     """
 
     assert target_bits > frac_bits
@@ -63,6 +63,36 @@ def perform_fake_quant(weight_dict, target_bits, frac_bits, target_dtype=np.floa
         # Those are now ints, convert back to floats
         w = (w * scale).astype(dtype=target_dtype)
 
+        d_out[key] = w
+
+    return d_out
+
+
+def perform_real_quant(weight_dict, target_bits, frac_bits):
+    """
+    Performs real quantization, meaning all values will be rounded to
+    their fixed point representation
+    Args:
+        weight_dict: Dictionary containing numpy arrays
+        target_bits: Target bit length of the integer values
+        frac_bits: Target fraction bit width
+
+    Returns:
+        Dictionary with original keys, containing quantized values
+    """
+
+    assert target_bits > frac_bits
+
+    value_bits = target_bits - frac_bits
+
+    a_max = 2 ** (value_bits - 1) - 1
+    a_min = -2 ** (value_bits - 1)
+    scale = 1 / 2 ** frac_bits
+
+    d_out = {}
+    for key, value in weight_dict.items():
+        # round weights
+        w = np.clip(value / scale, a_min=a_min, a_max=a_max).round().astype(np.int)
         d_out[key] = w
 
     return d_out
