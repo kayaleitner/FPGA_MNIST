@@ -6,7 +6,9 @@ use STD.textio.all;
 
 entity tb_memctrl is
 Generic (
-  PATH : string := "C:/Users/lukas/Documents/SoC_Lab/FPGA_MNIST/vivado/NN_IP/EggNet_1.0/sim/MemCtrl/"
+  -- PATH : string := "C:/Users/lukas/Documents/SoC_Lab/FPGA_MNIST/vivado/NN_IP/EggNet_1.0/sim/MemCtrl/"
+  -- Try relative path
+  PATH : string := "./"
  );
 end tb_memctrl;
 
@@ -521,7 +523,7 @@ begin
     )
     port map (
       Clk_i   => layer_clk,
-      nRst_i  => m_l2_fifo_srst,
+      Rst_i  => m_l2_fifo_srst,
       Data_i   => m_l2_fifo_in,
       WriteEn_i => m_l2_fifo_wr,
       ReadEn_i => m_l2_fifo_rd,

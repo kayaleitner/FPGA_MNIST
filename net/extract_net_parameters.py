@@ -4,6 +4,9 @@ import torch
 import keras
 import shutil
 
+# The line below is needed so that torch.load() works as expected
+from train_torch import LeNetV2, ConvBN, LinearRelu, Flatten
+
 # Chose if you want to use the training parameters from Keras or Torch
 EXTRACT_FROM_KERAS = True
 EXTRACT_FROM_TROCH = True
@@ -39,22 +42,27 @@ def extract(cleanup=True, extract_keras=EXTRACT_FROM_KERAS, extract_torch=EXTRAC
 
     if extract_torch:
         tmodel = load_torch()
-        tmodel.eval()  # Put in eval mode
-        for key, weights in tmodel.state_dict().items():
-            weights = weights.numpy()
-            vals = weights.flatten(order='C')
-            np.savetxt(os.path.join(EXPORT_DIR, 't_{}.txt'.format(key)), vals,
-                       header=str(weights.shape))
+        save_torch_model_weights(tmodel)
 
 
-def load_torch():
+def save_torch_model_weights(tmodel):
+    tmodel.eval()  # Put in eval mode
+    for key, weights in tmodel.state_dict().items():
+        weights = weights.numpy()
+        vals = weights.flatten(order='C')
+        np.savetxt(os.path.join(EXPORT_DIR, 't_{}.txt'.format(key)), vals,
+                   header=str(weights.shape))
+
+
+def load_torch(filepath=TORCH_SAVE_FILE):
     from train_torch import get_lenet_model
+
     # Create a model instance, make sure that save data and source code is in sync
-    model = get_lenet_model()
-    model.load_state_dict(torch.load(TORCH_STATES_SAVE_FILE))
+    # model = get_lenet_model()
+    # model.load_state_dict(torch.load(TORCH_STATES_SAVE_FILE))
 
     # ToDo: Better way would be the line below but it doesnt work for me :(
-    # model = torch.load(TORCH_SAVE_FILE)
+    model = torch.load(filepath)
 
     return model
 
@@ -70,6 +78,73 @@ def load_keras() -> keras.Model:
     model = keras.models.model_from_json(json_config)
     model.load_weights(KERAS_WEIGHTS_FILE)
     return model
+
+
+def _read_np_tensor(weight_file):
+    with open(weight_file) as f:
+        init_line = f.readline()
+
+    # assume the first line is a comment
+    assert init_line[0] == '#'
+    p1 = init_line.find('(')
+    p2 = init_line.find(')')
+    dims = [int(ds) for ds in init_line[p1 + 1:p2].split(sep=',') if len(ds) > 0]
+
+    return np.loadtxt(weight_file).reshape(dims)
+
+
+def reorder(x):
+    co, ci, h, w, = x.shape
+    x_ = np.zeros(shape=(h, w, ci, co), dtype=x.dtype)
+
+    for hx in range(h):
+        for wx in range(w):
+            for cix in range(ci):
+                for cox in range(co):
+                    x_[hx, wx, cix, cox] = x[cox, cix, hx, wx]
+    return x_
+
+
+def read_np_torch(ordering='BCHW', target_dtype=None):
+    d = {
+        'cn1.b': _read_np_tensor('np/t_0.0.bias.txt'),
+        'cn1.k': _read_np_tensor('np/t_0.0.weight.txt'),
+        'cn2.b': _read_np_tensor('np/t_3.0.bias.txt'),
+        'cn2.k': _read_np_tensor('np/t_3.0.weight.txt'),
+        'fc1.b': _read_np_tensor('np/t_7.0.bias.txt'),
+        'fc1.w': _read_np_tensor('np/t_7.0.weight.txt'),
+        'fc2.b': _read_np_tensor('np/t_9.0.bias.txt'),
+        'fc2.w': _read_np_tensor('np/t_9.0.weight.txt'),
+    }
+
+    if ordering is 'BCHW':
+        pass
+    elif ordering is 'BHWC':
+        k1 = np.moveaxis(d['cn1.k'], [0, 1], [3, 2])
+        k2 = np.moveaxis(d['cn2.k'], [0, 1], [3, 2])
+
+        # k1 = reorder(d['cn1.k'])
+        # k2 = reorder(d['cn2.k'])
+
+        assert k1[1, 2, 0, 4] == d['cn1.k'][4, 0, 1, 2]
+        assert k2[1, 2, 3, 4] == d['cn2.k'][4, 3, 1, 2]
+
+        d['cn1.k'] = k1
+        d['cn2.k'] = k2
+        d['fc1.w'] = np.moveaxis(d['fc1.w'], 0, 1)
+        d['fc2.w'] = np.moveaxis(d['fc2.w'], 0, 1)
+
+
+
+    else:
+        raise NotImplementedError('Expected ordering to be "BCHW" or "BHWC" but is: {}'.format(ordering))
+
+    if target_dtype is not None:
+        d_old = d
+        d = {}
+        for key, values in d_old.items():
+            d[key] = values.astype(target_dtype)
+    return d
 
 
 if __name__ == '__main__':

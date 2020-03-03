@@ -1,3 +1,0 @@
-[submodule "src/cmake/Xilinx"]
-	path = src/cmake/Xilinx
-	url = https://github.com/Xilinx/cmakeModules.git
