@@ -87,7 +87,7 @@ typedef struct layer_s {
 
 typedef struct network_s {
     uint8_t           layer_number;
-    struct layer_t**  layers;
+    layer_t**         layers;
     pixel_t**         results;
     volatile uint32_t result_number;
     uint8_t           debug_active;

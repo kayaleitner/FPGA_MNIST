@@ -31,3 +31,16 @@ Then copy the sysroots folder to your SDK project workspace
 10. select destination folder for your application (example: /tmp/dma-proxy.elf)
 10. Press run
 
+
+## Usage Dockcross
+
+Compilation can also happen via docker. See the [Dockcross Project](https://github.com/dockcross/dockcross) for details.
+To compile this project run the following commands inside a terminal (and check your docker instance is running):
+
+````shell script
+mkdir build
+docker run --rm dockcross/linux-armv7a > ./dockcross-linux-armv7a
+chmod +x ./dockcross-linux-armv7a
+dockcross-linux-armv7a cmake -Bbuild -Heggnet
+dockcross-linux-armv7a cmake --build build
+````

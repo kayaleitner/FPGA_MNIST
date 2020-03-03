@@ -8,7 +8,7 @@
  * Initializes the network. Searches for the corresponding UIO device, loads and initializes the dma proxy driver
  * @return Error code
  */
-egg_error_t egg_init_network(const char *ip_name, struct network_t *net)
+egg_error_t egg_init_network(const char *ip_name, network_t *net)
 {
 	egg_error_t code;
 	// Initialize DMA
@@ -18,7 +18,7 @@ egg_error_t egg_init_network(const char *ip_name, struct network_t *net)
 	debug("Initializing DMA done.");
 	// Initialize UIO Device --> AXI-lite bus communication
 	debug("Initializing UIO device of %s ...",ip_name);
-	code = egg_init_uio(ip_name);
+	code = egg_init_uio((char *) ip_name);
 	CHECK(code == EGG_ERROR_NONE,"Error initializing UIO device");
 	debug("Initializing UIO device of %s done",ip_name);
 	// Reading network structure from hardware using AXI lite bus and UIO device driver
@@ -49,7 +49,7 @@ egg_error_t egg_close_network()
 	code = egg_close_uio();
 	CHECK(code == EGG_ERROR_NONE,"Error closing UIO device");
 
-	code = egg_free_network();
+	code = egg_free_network(&network);
 	CHECK(code == EGG_ERROR_NONE,"Error freeing network");
 
 	return EGG_ERROR_NONE;
@@ -118,10 +118,10 @@ const char *egg_print_err(egg_error_t code)
 /**
  * Reads network structure from hardware
  */
-egg_error_t get_network_structure(struct network_t *net_ptr)
+egg_error_t get_network_structure(network_t *net_ptr)
 {
 	CHECK(uio.number >= 1,"Initialize Network first!");
-	if (network.number > 0)
+	if (network.layer_number > 0)
 	{
 		net_ptr = &network;
 		return EGG_ERROR_NONE;
@@ -140,7 +140,7 @@ egg_error_t get_network_structure(struct network_t *net_ptr)
 		layer_type_t type;
 		CHECK(egg_get_layer_info(i,&type,&width,&height,&channel_number)==EGG_ERROR_NONE,"Error reading layer number from hardware");
 		layer_t *layer;
-		layer = calloc (1, sizeof (struct layer_t));
+		layer = calloc (1, sizeof (layer_t));
 		layer->layer_type = type;
 		layer->height = height;
 		layer->width = width;
@@ -148,7 +148,7 @@ egg_error_t get_network_structure(struct network_t *net_ptr)
 		layers[i] = layer;
 	}
 	network.layers = layers;
-	network.number = layer_number;
+    network.layer_number = layer_number;
 	*net_ptr = network;
 	return EGG_ERROR_NONE;
 	error:
@@ -162,14 +162,14 @@ egg_error_t get_network_structure(struct network_t *net_ptr)
  */
 egg_error_t print_network()
 {
-	CHECK(network->layer_number > 0,"Network not initialized!");
-	for (int i=0;i<network->layer_number;i++)
+	CHECK(network.layer_number > 0,"Network not initialized!");
+	for (int i=0;i<network.layer_number;i++)
 	{
 		fprintf(stdout,"LAYER %d: ",i);
-		fprintf(stdout,"Type %s: ",get_type_string(network->layers[i]->layer_type));
-		fprintf(stdout,"Width %d: ",network->layers[i]->width);
-		fprintf(stdout,"Height %d: ",network->layers[i]->height);
-		fprintf(stdout,"In channel number %d:\n",network->layers[i]->in_channel_number);
+		fprintf(stdout,"Type %s: ",get_type_string(network.layers[i]->layer_type));
+		fprintf(stdout,"Width %d: ",network.layers[i]->width);
+		fprintf(stdout,"Height %d: ",network.layers[i]->height);
+		fprintf(stdout,"In channel number %d:\n",network.layers[i]->in_channel_number);
 	}
 	return EGG_ERROR_NONE;
 

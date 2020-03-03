@@ -37,7 +37,7 @@ typedef uint8_t byte_t;
  * Initializes the network. Searches for the corresponding UIO device, loads and initializes the dma proxy driver
  * @return Error code
  */
-egg_error_t egg_init_network(const char *ip_name, struct network_t *net);
+egg_error_t egg_init_network(const char *ip_name, network_t *net);
 
 /**
  * Close network and free memory mapped address space
@@ -87,7 +87,7 @@ const char *egg_print_err(egg_error_t code);
  * Reads network structure from hardware
  * @param net_ptr Pointer to Network structure. Used as call by reference return value.
  */
-egg_error_t get_network_structure(struct network_t *net_ptr);
+egg_error_t get_network_structure(network_t *net_ptr);
 
 /**
  * Print Network structure
