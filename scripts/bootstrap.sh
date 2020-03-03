@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 
+# ToDo: this is not up2date
 #--------- Setup dependencies ---------
 
 # Check if vfloat exists and install it if needed

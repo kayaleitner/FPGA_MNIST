@@ -6,11 +6,11 @@ MNIST on FPGA
 ![Python-Package CI Badge](https://github.com/marbleton/FPGA_MNIST/workflows/Python/badge.svg)
 ![Python-Package CI Badge](https://github.com/marbleton/FPGA_MNIST/workflows/VHDL%20Testbenches/badge.svg)
 
-
 This is a university project at TU Vienna to create a neural network hardware accelerator with an FPGA.
 The network is designed and trained using _Pytorch_ and _Keras_ in Python. 
 Using _Xilinx Vivado_ the Neural Network is implemented on _Digilent Zedboard_ featuring a Zynq-7000 ARM/FPGA SoC.
 For easy using of the webapp a the FPGA can be controlled via a Webinterface based on Python Flask.  
+For more details see the [Specification Document](tex/specification/specification.pdf)
 
 Authors
 ----------------
@@ -44,11 +44,10 @@ Contains the documentation of the project in Latex format. A precompiled PDF is 
 `data`:
 Contains project data, e.g. the _MNIST_ dataset.
 
-
 Software Overview
 -----------------
 
-<pre>
+```text
 +----------------------------+    +-----------------------------+
 |  CPU   +-----------------+ |    |                             |
 |        |                 | |    |                             |
@@ -64,7 +63,7 @@ Software Overview
 |        |                 +<-----+                             |
 |        +-----------------+ |    |                             |
 +----------------------------+    +-----------------------------+
-</pre> 
+```
 
 Tasks
 ----------------
@@ -93,8 +92,8 @@ Tasks
 
 For more details see the [Specification Document](tex/specification/specification.pdf)
 
-
-## Build
+Build
+-----
 
 ### Requirements
 
@@ -112,8 +111,7 @@ See `python/README.md` for more details on this topic.
 
 Open Vivado and select: `Execute Tcl Script`. Navigate to `vivado/project`. If problems occur use the cleanup script
 in the folder (either `cleanup.sh` for Linux/Unix or `cleanup.cmd` for Windows). The bitstream can then be generated in
-Vivado as usual. 
-
+Vivado as usual.
 
 ### Linux Kernel Driver
 
@@ -126,6 +124,17 @@ swig -python eggnet.i
 ````
 
 This should create two files, `eggnet_wrap.c` and `EggnetDriverCore.py`. The first one must then be build togehter 
-with the rest of the project using the Vivado SDK or CMake. 
+with the rest of the project using the Vivado SDK or CMake.
 
+## Additional Information and Further Reading
 
+Backpropagation in CNNs
+ - https://jefkine.com/general/2016/09/05/backpropagation-in-convolutional-neural-networks/
+ - https://medium.com/the-bioinformatics-press/only-numpy-understanding-back-propagation-for-max-pooling-layer-in-multi-layer-cnn-with-example-f7be891ee4b4
+ - A guide to convolution arithmetic for deep learning: https://arxiv.org/pdf/1603.07285.pdf
+
+Vanishing Gradients Problem
+- https://www.jefkine.com/general/2018/05/21/2018-05-21-vanishing-and-exploding-gradient-problems/
+
+Large-scale Learning with SVM and Convolutional Nets for Generic Object Categorization
+http://yann.lecun.com/exdb/publis/pdf/huang-lecun-06.pdf

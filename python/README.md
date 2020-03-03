@@ -23,14 +23,6 @@ pip install .
 pip install path/to/folder
 ```
 
-## Quantization
-
-Quantization is based on the work of Xilinx, published in their repository 
-
-![Xilinx/brevitas](https://github.com/Xilinx/brevitas)
-
- on GitHub.
-
 ## Performance of C-Extensions
 
 | Function      | Speed Up |
