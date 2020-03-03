@@ -25,30 +25,11 @@ jobs:
 
     - name: Install GHDL
       run: |
-        # Install dependencies
+        sudo add-apt-repository universe
+        sudo add-apt-repository ppa:mati75/ghdl # or ppa:gekkio/ghdl
+
         sudo apt-get update
-        sudo apt-get install libc-dev libz-dev llvm
-        sudo apt-get install libgnat
-
-        mkdir ghdl
-
-        # Download release
-        wget https://github.com/ghdl/ghdl/releases/download/v0.37/ghdl-0.37-ubuntu16-llvm-3.9.tgz
-
-        # Extract content to folder ghdl
-        tar -xf ghdl-0.37-ubuntu16-llvm-3.9 -C ghdl
-
-        # Install GHDL in user directory
-        # ToDo: Find better way to install
-
-        chmod +x bin/*
-        sudo cp bin/* /usr/local/bin
-        sudo cp lib/* /usr/local/lib
-        sudo cp include/* /usr/local/include
-
-        # Check if GHDL is working and in path
-        # ghdl --version
-
+        sudo apt-get install ghdl*
 
     - name: GHDL Check
       run: ghdl --version
