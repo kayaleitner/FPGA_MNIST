@@ -27,32 +27,37 @@ jobs:
       run: |
         # Install dependencies
         sudo apt-get update
-        sudo apt-get install -y llvm gnat
 
-        # Install GHDL
+        # Try to auto install
+        sudo apt-get install -y ghdl
 
-        mkdir ghdl
+        # Install GHDL manually
+        # sudo apt-get install -y llvm gnat
+        # mkdir ghdl
 
         # Download release
-        wget https://github.com/ghdl/ghdl/releases/download/v0.37/ghdl-0.37-ubuntu16-llvm-3.9.tgz
+        # wget https://github.com/ghdl/ghdl/releases/download/v0.37/ghdl-0.37-ubuntu16-llvm-3.9.tgz
 
         # Extract content to folder ghdl
-        tar -xf ghdl-0.37-ubuntu16-llvm-3.9 -C ghdl
+        # tar -xf ghdl-0.37-ubuntu16-llvm-3.9 -C ghdl
 
         # Install GHDL in user directory
         # ToDo: Find better way to install
 
-        chmod +x bin/*
-        sudo cp bin/* /usr/local/bin
-        sudo cp lib/* /usr/local/lib
-        sudo cp include/* /usr/local/include
+        # chmod +x bin/*
+        # sudo cp bin/* /usr/local/bin
+        # sudo cp lib/* /usr/local/lib
+        # sudo cp include/* /usr/local/include
 
         # Check if GHDL is working and in path
-        ghdl --version
+        # ghdl --version
 
         # sudo dpkg --install ghdl_0.33-1ubuntu1_amd64.deb
         # sudo apt-get install ghdl
-  
+
+    - name: GHDL Check
+      run: ghdl --version
+
     - name: Install Python Dependencies
       run: |
         pwd        
