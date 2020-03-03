@@ -3,7 +3,6 @@ MNIST on FPGA
 
 ![GitHub](https://img.shields.io/github/license/marbleton/FPGA_MNIST)
 
-![General CI Badge](https://github.com/marbleton/FPGA_MNIST/workflows/CI/badge.svg)
 ![Python-Package CI Badge](https://github.com/marbleton/FPGA_MNIST/workflows/Python/badge.svg)
 ![Python-Package CI Badge](https://github.com/marbleton/FPGA_MNIST/workflows/VHDL%20Testbenches/badge.svg)
 
