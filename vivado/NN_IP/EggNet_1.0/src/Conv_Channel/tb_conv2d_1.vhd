@@ -98,10 +98,8 @@ begin
 		Clk_i => s_Clk_i,
 		n_Res_i => s_n_Res_i,
 		Valid_i => s_Pool_Valid_o,
-		Last_i => s_Pool_Last_o,
 		Ready_i => s_Serializer_Ready_i,
 		Valid_o => s_Serializer_Valid_o,
-		Last_o => s_Serializer_Last_o,
 		Ready_o => s_Serializer_Ready_o,
 		Data_i => s_Pool_Data_o,
 		Data_o => s_Serializer_Data_o
@@ -119,7 +117,7 @@ begin
 			if y = 0 then
 				s_Serializer_Ready_i <= '1';
 			else
-				s_Serializer_Ready_i <= '1';
+				s_Serializer_Ready_i <= '0';
 			end if;
 		end if;
 	end process;

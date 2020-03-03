@@ -26,7 +26,7 @@ use IEEE.NUMERIC_STD.ALL;
 use ieee.std_logic_unsigned.all;
 use ieee.math_real.ceil;
 use ieee.math_real.log2;
-
+use STD.textio.all;
 
 LIBRARY work;
 USE work.denseLayerPkg.all;
@@ -39,7 +39,9 @@ USE work.denseLayerPkg.all;
 entity vectorMultiplier is
 	Generic(   VECTOR_WIDTH : integer := 8;
 	           INPUT_COUNT : integer := 4;
-			   OUTPUT_COUNT : integer := 4);
+			   OUTPUT_COUNT : integer := 4;
+			   BIAS_WIDTH : integer := 8;
+			   BIAS_FILE : string  := "bias_terms.mif");
     Port ( 
 			  Resetn_i : in std_logic;
 			  Reset_calculation_i : in std_logic;
@@ -71,6 +73,32 @@ architecture Behavioral of vectorMultiplier is
     signal s_enable_accumulation : std_logic := '0';
     
     signal s_reset_accumulators : std_logic := '0';
+    
+    
+    
+-- Definition of bias terms array.
+type bias_array is array (0 to OUTPUT_COUNT-1) of std_logic_vector(BIAS_WIDTH-1 downto 0);    
+
+-- This function initializes bias terms array with the data from a .mif file.
+impure function init_mem(mif_file_name : in string) return bias_array is
+	file mif_file 		: text open read_mode is mif_file_name;
+	variable mif_line	: line;
+	variable temp_bv	: bit_vector(BIAS_WIDTH-1 downto 0);
+	variable temp_mem	: bias_array;
+begin
+
+	for i in 0 to OUTPUT_COUNT-1 loop
+		readline (mif_file, mif_line);
+		read(mif_line, temp_bv);
+		temp_mem(i) := to_stdlogicvector(temp_bv);
+	end loop;
+
+	return temp_mem;
+end function;
+
+signal s_reset_values : bias_array := init_mem(BIAS_FILE);
+
+
 
 begin
     
@@ -92,6 +120,7 @@ begin
         accumulatorBlock : entity work.accumulator
         generic map
         (
+            BIAS_WIDTH => BIAS_WIDTH,
             INPUT_WIDTH => 2*VECTOR_WIDTH,
             OUTPUT_WIDTH => 2*VECTOR_WIDTH + integer(ceil(log2(real(INPUT_COUNT))))
         )
@@ -100,6 +129,7 @@ begin
             Clk_i => Clk_i,
             Reset_i => s_reset_accumulators,
             Enable_i => s_enable_accumulation,
+            Reset_value_i => s_reset_values(i),
             Data_i => s_multiplied(i),
             Data_o => Output_o(i)
         );

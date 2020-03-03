@@ -34,6 +34,7 @@ architecture Behavioral of tb_MaxPooling is
 	file input_file, output_file : text;
 	signal sim_ended : std_logic := '0';
 	constant char_num : string(1 to 10) := "0123456789";
+		signal test : std_logic := '0';
 	
 begin
 	uit : entity work.MaxPooling
@@ -86,13 +87,15 @@ begin
 		variable y : integer;
 	begin
 		if rising_edge(s_Clk_i) then
-			uniform(seed1, seed2, x);
-			y := integer(floor(x * 2.0));
-			if y = 0 then
-				s_Ready_i <= '1';
-			else
-				s_Ready_i <= '1';
-			end if;
+			test <= not(test);
+			s_Ready_i <= '1';
+			-- uniform(seed1, seed2, x);
+			-- y := integer(floor(x * 2.0));
+			-- if y = 0 then
+				-- s_Ready_i <= '0';
+			-- else
+				-- s_Ready_i <= '1';
+			-- end if;
 		end if;
 	end process;
 	

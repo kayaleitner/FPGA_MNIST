@@ -65,7 +65,9 @@ begin
 		VECTOR_WIDTH  => VECTOR_WIDTH,
         INPUT_COUNT   => INPUT_COUNT_L1,
         OUTPUT_COUNT  => OUTPUT_COUNT_L1,
-		ROM_FILE      => "dense_layer_1.mif")
+		ROM_FILE      => "dense_layer_1.mif",
+		BIAS_WIDTH    => VECTOR_WIDTH*2,
+        BIAS_FILE     => "bias_terms_L1.mif")
     port map(
 		Resetn_i => Resetn_i,
 		Reset_calculation_i => s_L1_Reset_i,
@@ -84,7 +86,9 @@ begin
 		VECTOR_WIDTH  => VECTOR_WIDTH,
         INPUT_COUNT   => INPUT_COUNT_L2,
         OUTPUT_COUNT  => OUTPUT_COUNT_L2,
-		ROM_FILE      => "dense_layer_2.mif")
+		ROM_FILE      => "dense_layer_2.mif",
+		BIAS_WIDTH    => VECTOR_WIDTH*2,
+        BIAS_FILE     => "bias_terms_L2.mif")
     port map(
 		Resetn_i => Resetn_i,
 		Reset_calculation_i => s_L2_Reset_i,

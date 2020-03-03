@@ -40,7 +40,9 @@ entity layer is
 Generic (  VECTOR_WIDTH   : integer := 8;
            INPUT_COUNT    : integer := 1568;
            OUTPUT_COUNT   : integer := 32;
-           ROM_FILE       : string  := "rom_content.mif");
+           ROM_FILE       : string  := "rom_content.mif";
+           BIAS_WIDTH     : integer := 16;
+           BIAS_FILE      : string  := "bias_terms.mif");
 Port ( 
 	  Resetn_i : in STD_LOGIC;
       Reset_calculation_i : in STD_LOGIC;
@@ -90,7 +92,9 @@ begin
     multiplierBlock : entity work.vectorMultiplier
     generic map(    VECTOR_WIDTH => VECTOR_WIDTH,
                     INPUT_COUNT => INPUT_COUNT,
-                    OUTPUT_COUNT => OUTPUT_COUNT)
+                    OUTPUT_COUNT => OUTPUT_COUNT,
+                    BIAS_WIDTH => BIAS_WIDTH,
+                    BIAS_FILE => BIAS_FILE)
     port map
     (
 		Resetn_i => Resetn_i,

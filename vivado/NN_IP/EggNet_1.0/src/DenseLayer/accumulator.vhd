@@ -31,11 +31,13 @@ use ieee.std_logic_unsigned.all;
 --use UNISIM.VComponents.all;
 
 entity accumulator is
-	Generic(	INPUT_WIDTH : integer := 16;
+	Generic(	BIAS_WIDTH : integer := 8;
+	            INPUT_WIDTH : integer := 16;
 				OUTPUT_WIDTH : integer := 27);
    Port ( 	Clk_i : in  STD_LOGIC;
 			Reset_i : in  STD_LOGIC;
 			Enable_i : in  STD_LOGIC;
+			Reset_value_i : in STD_LOGIC_VECTOR(BIAS_WIDTH-1 downto 0);
 			Data_i : in  STD_LOGIC_VECTOR (INPUT_WIDTH-1 downto 0);
 			Data_o : out  STD_LOGIC_VECTOR (OUTPUT_WIDTH-1 downto 0));
 end accumulator;
@@ -50,7 +52,7 @@ begin
     begin
         if(rising_edge(Clk_i))then
             if(Reset_i='1')then
-                s_accumulated <= (others=>'0');
+                s_accumulated <= std_logic_vector(resize(signed(Reset_value_i),OUTPUT_WIDTH));
             elsif(Enable_i='1')then
                 s_accumulated <= std_logic_vector(signed(s_accumulated) + resize(signed(Data_i),OUTPUT_WIDTH));
             end if;
