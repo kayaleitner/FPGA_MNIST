@@ -3,18 +3,23 @@
 	<storageModule moduleId="org.eclipse.cdt.core.settings">
 		<cconfiguration id="xilinx.gnu.armv7.linux.exe.debug.818788697">
 			<storageModule buildSystemId="org.eclipse.cdt.managedbuilder.core.configurationDataProvider" id="xilinx.gnu.armv7.linux.exe.debug.818788697" moduleId="org.eclipse.cdt.core.settings" name="Debug">
-				<externalSettings/>
+				<externalSettings>
+					<externalSetting>
+						<entry flags="VALUE_WORKSPACE_PATH" kind="includePath" name="/EggDriver"/>
+						<entry flags="VALUE_WORKSPACE_PATH" kind="libraryPath" name="/EggDriver/Debug"/>
+						<entry flags="RESOLVED" kind="libraryFile" name="EggDriver" srcPrefixMapping="" srcRootPath=""/>
+					</externalSetting>
+				</externalSettings>
 				<extensions>
 					<extension id="com.xilinx.sdk.managedbuilder.XELF.arm.a53.x32.linux" point="org.eclipse.cdt.core.BinaryParser"/>
 					<extension id="org.eclipse.cdt.core.GASErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
 					<extension id="org.eclipse.cdt.core.GmakeErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
-					<extension id="org.eclipse.cdt.core.GLDErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
 					<extension id="org.eclipse.cdt.core.CWDLocator" point="org.eclipse.cdt.core.ErrorParser"/>
 					<extension id="org.eclipse.cdt.core.GCCErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
 				</extensions>
 			</storageModule>
 			<storageModule moduleId="cdtBuildSystem" version="4.0.0">
-				<configuration artifactExtension="elf" artifactName="${ProjName}" buildArtefactType="org.eclipse.cdt.build.core.buildArtefactType.exe" buildProperties="org.eclipse.cdt.build.core.buildArtefactType=org.eclipse.cdt.build.core.buildArtefactType.exe,org.eclipse.cdt.build.core.buildType=org.eclipse.cdt.build.core.buildType.debug" cleanCommand="rm -rf" description="" id="xilinx.gnu.armv7.linux.exe.debug.818788697" name="Debug" parent="xilinx.gnu.armv7.linux.exe.debug">
+				<configuration artifactExtension="elf" artifactName="${ProjName}" buildArtefactType="org.eclipse.cdt.build.core.buildArtefactType.staticLib" buildProperties="org.eclipse.cdt.build.core.buildArtefactType=org.eclipse.cdt.build.core.buildArtefactType.staticLib,org.eclipse.cdt.build.core.buildType=org.eclipse.cdt.build.core.buildType.debug" cleanCommand="rm -rf" description="" id="xilinx.gnu.armv7.linux.exe.debug.818788697" name="Debug" parent="xilinx.gnu.armv7.linux.exe.debug">
 					<folderInfo id="xilinx.gnu.armv7.linux.exe.debug.818788697." name="/" resourcePath="">
 						<toolChain id="xilinx.gnu.armv7.linux.exe.debug.toolchain.130076651" name="Xilinx ARM v7 GNU/Linux Toolchain" superClass="xilinx.gnu.armv7.linux.exe.debug.toolchain">
 							<targetPlatform binaryParser="com.xilinx.sdk.managedbuilder.XELF.arm.a53.x32.linux" id="xilinx.armv7.linux.target.gnu.base.debug.1901354079" isAbstract="false" name="Debug Platform" superClass="xilinx.armv7.linux.target.gnu.base.debug"/>
@@ -26,7 +31,10 @@
 								<option defaultValue="gnu.c.optimization.level.none" id="xilinx.gnu.compiler.option.optimization.level.1374521372" name="Optimization Level" superClass="xilinx.gnu.compiler.option.optimization.level" valueType="enumerated"/>
 								<option id="xilinx.gnu.compiler.option.debugging.level.48237652" name="Debug Level" superClass="xilinx.gnu.compiler.option.debugging.level" value="gnu.c.debugging.level.max" valueType="enumerated"/>
 								<option id="xilinx.gnu.compiler.dircategory.includes.173089480" name="Include Paths" superClass="xilinx.gnu.compiler.dircategory.includes" valueType="includePath">
-									<listOptionValue builtIn="false" value="&quot;C:\Users\lukas\Documents\SoC_Lab\FPGA_MNIST\vivado\Software\sysroots\plnx_arm-tcbootstrap\usr\include&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc}/sysroots/numpy_include&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc}/sysroots/python3.6/include/python3.6m&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc}/sysroots/linux/usr/include&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc}/sysroots/linux/usr/include/arm-linux-gnueabihf&quot;"/>
 								</option>
 								<inputType id="xilinx.gnu.armv7.linux.c.compiler.input.1437984535" name="C source files" superClass="xilinx.gnu.armv7.linux.c.compiler.input"/>
 							</tool>
@@ -37,10 +45,13 @@
 							<tool id="xilinx.gnu.armv7.linux.toolchain.archiver.1838078280" name="ARM v7 Linux archiver" superClass="xilinx.gnu.armv7.linux.toolchain.archiver"/>
 							<tool id="xilinx.gnu.armv7.linux.c.toolchain.linker.debug.1518361666" name="ARM v7 Linux gcc linker" superClass="xilinx.gnu.armv7.linux.c.toolchain.linker.debug">
 								<option id="xilinx.gnu.c.link.option.paths.1512795901" name="Library search path (-L)" superClass="xilinx.gnu.c.link.option.paths" valueType="libPaths">
-									<listOptionValue builtIn="false" value="&quot;C:\Users\lukas\Documents\SoC_Lab\FPGA_MNIST\vivado\Software\sysroots\plnx_arm-tcbootstrap\usr\lib&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;C:\Users\lukas\Documents\SoC_Lab\FPGA_MNIST\vivado\Software\sysroots\plnx_arm-tcbootstrap\lib&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc}/sysroots/python3.6/lib&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc}/sysroots/linux/lib/arm-linux-gnueabihf&quot;"/>
 								</option>
-								<option id="xilinx.gnu.c.link.option.ldflags.685569153" superClass="xilinx.gnu.c.link.option.ldflags" value="-lpthread" valueType="string"/>
+								<option id="xilinx.gnu.c.link.option.ldflags.685569153" name="Linker Flags" superClass="xilinx.gnu.c.link.option.ldflags" value="-lpthread" valueType="string"/>
+								<option id="xilinx.gnu.c.link.option.libs.640120216" name="Libraries (-l)" superClass="xilinx.gnu.c.link.option.libs" valueType="libs">
+									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="python3.6m"/>
+								</option>
 								<inputType id="xilinx.gnu.linker.input.1728356513" superClass="xilinx.gnu.linker.input">
 									<additionalInput kind="additionalinputdependency" paths="$(USER_OBJS)"/>
 									<additionalInput kind="additionalinput" paths="$(LIBS)"/>
@@ -79,8 +90,9 @@
 							<tool id="xilinx.gnu.armv7.linux.c.toolchain.compiler.release.1809659617" name="ARM v7 Linux gcc compiler" superClass="xilinx.gnu.armv7.linux.c.toolchain.compiler.release">
 								<option defaultValue="gnu.c.optimization.level.more" id="xilinx.gnu.compiler.option.optimization.level.1622123742" name="Optimization Level" superClass="xilinx.gnu.compiler.option.optimization.level" valueType="enumerated"/>
 								<option id="xilinx.gnu.compiler.option.debugging.level.1087208125" name="Debug Level" superClass="xilinx.gnu.compiler.option.debugging.level" value="gnu.c.debugging.level.none" valueType="enumerated"/>
-								<option id="xilinx.gnu.compiler.dircategory.includes.653531140" name="Include Paths" superClass="xilinx.gnu.compiler.dircategory.includes" valueType="includePath">
-									<listOptionValue builtIn="false" value="&quot;C:\Users\lukas\Documents\SoC_Lab\FPGA_MNIST\vivado\Software\sysroots\plnx_arm-tcbootstrap\usr\include&quot;"/>
+								<option id="xilinx.gnu.compiler.dircategory.includes.653531140" name="Include Paths" superClass="xilinx.gnu.compiler.dircategory.includes" valueType="includePath"/>
+								<option id="xilinx.gnu.compiler.symbols.defined.1229744315" name="Defined symbols (-D)" superClass="xilinx.gnu.compiler.symbols.defined" valueType="definedSymbols">
+									<listOptionValue builtIn="false" value="NDEBUG=1"/>
 								</option>
 								<inputType id="xilinx.gnu.armv7.linux.c.compiler.input.1476348006" name="C source files" superClass="xilinx.gnu.armv7.linux.c.compiler.input"/>
 							</tool>
