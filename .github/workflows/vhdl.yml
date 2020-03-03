@@ -27,7 +27,7 @@ jobs:
       run: |
         # Install dependencies
         sudo apt-get update
-        sudo apt-get install llvm libgnat-6 libc6 gnat zlib1g
+        sudo apt-get install -y llvm gnat
 
         # Install GHDL
 
