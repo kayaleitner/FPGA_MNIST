@@ -6,7 +6,8 @@ import numpy as np
 
 import NeuralNetwork.nn as nn
 from NeuralNetwork.nn.core import mean_squared_error
-from NeuralNetwork.nn.Layer import Layer, FullyConnectedLayer, MaxPool2dLayer, Conv2dLayer, ReshapeLayer
+from NeuralNetwork.nn.Layer import Layer, FullyConnectedLayer, MaxPool2dLayer, Conv2dLayer, ReshapeLayer, \
+    CustomReshapeLayer
 from NeuralNetwork.nn.quant import QuantConvLayerType, QuantFullyConnectedType, quantize_vector
 
 
@@ -165,14 +166,24 @@ class LeNet(Network):
     FC1_SHAPE = (32 * 7 * 7, 32)
     FC2_SHAPE = (32, 10)
 
-    def __init__(self, dtype=np.float32):
+    def __init__(self, dtype=np.float32, reshape_torch=False):
+        """
+        Initializes a new LeNet inspired network
+        Args:
+            dtype: Datatype to be used
+            reshape_torch: set this, if the training parameters came from Pytorch which requires a custom reshape
+        """
+        self.reshape_torch = reshape_torch
         r1 = ReshapeLayer(newshape=[-1, 28, 28, 1])
         cn1 = Conv2dLayer(in_channels=1, out_channels=16, kernel_size=3, activation='relu',
                           dtype=np.float32)  # [? 28 28 16]
         mp1 = MaxPool2dLayer(size=2)  # [? 14 14 16]
         cn2 = Conv2dLayer(in_channels=16, out_channels=32, kernel_size=3, activation='relu')  # [? 14 14 32]
         mp2 = MaxPool2dLayer(size=2)  # [?  7  7 32]
-        r2 = ReshapeLayer(newshape=[-1, 32 * 7 * 7])
+        if reshape_torch:
+            r2 = CustomReshapeLayer(custom_reshape_func=CustomReshapeLayer.reshape_for_torch)
+        else:
+            r2 = ReshapeLayer(newshape=[-1, 32 * 7 * 7])
         fc1 = FullyConnectedLayer(input_size=32 * 7 * 7, output_size=32, activation='relu', dtype=np.float32)
         fc2 = FullyConnectedLayer(input_size=32, output_size=10, activation='softmax')
 
@@ -296,3 +307,94 @@ class LeNet(Network):
 
                 weight_loaded = np.loadtxt(weight_file)
                 # ToDo: Finish this up by mapping the weights to the right layer
+
+
+def _lenet_to_dict(network: LeNet):
+
+    d = {
+        'conv1_k': network.cn1.kernel,
+        'conv1_b': network.cn1.bias,
+        'conv2_k': network.cn2.kernel,
+        'conv2_b': network.cn2.bias,
+        'fc1_w': network.fc1.weights,
+        'fc1_b': network.fc1.bias,
+        'fc2_w': network.fc2.weights,
+        'fc2_b': network.fc2.bias
+    }
+
+    return d
+
+
+def _get_layers(weights_dict, target_bits, fraction_bits):
+
+    assert target_bits > fraction_bits
+
+    value_bits = target_bits-fraction_bits
+
+    a_max = 2 ** (value_bits-1) - 1
+    a_min = -2 ** (value_bits-1)
+    scale = 1 / 2 ** value_bits
+
+    c1_k1 = weights_dict['conv1_k']
+    c1_b1 = weights_dict['conv1_b']
+    c2_k2 = weights_dict['conv2_k']
+    c2_b2 = weights_dict['conv2_b']
+
+    fc1_w = weights_dict['fc1_w']
+    fc1_b = weights_dict['fc1_b']
+    fc2_w = weights_dict['fc2_w']
+    fc2_b = weights_dict['fc2_b']
+
+    # ni3 = nn_lenet_f64.fc1.input_size
+    # no3 = nn_lenet_f64.fc1.output_size
+    # ni4 = nn_lenet_f64.fc2.input_size
+    # no4 = nn_lenet_f64.fc2.output_size
+    ni3, no3 = fc1_w.shape
+    ni4, no4 = fc2_w.shape
+
+    qk1 = np.clip(c1_k1 / scale, a_max=a_max, a_min=a_min).astype(np.int8)
+    qb1 = np.clip(c1_b1 / scale, a_max=a_max, a_min=a_min).astype(np.int8)
+    qk2 = np.clip(c2_k2 / scale, a_max=a_max, a_min=a_min).astype(np.int8)
+    qb2 = np.clip(c2_b2 / scale, a_max=a_max, a_min=a_min).astype(np.int8)
+
+    qw3 = np.clip(fc1_w / scale, a_max=a_max, a_min=a_min).astype(np.int8)
+    qb3 = np.clip(fc1_b / scale, a_max=a_max, a_min=a_min).astype(np.int8)
+    qw4 = np.clip(fc2_w / scale, a_max=a_max, a_min=a_min).astype(np.int8)
+    qb4 = np.clip(fc2_b / scale, a_max=a_max, a_min=a_min).astype(np.int8)
+
+    dfrac_bits = 2*fraction_bits
+
+    layers = [
+        nn.Layer.ReshapeLayer(newshape=(-1, 28, 28, 1)),
+        nn.Layer.Conv2dLayer(in_channels=1, out_channels=3, kernel_size=3, kernel_init_weights=qk1, bias_init_weights=qb1, use_bias=True),
+        nn.Layer.ShiftLayer(target_bits=target_bits, target_frac_bits=fraction_bits, source_bits=16, source_frac_bits=dfrac_bits),
+        nn.Layer.ReluActivationLayer(),
+        nn.Layer.MaxPool2dLayer(),
+        nn.Layer.Conv2dLayer(in_channels=3, out_channels=9, kernel_size=3, kernel_init_weights=qk2, bias_init_weights=qb2, use_bias=True),
+        nn.Layer.ShiftLayer(target_bits=target_bits, target_frac_bits=fraction_bits, source_bits=16, source_frac_bits=dfrac_bits),
+        nn.Layer.ReluActivationLayer(),
+        nn.Layer.MaxPool2dLayer(),
+        nn.Layer.FlattenLayer(),
+        nn.Layer.BreakpointLayer(enabled=False),
+        nn.Layer.FullyConnectedLayer(input_size=ni3, output_size=no3, dtype=np.int16, weights=qw3, bias=qb3),
+        nn.Layer.ShiftLayer(target_bits=target_bits, target_frac_bits=fraction_bits, source_bits=16, source_frac_bits=dfrac_bits),
+        nn.Layer.ReluActivationLayer(),
+        nn.Layer.FullyConnectedLayer(input_size=ni4, output_size=no4, dtype=np.int16, weights=qw4, bias=qb4),
+        nn.Layer.ShiftLayer(target_bits=target_bits, target_frac_bits=fraction_bits, source_bits=16, source_frac_bits=dfrac_bits),
+        nn.Layer.SoftmaxLayer()
+    ]
+    
+    return layers
+
+
+class FpiLeNet(Network):
+
+    def __init__(self, network, target_bits, fraction_bits):
+
+        layers = _get_layers(
+            weights_dict=_lenet_to_dict(network),
+            target_bits=target_bits,
+            fraction_bits=fraction_bits
+        )
+
+        super(FpiLeNet, self).__init__(list_of_layers=layers)

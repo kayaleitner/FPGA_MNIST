@@ -384,6 +384,7 @@ class ReshapeLayer(Layer):
     newshape: np.ndarray
 
     def __init__(self, newshape):
+        super(ReshapeLayer, self).__init__()
         self.newshape = newshape
 
     def __call__(self, *args, **kwargs):
@@ -395,6 +396,30 @@ class ReshapeLayer(Layer):
 
     def get_output_shape(self, input_data_shape: np.ndarray = None):
         return self.newshape
+
+
+class CustomReshapeLayer(Layer):
+
+    def __init__(self, custom_reshape_func):
+        super(CustomReshapeLayer, self).__init__()
+        self.f = custom_reshape_func
+
+    def __call__(self, *args, **kwargs):
+        x = args[0]
+        return self.f(x)
+
+    @staticmethod
+    def reshape_for_torch(x):
+        # Torch has convention:
+        # [Batch, Channels, Height, Width]
+        # [Batch, Height, Width, Channels]
+
+        # Step 1)
+        # Move Axis
+        x_ = np.moveaxis(x, 3, 1)
+        x_ = np.reshape(x_ , newshape=(x_.shape[0], -1))
+
+        return x_
 
 
 class FlattenLayer(Layer):

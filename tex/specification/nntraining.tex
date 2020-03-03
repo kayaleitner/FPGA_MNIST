@@ -29,4 +29,17 @@ For controlling the ADAM algorithm the recommended values, listed in Table~\ref{
     \label{tab:train-params}
 \end{table}
 \todo{Force table to be centred in text}
-\todo{Add qunatization details}
+\todo{Add quantization details}
+
+A useful guide for implementing convolutions can be found in \cite{dumoulin2016guide}
+
+
+\subsection{Quantization}
+
+The network was reduced to fixed point integers defined by the equation
+\begin{equation}
+	v = Q \cdot 2 ^{-m}
+\end{equation}
+where both $Q$ and $m$ are integers and $v$ is the real value representation of the fixed point number. 
+
+\todo{Add Histogram}
