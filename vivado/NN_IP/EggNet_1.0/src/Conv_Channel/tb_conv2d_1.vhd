@@ -87,25 +87,25 @@ begin
 		M_layer_tdata_o => s_Pool_Data_o,
 		M_layer_tkeep_o => open,
 		M_layer_tlast_o => s_Pool_Last_o,
-		M_layer_tready_i => s_Serializer_Ready_i
+		M_layer_tready_i => s_Serializer_Ready_o
 	);
 	
-	-- uit_2 : entity work.Serializer
-	-- generic map(
-		-- VECTOR_WIDTH => BIT_WIDTH_OUT,
-		-- INPUT_CHANNELS => OUTPUT_CHANNELS
-	-- ) port map(
-		-- Clk_i => s_Clk_i,
-		-- n_Res_i => s_n_Res_i,
-		-- Valid_i => s_Pool_Valid_o,
-		-- Last_i => s_Pool_Last_o,
-		-- Ready_i => s_Serializer_Ready_i,
-		-- Valid_o => s_Serializer_Valid_o,
-		-- Last_o => s_Serializer_Last_o,
-		-- Ready_o => s_Serializer_Ready_o,
-		-- Data_i => s_Pool_Data_o,
-		-- Data_o => s_Serializer_Data_o
-	-- );
+	uit_2 : entity work.Serializer
+	generic map(
+		VECTOR_WIDTH => BIT_WIDTH_OUT,
+		INPUT_CHANNELS => OUTPUT_CHANNELS
+	) port map(
+		Clk_i => s_Clk_i,
+		n_Res_i => s_n_Res_i,
+		Valid_i => s_Pool_Valid_o,
+		Last_i => s_Pool_Last_o,
+		Ready_i => s_Serializer_Ready_i,
+		Valid_o => s_Serializer_Valid_o,
+		Last_o => s_Serializer_Last_o,
+		Ready_o => s_Serializer_Ready_o,
+		Data_i => s_Pool_Data_o,
+		Data_o => s_Serializer_Data_o
+	);
   
 	set_ready : process(s_Clk_i)
 		variable seed1 : positive := 1;
@@ -119,7 +119,7 @@ begin
 			if y = 0 then
 				s_Serializer_Ready_i <= '1';
 			else
-				s_Serializer_Ready_i <= '0';
+				s_Serializer_Ready_i <= '1';
 			end if;
 		end if;
 	end process;
@@ -232,7 +232,9 @@ begin
 		for L in 0 to INPUT_ARRAY_SIZE - 1 loop
 			wait until rising_edge(s_Clk_i);
 			while s_C1_Ready_o = '0' loop
-				--s_C1_Valid_i <= '0';
+				s_C1_Last_i <= '0';
+				s_C1_X_i <= (others => '0');
+				s_C1_Valid_i <= '0';
 				wait until rising_edge(s_Clk_i);
 			end loop;
 			if (L mod IMG_WIDTH) = IMG_WIDTH - 1 then

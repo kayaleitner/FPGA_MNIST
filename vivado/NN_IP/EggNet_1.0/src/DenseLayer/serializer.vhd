@@ -30,7 +30,7 @@ architecture Behavioral of Serializer is
 begin
 	
 	Valid_o <= s_Valid_o;
-	Ready_o <= not(s_Valid_o) and Ready_i and not(Valid_i);
+	Ready_o <= not(s_Valid_o) and Ready_i and not(Valid_i) and not(serialize);
 
 	output: process(Clk_i)
 	begin

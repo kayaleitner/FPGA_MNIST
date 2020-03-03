@@ -49,7 +49,7 @@ architecture Behavioral of MaxPooling is
   signal output_en      : std_logic;
   signal s_ready        : std_logic;
   signal m_tvalid       : std_logic;
-  signal s_opt1, s_opt2, s_opt3, s_opt4 : std_logic_vector(DATA_WIDTH-1 downto 0) := (others => '0');
+  signal s_opt1, s_opt2, s_opt3, s_opt4, s_fifo_out : std_logic_vector(DATA_WIDTH-1 downto 0) := (others => '0');
   signal ready_latched  : std_logic;
   signal s_st : integer := 0;
   signal last : std_logic;
@@ -75,7 +75,7 @@ begin
   S_layer_tready_o <= s_ready and M_layer_tready_i and not(S_layer_tlast_i);
   fifo_wr <= s_ready and ready_latched and S_layer_tvalid_i; 
 
-  pooling: process(state, S_layer_tvalid_i, S_layer_tdata_i, S_layer_tkeep_i, S_layer_tlast_i, M_layer_tready_i, last, ready_latched, output_en)
+  pooling: process(state, S_layer_tvalid_i, S_layer_tdata_i, S_layer_tkeep_i, S_layer_tlast_i, M_layer_tready_i, last, ready_latched, output_en, fifo_out)
     variable col_cnt  : integer; 
     variable row_cnt  : integer;
     variable opt1, opt2, opt3, opt4 : std_logic_vector(DATA_WIDTH-1 downto 0);
@@ -143,10 +143,10 @@ begin
 		      fifo_rd <= '1';
 			end if;
 			s_in <= S_layer_tdata_i(DATA_WIDTH-1 downto 0);
+			s_fifo_out <= fifo_out(0);
             for i in 0 to CHANNEL_NUMBER-1 loop
               pool_buffer_0(i) <= fifo_out(i);
               pool_buffer_1(i) <= S_layer_tdata_i(((i+1)*DATA_WIDTH)-1 downto (i*DATA_WIDTH));
-			  pool_buffer_2(i) <= pool_buffer_1(i);
             end loop;                        
             if output_en = '1' then 
               m_tvalid <= '1';
