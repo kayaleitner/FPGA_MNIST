@@ -105,6 +105,9 @@ end EggNet_v1_0;
 
 architecture arch_imp of EggNet_v1_0 is
 
+  attribute X_INTERFACE_INFO of Res_itrp_o : signal is "xilinx.com:signal:interrupt:1.0 irq INTERRUPT";
+  attribute X_INTERFACE_PARAMETER of Res_itrp_o : signal is "SENSITIVITY EDGE_RISING";
+
   constant L1_BRAM_ADDR_WIDTH		    : integer := 11; -- maximum = 24 
   constant MEM_CTRL_ADDR_WITDH      : integer := 8; -- don't change
   constant KERNEL_SIZE              : integer := 3;

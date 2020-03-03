@@ -1,0 +1,23 @@
+/*
+ * main.c
+ *
+ *  Created on: 3 Mar 2020
+ *      Author: lukas
+ */
+#include "eggnet.h"
+#include <stdio.h>
+#include <unistd.h>
+#include "dbg.h"
+#include <pthread.h>
+
+int main()
+{
+	network_t network;
+	const char* ip_name = "NeuralNetwork";
+
+	debug("**** Start main ****\n");
+	debug("Initialize network...");
+
+	CHECK(egg_init_network(ip_name, &network) == EGG_ERROR_NONE,"Error initializing Network");
+
+}
