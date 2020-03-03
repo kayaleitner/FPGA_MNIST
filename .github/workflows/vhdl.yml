@@ -27,8 +27,8 @@ jobs:
       run: |
         # Install dependencies
         sudo apt-get update
-        apt-get install libc-dev libz-dev llvm
-        apt-get install libgnat
+        sudo apt-get install libc-dev libz-dev llvm
+        sudo apt-get install libgnat
 
         mkdir ghdl
 
