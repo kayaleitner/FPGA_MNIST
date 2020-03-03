@@ -35,10 +35,11 @@ typedef uint8_t byte_t;
  * Initializes the network. Searches for the corresponding UIO device, loads and initializes the dma proxy driver
  * @return Error code
  */
-egg_error_t egg_init_network(const char *ip_name, network_t *network);
+egg_error_t egg_init_network(const char *ip_name, network_t* network);
 
 /**
- * Close network and free memory mapped address space
+ * Closes network and frees memory mapped address space
+ * @param network Pointer to network sturcture
  * @return Error code
  */
 egg_error_t egg_close_network(network_t* network);
@@ -59,6 +60,13 @@ void *egg_tx_img_thread(void* network);
  */
 void *egg_rx_img_thread(void* network);
 
+/**
+ * Gets results
+ * @param results Pointer to result matrix
+ * @param network Pointer to network structure
+ * @return Error code
+ */
+egg_error_t get_results(pixel_t*** results, uint32_t* result_number, network_t* network);
 /**********************************************************************************************************************
  *
  *  Status Functions

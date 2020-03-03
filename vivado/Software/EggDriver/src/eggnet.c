@@ -7,12 +7,13 @@
 
 /**
  * Initializes the network. Searches for the corresponding UIO device, loads and initializes the dma proxy driver
+ * @param ip_name String including the Name of the IP implemented in vivado
+ * @param network Pointer to network structure
  * @return Error code
  */
-egg_error_t egg_init_network(const char *ip_name, network_t *net_ptr)
+egg_error_t egg_init_network(const char *ip_name, network_t* network)
 {
 	egg_error_t code;
-	network_t* network;
 	network = calloc(1,sizeof(network_t));
 	CHECK(network != NULL,"Error allocating network sturcture")
 	// Initialize DMA
@@ -35,7 +36,6 @@ egg_error_t egg_init_network(const char *ip_name, network_t *net_ptr)
 	#ifndef NDEBUG
 		print_network(network);
 	#endif
-	*net_ptr = *network;
 	return code;
 	error:
 		return code;
@@ -43,6 +43,7 @@ egg_error_t egg_init_network(const char *ip_name, network_t *net_ptr)
 
 /**
  * Close network and free memory mapped address space
+ * @param network Pointer to network structure
  * @return Error code
  */
 egg_error_t egg_close_network(network_t* network)
@@ -63,7 +64,41 @@ egg_error_t egg_close_network(network_t* network)
 }
 
 
+/**
+ * Gets results
+ * @param results Pointer to result matrix --> Used as return value
+ * @param result_number Pointer to number of results --> Used as return value
+ * @param network Pointer to network structure
+ * @return Error code
+ */
+egg_error_t get_results(pixel_t*** results, uint32_t* result_number, network_t* network)
+{
+	CHECK(network->result_number > 0,"No results available");
+	*results = network->results;
+	*result_number = network->result_number;
+	return EGG_ERROR_NONE;
+	error:
+		return EGG_ERROR_UDEF;
+}
 
+/**
+ * Free results
+ * @param network Pointer to network structure
+ * @return Error code
+ */
+egg_error_t free_results(network_t* network)
+{
+	CHECK(network->result_number > 0,"No results available");
+	for (int i=0;i<network->result_number;i++)
+	{
+		free(network->results[i]);
+	}
+	free(network->results);
+	network->result_number = 0;
+	return EGG_ERROR_NONE;
+	error:
+		return EGG_ERROR_UDEF;
+}
 
 egg_error_t egg_forward(const uint8_t *image_buffer, int batch, int height, int width, int channels, 
                         int **results, int *batch_out, int *n) {
