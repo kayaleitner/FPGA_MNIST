@@ -10,6 +10,7 @@ entity MemCtrl_3x3 is
     LAYER_HIGHT               : integer range 1 to 4096 := 28; -- Layer hight of next layer 
     LAYER_WIDTH               : integer range 1 to 4096 := 28; -- Layer width of next layer     
     AXI4_STREAM_INPUT         : integer range 0 to 1 := 0; -- integer to calculate S_LAYER_DATA_WIDTH 
+    MEM_CTRL_ADDR             : integer := 255; 
     C_S_AXIS_TDATA_WIDTH	    : integer	:= 32;
     C_S00_AXI_DATA_WIDTH	    : integer	:= 32
   );
@@ -58,12 +59,17 @@ entity MemCtrl_3x3 is
     Dbg_enable_i     : in std_logic;   
     -- Status
     Layer_properties_o : out std_logic_vector(C_S00_AXI_DATA_WIDTH-1 downto 0);
-    Status_o : out std_logic_vector(C_S00_AXI_DATA_WIDTH-1 downto 0) -- (4) --> wr_invalid_block | ((3 downto 2) --> RD_STATE | (1 downto 0) --> WR_STATE 
+    Status_o : out std_logic_vector(C_S00_AXI_DATA_WIDTH-1 downto 0) -- (1 downto 0) --> WR_STATE 
+                                                                     -- (3 downto 2) --> RD_STATE
+                                                                     -- (4) --> wr_invalid_block
                                                                      -- (7 downto 5) --> Next Layer type :  000 : Dense
                                                                      --                                     001 : Conv 1x1 
                                                                      --                                     010 : Conv 3x3 
                                                                      --                                     011 : Conv 5x5 
                                                                      --                                     100 : Average pooling
+                                                                     -- (15 downto 8) --> Address of Memory controller 
+                                                                     -- (16) --> Debug error; 
+                                                                     -- (17) --> Debug active;
   );
 end MemCtrl_3x3;
 
@@ -134,6 +140,7 @@ signal dbg_rea32_addr   :std_logic_vector(DBG_REA_32BIT_WIDTH-1 downto 0);
 signal dbg_axi_ram_addr :std_logic_vector(DBG_BRAM_ADDRESS_WIDTH-1 downto 0);
 signal dbg_32bit_data   :std_logic_vector(C_S_AXIS_TDATA_WIDTH-1 downto 0);
 signal dbg_bram_addr_out:std_logic_vector(BRAM_ADDR_WIDTH-1 downto 0);
+signal dbg_error        :std_logic;
 
 signal next_block_read  :std_logic_vector(1 downto 0); -- 00 wait, 01 block 0, 10 block 1
 signal next_block_write :std_logic_vector(1 downto 0); -- 00 wait, 01 block 0, 10 block 1
@@ -146,12 +153,16 @@ signal wr_invalid_block :std_logic;
 
 begin
 
--- ********************* Layer informaiton *********************************************************
+-- ********************* Layer and status informaiton **********************************************
 Layer_properties_o(11 downto 0) <= std_logic_vector(to_unsigned(LAYER_WIDTH-1,12)); -- Since 0 size is not possible 0 means size 1 
 Layer_properties_o(23 downto 12) <= std_logic_vector(to_unsigned(LAYER_HIGHT-1,12)); -- Since 0 size is not possible 0 means size 1
 Layer_properties_o(31 downto 24) <= std_logic_vector(to_unsigned(IN_CHANNEL_NUMBER-1,8)); -- Since 0 size is not possible 0 means size 1; 
 Status_o(7 downto 5) <= "010"; -- ID for conv3x3 
-Status_o(31 downto 8) <= (others => '0'); -- Add usefull informaiton
+Status_o(15 downto 8) <=  std_logic_vector(to_unsigned(MEM_CTRL_ADDR,8));
+Status_o(16) <= dbg_error;
+Status_o(17) <= dbg_active;
+Status_o(31 downto 18) <= (others => '0'); -- Add usefull informaiton
+
 -- ********************* Block control *************************************************************
 BlockControl: process(Layer_clk_i,Layer_aresetn_i)
 begin
@@ -548,13 +559,23 @@ begin
     dbg_state <= IDLE;
     dbg_mem_addr <= (others => '0');
     dbg_bram_addr_out <= (others => '1');
+    dbg_error <= '0';
   elsif rising_edge(Layer_clk_i) then 
     case dbg_state is 
       when IDLE => 
         dbg_bram_addr_out <= (others => '1');
         if dbg_active = '1' then 
-          dbg_mem_addr <= Dbg_bram_addr_i(BRAM_ADDR_WIDTH-1 downto 0); 
-          dbg_state <= WAIT_CY;
+          if next_block_read(0) = '1' then 
+            dbg_mem_addr <= Dbg_bram_addr_i(BRAM_ADDR_WIDTH-1 downto 0); 
+            dbg_error <= '0';
+            dbg_state <= WAIT_CY;
+          elsif next_block_read(1) = '1' then 
+            dbg_mem_addr <= std_logic_vector(unsigned(Dbg_bram_addr_i(BRAM_ADDR_WIDTH-1 downto 0))+to_unsigned(BRAM_ADDR_BLOCK_WIDTH,BRAM_ADDR_WIDTH)); 
+            dbg_error <= '0';    
+            dbg_state <= WAIT_CY;            
+          else 
+            dbg_error <= '1';
+          end if;
         end if;         
       when WAIT_CY =>
         -- BRAM read access needs 2 clock cycles 
@@ -576,7 +597,15 @@ begin
           dbg_32bit_data <= dbg_32bit_array(DBG_MAX_REA);
         end if;    
         -- Update output address to indicate that read is successfully done 
-        dbg_bram_addr_out(BRAM_ADDR_WIDTH-1 downto 0) <= dbg_mem_addr; 
+        if next_block_read(0) = '1' then 
+            dbg_bram_addr_out(BRAM_ADDR_WIDTH-1 downto 0) <= dbg_mem_addr; 
+            dbg_error <= '0';
+          elsif next_block_read(1) = '1' then 
+            dbg_bram_addr_out(BRAM_ADDR_WIDTH-1 downto 0) <= std_logic_vector(unsigned(dbg_mem_addr)-to_unsigned(BRAM_ADDR_BLOCK_WIDTH,BRAM_ADDR_WIDTH)); 
+            dbg_error <= '0';            
+          else 
+            dbg_error <= '1';
+          end if;
         dbg_state <= IDLE; 
       when others => 
         dbg_state <= IDLE; 

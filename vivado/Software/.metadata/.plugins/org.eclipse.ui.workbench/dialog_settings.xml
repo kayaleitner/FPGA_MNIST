@@ -1,5 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <section name="Workbench">
+	<section name="WorkbenchPreferenceDialogSettings">
+		<item value="122" key="DIALOG_X_ORIGIN"/>
+		<item value="0" key="DIALOG_Y_ORIGIN"/>
+	</section>
 	<section name="org.eclipse.ui.internal.QuickAccess">
 		<item value="-1" key="dialogHeight"/>
 		<item value="-1" key="dialogWidth"/>
@@ -11,5 +15,12 @@
 		</list>
 		<list key="textArray">
 		</list>
+	</section>
+	<section name="InstallationDialogSettings">
+		<item value="815" key="DIALOG_WIDTH"/>
+		<item value="1|Segoe UI|9.0|0|WINDOWS|1|-24|0|0|0|400|0|0|0|1|0|0|0|0|Segoe UI" key="DIALOG_FONT_NAME"/>
+		<item value="782" key="DIALOG_HEIGHT"/>
+		<item value="30" key="DIALOG_X_ORIGIN"/>
+		<item value="-77" key="DIALOG_Y_ORIGIN"/>
 	</section>
 </section>

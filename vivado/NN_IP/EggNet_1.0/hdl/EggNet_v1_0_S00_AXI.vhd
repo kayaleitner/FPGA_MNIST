@@ -5,7 +5,7 @@ use ieee.numeric_std.all;
 entity EggNet_v1_0_S00_AXI is
 	generic (
 		-- Users to add parameters here
-    MEM_CTRL_ADDR_WITDH   : integer := 4; 
+    MEM_CTRL_ADDR_WITDH   : integer range 8 to 8 := 8; -- don't change 
 		-- User parameters ends
 		-- Do not modify the parameters beyond this line
   
@@ -391,10 +391,11 @@ begin
 
 
 	-- Add user logic here
-  AXI_mem_ctrl_addr_o <= slv_reg0(3 downto 0); 
-  Dbg_enable_o <= slv_reg0(31);
-  Dbg_32bit_select_o <= slv_reg0(11 downto 8);
+  AXI_mem_ctrl_addr_o <= slv_reg0(MEM_CTRL_ADDR_WITDH-1 downto 0); 
   Dbg_bram_addr_o <= slv_reg1; 
+  Dbg_enable_o <= slv_reg2(0);
+  Dbg_32bit_select_o <= slv_reg3(3 downto 0);
+  
 
 	-- User logic ends
 

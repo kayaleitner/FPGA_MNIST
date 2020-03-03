@@ -74,7 +74,10 @@ entity EggNet_v1_0 is
 		m00_axis_tdata	: out std_logic_vector(C_M00_AXIS_TDATA_WIDTH-1 downto 0);
 		m00_axis_tkeep	: out std_logic_vector((C_M00_AXIS_TDATA_WIDTH/8)-1 downto 0);
 		m00_axis_tlast	: out std_logic;
-		m00_axis_tready	: in std_logic
+		m00_axis_tready	: in std_logic;
+    
+    -- Interrupts 
+    Res_itrp_o : out std_logic
     
     
     ;ila_s00_axis_tready	: out std_logic;
@@ -102,7 +105,11 @@ end EggNet_v1_0;
 
 architecture arch_imp of EggNet_v1_0 is
 
+  attribute X_INTERFACE_INFO of Res_itrp_o : signal is "xilinx.com:signal:interrupt:1.0 irq INTERRUPT";
+  attribute X_INTERFACE_PARAMETER of Res_itrp_o : signal is "SENSITIVITY EDGE_RISING";
+
   constant L1_BRAM_ADDR_WIDTH		    : integer := 11; -- maximum = 24 
+  constant MEM_CTRL_ADDR_WITDH      : integer := 8; -- don't change
   constant KERNEL_SIZE              : integer := 3;
 --constant M_LAYER_DIM_FEATURES : integer := 1; 
   
@@ -119,7 +126,7 @@ architecture arch_imp of EggNet_v1_0 is
     Dbg_bram_data_i         : in std_logic_vector(C_S00_AXI_DATA_WIDTH-1 downto 0); 
     Dbg_32bit_select_o      : out std_logic_vector(3 downto 0);   
     Dbg_enable_o            : out std_logic;  
-    AXI_mem_ctrl_addr_o     : out std_logic_vector(MEM_CTRL_NUMBER-1 downto 0);  
+    AXI_mem_ctrl_addr_o     : out std_logic_vector(MEM_CTRL_ADDR_WITDH-1 downto 0);  
     AXI_layer_properties_i  : in  std_logic_vector(C_S00_AXI_DATA_WIDTH-1 downto 0);
 		S_AXI_ACLK	            : in std_logic;
 		S_AXI_ARESETN	          : in std_logic;
@@ -153,6 +160,7 @@ component MemCtrl_3x3 is
       LAYER_HIGHT               : integer := 28;
       LAYER_WIDTH               : integer := 28;   
       AXI4_STREAM_INPUT         : integer range 0 to 1    := 0;
+      MEM_CTRL_ADDR             : integer := 255;
       C_S_AXIS_TDATA_WIDTH	    : integer	:= 32;
       C_S00_AXI_DATA_WIDTH	    : integer	:= 32);
     Port (
@@ -195,7 +203,8 @@ component MemCtrl_3x3 is
       Dbg_enable_i     : in std_logic;     
       -- Status
       Layer_properties_o : out std_logic_vector(C_S00_AXI_DATA_WIDTH-1 downto 0);
-      Status_o : out std_logic_vector(C_S00_AXI_DATA_WIDTH-1 downto 0) );
+      Status_o : out std_logic_vector(C_S00_AXI_DATA_WIDTH-1 downto 0));
+      
   end component MemCtrl_3x3;
 
   component ShiftRegister_3x3 is
@@ -304,7 +313,7 @@ component MemCtrl_3x3 is
   signal dbg_32bit_select       : std_logic_vector(3 downto 0); 
   signal dbg_enable_AXI         : std_logic;   
   signal dbg_enable             : std_logic_vector(MEM_CTRL_NUMBER downto 0);   
-  signal axi_mem_ctrl_addr      : std_logic_vector(MEM_CTRL_NUMBER-1 downto 0);  
+  signal axi_mem_ctrl_addr      : std_logic_vector(MEM_CTRL_ADDR_WITDH-1 downto 0);  
   signal axi_progress           : std_logic_vector(C_S00_AXI_DATA_WIDTH-1 downto 0);   
   
   signal l1_s_conv_data_1       : std_logic_vector(((DATA_WIDTH*L1_IN_CHANNEL_NUMBER) - 1) downto 0);
@@ -325,6 +334,8 @@ component MemCtrl_3x3 is
   signal layer_properties       : STATUS_ARR; 
   signal axi_layer_properties   : std_logic_vector(C_S00_AXI_DATA_WIDTH-1 downto 0);
   signal axi_status             : std_logic_vector(C_S00_AXI_DATA_WIDTH-1 downto 0);
+  signal all_running            : std_logic;
+  
   
   signal l1_s_tready            : std_logic;
   
@@ -402,6 +413,7 @@ EggNet_v1_0_S00_AXI_inst : EggNet_v1_0_S00_AXI
       LAYER_HIGHT             => LAYER_HIGHT,
       LAYER_WIDTH             => LAYER_WIDTH,
       AXI4_STREAM_INPUT       => 1,
+      MEM_CTRL_ADDR           => 1,
       C_S_AXIS_TDATA_WIDTH    => C_S00_AXIS_TDATA_WIDTH,
       C_S00_AXI_DATA_WIDTH    => C_S00_AXI_DATA_WIDTH
       )       
@@ -503,8 +515,24 @@ EggNet_v1_0_S00_AXI_inst : EggNet_v1_0_S00_AXI
   
 
   layer_properties(0)(7 downto 0) <= std_logic_vector(to_unsigned(MEM_CTRL_NUMBER,8));
-  layer_properties(0)(31 downto 8) <= (others => '0'); -- FIND SOMETHING USEFULL 
-  status(0) <= x"FF00FF00"; -- ADD OVERALL STATUS
+  layer_properties(0)(31 downto 7) <= (others => '0'); -- FIND SOMETHING USEFULL 
+  status(0)(7 downto 0) <= (others => '0'); -- find something usefull here
+  status(0)(15 downto 8) <= (others => '0'); -- Memory Controller Address = 0 for overall status. DO NOT CHANGE!
+  status(0)(31 downto 16) <= x"F0F0"; -- find something usefull here 
+  
+  Running_flag: process(s00_axi_aclk,s00_axi_aresetn) is 
+    variable debugging : std_logic;
+  begin 
+    if s00_axi_aresetn = '0' then 
+      debugging := '0';
+    elsif rising_edge(s00_axi_aclk) then 
+      debugging := '0';
+      for i in 1 to MEM_CTRL_NUMBER loop 
+        debugging := debugging and status(i)(17);
+      end loop; 
+      all_running <= not debugging;  
+    end if;
+  end process; 
   
   Dbg_ctrl: process(s00_axi_aclk,s00_axi_aresetn) is 
   begin 
@@ -525,7 +553,8 @@ EggNet_v1_0_S00_AXI_inst : EggNet_v1_0_S00_AXI
   m00_axis_tkeep <= (others => '1');
   m00_axis_tlast <= l1_s_conv_tlast;
   l1_s_conv_tready <= m00_axis_tready;
-
+  
+  Res_itrp_o <= l1_s_conv_tlast;
 	-- User logic ends
 
 end arch_imp;
