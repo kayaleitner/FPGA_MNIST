@@ -31,10 +31,10 @@
 								<option defaultValue="gnu.c.optimization.level.none" id="xilinx.gnu.compiler.option.optimization.level.1374521372" name="Optimization Level" superClass="xilinx.gnu.compiler.option.optimization.level" valueType="enumerated"/>
 								<option id="xilinx.gnu.compiler.option.debugging.level.48237652" name="Debug Level" superClass="xilinx.gnu.compiler.option.debugging.level" value="gnu.c.debugging.level.max" valueType="enumerated"/>
 								<option id="xilinx.gnu.compiler.dircategory.includes.173089480" name="Include Paths" superClass="xilinx.gnu.compiler.dircategory.includes" valueType="includePath">
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc}/sysroots/numpy_include&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc}/sysroots/python3.6/include/python3.6m&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc}/sysroots/linux/usr/include&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc}/sysroots/linux/usr/include/arm-linux-gnueabihf&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc}/sysroots/numpy_include/include&quot;"/>
 								</option>
 								<inputType id="xilinx.gnu.armv7.linux.c.compiler.input.1437984535" name="C source files" superClass="xilinx.gnu.armv7.linux.c.compiler.input"/>
 							</tool>
@@ -90,7 +90,12 @@
 							<tool id="xilinx.gnu.armv7.linux.c.toolchain.compiler.release.1809659617" name="ARM v7 Linux gcc compiler" superClass="xilinx.gnu.armv7.linux.c.toolchain.compiler.release">
 								<option defaultValue="gnu.c.optimization.level.more" id="xilinx.gnu.compiler.option.optimization.level.1622123742" name="Optimization Level" superClass="xilinx.gnu.compiler.option.optimization.level" valueType="enumerated"/>
 								<option id="xilinx.gnu.compiler.option.debugging.level.1087208125" name="Debug Level" superClass="xilinx.gnu.compiler.option.debugging.level" value="gnu.c.debugging.level.none" valueType="enumerated"/>
-								<option id="xilinx.gnu.compiler.dircategory.includes.653531140" name="Include Paths" superClass="xilinx.gnu.compiler.dircategory.includes" valueType="includePath"/>
+								<option id="xilinx.gnu.compiler.dircategory.includes.653531140" name="Include Paths" superClass="xilinx.gnu.compiler.dircategory.includes" valueType="includePath">
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc}/sysroots/numpy_include&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc}/sysroots/python3.6/include/python3.6m&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc}/sysroots/linux/usr/include&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc}/sysroots/linux/usr/include/arm-linux-gnueabihf&quot;"/>
+								</option>
 								<option id="xilinx.gnu.compiler.symbols.defined.1229744315" name="Defined symbols (-D)" superClass="xilinx.gnu.compiler.symbols.defined" valueType="definedSymbols">
 									<listOptionValue builtIn="false" value="NDEBUG=1"/>
 								</option>
