@@ -110,6 +110,7 @@ begin
         when FIRST_LINE => 
 		  s_st <= 2;
           s_ready <= '1';
+	      fifo_rd <= '0';
           if fifo_wr = '1' then 
 		    if col_cnt = LAYER_WIDTH-1 then 
               col_cnt_next <= 0;
