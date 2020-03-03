@@ -38,7 +38,10 @@ jobs:
         sudo mv bin/* /usr/local/bin
         sudo mv lib/* /usr/local/lib
         sudo mv include/* /usr/local/include
-        
+
+        # Check if ghdl is in path
+        ghdl --version
+
         # sudo dpkg --install ghdl_0.33-1ubuntu1_amd64.deb
         # sudo apt-get install ghdl
   
