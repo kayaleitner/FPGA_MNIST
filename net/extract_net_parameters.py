@@ -42,12 +42,16 @@ def extract(cleanup=True, extract_keras=EXTRACT_FROM_KERAS, extract_torch=EXTRAC
 
     if extract_torch:
         tmodel = load_torch()
-        tmodel.eval()  # Put in eval mode
-        for key, weights in tmodel.state_dict().items():
-            weights = weights.numpy()
-            vals = weights.flatten(order='C')
-            np.savetxt(os.path.join(EXPORT_DIR, 't_{}.txt'.format(key)), vals,
-                       header=str(weights.shape))
+        save_torch_model_weights(tmodel)
+
+
+def save_torch_model_weights(tmodel):
+    tmodel.eval()  # Put in eval mode
+    for key, weights in tmodel.state_dict().items():
+        weights = weights.numpy()
+        vals = weights.flatten(order='C')
+        np.savetxt(os.path.join(EXPORT_DIR, 't_{}.txt'.format(key)), vals,
+                   header=str(weights.shape))
 
 
 def load_torch(filepath=TORCH_SAVE_FILE):

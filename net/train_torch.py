@@ -272,6 +272,11 @@ def train_one_epoch(model, criterion, optimizer, data_loader, device, ntrain_bat
     return
 
 
+def save_weights_as_numpy(net):
+    from extract_net_parameters import save_torch_model_weights
+    save_torch_model_weights(net)
+
+
 def train(nepochs=DEFAULT_EPOCHS, plot_history=False):
     """
     data sets & data loaders
@@ -311,6 +316,8 @@ def train(nepochs=DEFAULT_EPOCHS, plot_history=False):
     """
     torch.save(net, MODEL_SAVE_PATH)
     torch.save(net.state_dict(), MODEL_STATE_SAVE_PATH)
+
+    save_weights_as_numpy(net)
 
     test_accuracies = []
     for i, data in enumerate(testloader):
