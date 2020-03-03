@@ -15,7 +15,7 @@ For easy using of the webapp a the FPGA can be controlled via a Webinterface bas
 Authors
 ----------------
 
-Baischer Lukas, Leitner Anton, Kulnik Benjamin, Marschner Stefan 
+Baischer Lukas, Leitner Anton, Kulnik Benjamin, Marschner Stefan, Cerv Miha
 
 Project Structure
 ----------------
