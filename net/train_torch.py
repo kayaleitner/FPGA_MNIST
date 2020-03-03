@@ -158,7 +158,7 @@ class ConvBN(nn.Sequential):
     def __init__(self, in_planes, out_planes, kernel_size=3, stride=1, groups=1):
         padding = (kernel_size - 1) // 2
         super(ConvBN, self).__init__(
-            nn.Conv2d(in_planes, out_planes, kernel_size, stride, padding, groups=groups, bias=True),
+            nn.Conv2d(in_channels=in_planes, out_channels=out_planes, kernel_size=kernel_size, stride=stride, padding=padding, groups=groups, bias=True),
             nn.BatchNorm2d(out_planes, momentum=0.1),
         )
 
@@ -412,44 +412,6 @@ class Flatten(nn.Module):
 
     def forward(self, x):
         return x.view(x.size()[0], -1)
-
-
-class LayerActivations:
-    features = None
-
-    def __init__(self, model, layer_num, validate_func):
-        self.hook = model[layer_num].register_forward_hook(self.hook_fn)
-        self.validate_func = validate_func
-
-    def hook_fn(self, module, input, output):
-        validated_out = self.validate_func(module, input, output)
-        self.features = output.cpu()
-
-    def remove(self):
-        self.hook.remove()
-
-    @staticmethod
-    def torch_conv_weights_to_keras(x):
-        x_ = x.numpy()
-        # H W Ci Co
-        # Co Ci H W
-        x_ = np.moveaxis(x_, [0, 1], [3, 2])
-        return x_
-
-    @staticmethod
-    def torch_conv_activations_to_keras(x):
-        x_ = x.numpy()
-        # B H W C
-        # B C H W
-        x_ = np.moveaxis(x_, 1, 3)
-        return x_
-
-    @staticmethod
-    def torch_convolution_check(module, torch_input, torch_output, kernel):
-        # Use tupel unpacking?
-        x = LayerActivations.torch_conv_activations_to_keras(torch_input[0])
-        y = LayerActivations.torch_conv_activations_to_keras(torch_output)
-        nnext.conv2d_float(x, kernel, stride=1)
 
 
 if __name__ == '__main__':

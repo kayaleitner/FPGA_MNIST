@@ -1,17 +1,15 @@
 from __future__ import print_function, division
 
-import os
 import numpy as np
 import torch
 import torch.quantization
 import torch.nn as nn
 import torch.optim
-import torchvision
-from torch.utils.data import DataLoader
 
 from extract_net_parameters import load_torch, read_np_torch
 from train_torch import evaluate, prepare_datasets, train_network, LEARNING_RATE, evaluate_labels
-from train_torch import LeNetV2, ConvBN, LinearRelu, Flatten, LayerActivations
+from train_torch import LinearRelu, Flatten, LeNetV2, ConvBN
+from debug import LayerActivations, check_torch_conv_hook, _imshow
 
 # Import the own made network
 import NeuralNetwork
@@ -55,7 +53,7 @@ def perform_fake_quant(weight_dict, target_bits, frac_bits, target_dtype=np.floa
 
     a_max = 2 ** (value_bits - 1) - 1
     a_min = -2 ** (value_bits - 1)
-    scale = 1 / 2 ** value_bits
+    scale = 1 / 2 ** frac_bits
 
     d_out = {}
     for key, value in weight_dict.items():
@@ -77,37 +75,41 @@ def main():
     criterion = nn.CrossEntropyLoss()
     optimizer = torch.optim.Adam(net.parameters(), lr=LEARNING_RATE)
 
+    net.eval()
+    (top1, top5) = evaluate(net, criterion, data_loader=testloader)
+    print("top1 performance: ", top1)
+
     # Read the weights in keras convention
     weights = read_np_torch(ordering='BHWC', target_dtype=np.float32)
+    weights_torch = read_np_torch(ordering='BCHW', target_dtype=np.float32)
 
     # Training in torch happens with np.float32
-    qweights = perform_fake_quant(weight_dict=weights, target_bits=8, frac_bits=4, target_dtype=np.float32)
+    qweights = perform_fake_quant(weight_dict=weights, target_bits=5, frac_bits=3, target_dtype=np.float32)
+    qweights_torch = perform_fake_quant(weight_dict=weights_torch, target_bits=8, frac_bits=4, target_dtype=np.float32)
 
     # Compare with our net
     mnist = NeuralNetwork.Reader.MNIST(folder_path='/tmp/mnist/')
-    train_images = mnist.train_images()
-    train_labels = mnist.train_labels()
-    our_net = NeuralNetwork.nn.Network.LeNet()
-    our_net.cn1.weights = weights['cn1.k']
-    our_net.cn1.bias = weights['cn1.b']
-    our_net.cn2.weights = weights['cn2.k']
-    our_net.cn2.bias = weights['cn2.b']
-    our_net.fc1.weights = weights['fc1.w']
-    our_net.fc1.bias = weights['fc1.b']
-    our_net.fc2.weights = weights['fc2.w']
-    our_net.fc2.bias = weights['fc2.b']
+    test_images = mnist.test_images()
+    test_labels = mnist.test_labels()
+    our_net = init_network_from_weights(qweights, from_torch=True)
 
-    img_batch = train_images[0:50, :, :] / 255
-    lbl_batch = train_labels[0:50]
-    lbl_our_net, y_our_net_intermediate = our_net.forward_intermediate(img_batch)
-    lbl_our_net = lbl_our_net.argmax(1)
+    batch_size = 50
+    accuracy = evaluate_network(batch_size, our_net, test_images, test_labels)
+    print("Accuracy: ", accuracy)
 
     net.eval()
-    LayerActivations(net, layer_num=0, validate_func=lambda x,y,z: LayerActivations.torch_convolution_check(x,y,z,kernel=weights['cn1.k']))
-    LayerActivations(net, layer_num=3, validate_func=lambda x,y,z: LayerActivations.torch_convolution_check(x,y,z,kernel=weights['cn2.k']))
+    # Reshape images
+    img_bach_torch = np.reshape(img_batch, newshape=(-1, 1, 28, 28)).astype(np.float32)
+    _imshow(img_bach_torch, mode='torch')
+    lbl_torch = net(torch.from_numpy(img_bach_torch))
+    lbl_torch = lbl_torch.topk(1)[1].numpy().flatten()  # ToDo: Maybe simplify this expression a bit
+
+    # To check the output of the fully connected layers against our net
+    # LayerActivations(net, layer_num=7, validate_func=None)
+    # LayerActivations(net, layer_num=9, validate_func=None)
+
     lbls = evaluate_labels(net, criterion, data_loader=testloader)
     (top1, top5) = evaluate(net, criterion, data_loader=testloader)
-
 
     fixed_conv_model = nn.Sequential(
         FixedConvLayer(kernel=weights['cn1.k'], bias=weights['cn1.b']),
@@ -116,10 +118,10 @@ def main():
         nn.MaxPool2d(kernel_size=2, stride=2),
         Flatten(),
         # LinearRelu(in_features=qweights['fc1.w'].shape[1], out_features=qweights['fc1.w'].shape[0]),
-        LinearRelu.init_with_weights(w=qweights['fc1.w'], b=qweights['fc1.b']),
+        LinearRelu.init_with_weights(w=weights_torch['fc1.w'], b=weights_torch['fc1.b']),
         nn.Dropout(p=0.25),
         # LinearRelu(in_features=qweights['fc2.w'].shape[1], out_features=10),
-        LinearRelu.init_with_weights(w=qweights['fc2.w'], b=qweights['fc2.b']),
+        LinearRelu.init_with_weights(w=weights_torch['fc2.w'], b=weights_torch['fc2.b']),
         nn.Softmax(dim=1)
     )
 
@@ -129,6 +131,32 @@ def main():
     print(top1)
 
     (top1, top5) = evaluate(net, criterion, testloader)
+
+
+def evaluate_network(batch_size, network, train_images, train_labels):
+    i = 0
+    total_correct = 0
+    while i < train_images.shape[0]:
+        x = train_images[i:i + batch_size] / 255.0
+        y_ = train_labels[i:i + batch_size]
+        y = network.forward(x)
+        y = y.argmax(-1)
+        total_correct += np.sum(y == y_)
+    accuracy = total_correct / train_images.shape[0]
+    return accuracy
+
+
+def init_network_from_weights(qweights, from_torch):
+    our_net = NeuralNetwork.nn.Network.LeNet(reshape_torch=from_torch)
+    our_net.cn1.weights = qweights['cn1.k']
+    our_net.cn1.bias = qweights['cn1.b']
+    our_net.cn2.weights = qweights['cn2.k']
+    our_net.cn2.bias = qweights['cn2.b']
+    our_net.fc1.weights = qweights['fc1.w']
+    our_net.fc1.bias = qweights['fc1.b']
+    our_net.fc2.weights = qweights['fc2.w']
+    our_net.fc2.bias = qweights['fc2.b']
+    return our_net
 
 
 if __name__ == '__main__':
