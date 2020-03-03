@@ -1,1 +1,5 @@
-from NeuralNetwork.NN.Activations import relu, drelu
+"""
+Neural Network Package
+"""
+import NeuralNetwork.nn
+import NeuralNetwork.Reader

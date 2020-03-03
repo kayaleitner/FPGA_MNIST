@@ -26,21 +26,20 @@
     }
 
 
-
-int maxPool2D(const float * restrict data_in,
-              int          batch,
-              int          in_h,
-              int          in_w,
-              int          in_ch,
-              float **     pdata_out,
-              int *        pbatch_out,
-              int *        pout_h,
-              int *        pout_w,
-              int *        pout_ch)
+int maxPool2D(const float* restrict data_in,
+              int                   batch,
+              int                   in_h,
+              int                   in_w,
+              int                   in_ch,
+              float**               pdata_out,
+              int*                  pbatch_out,
+              int*                  pout_h,
+              int*                  pout_w,
+              int*                  pout_ch)
 {
     int return_value = 0;
 
-    float *   data_out = NULL;
+    float*    data_out = NULL;
     const int batch_out = batch;
     const int out_h = in_h / 2;
     const int out_w = in_w / 2;
@@ -65,7 +64,7 @@ int maxPool2D(const float * restrict data_in,
                   "Trying to request %g GBs, exceeds MAX allowed %lu GBs",
                   (((double)data_out_size * sizeof(float)) / GIGABYTE_BYTES), MAX_MEMORY_TO_ALLOCATE / GIGABYTE_BYTES)
 
-    data_out = (float *)calloc(data_out_size, sizeof(float));
+    data_out = (float*)calloc(data_out_size, sizeof(float));
     CHECK_AND_SET(data_out != NULL, return_value, NNE_ERROR_NULL_POINTER_PARAMETER,
                   "Error when allocating %lu bytes of memory", data_out_size * sizeof(float));
 
@@ -76,16 +75,12 @@ int maxPool2D(const float * restrict data_in,
     *pout_w = out_w;
     *pout_ch = out_ch;
 
-    for (int b = 0; b < batch; b++)
-    {
+    for (int b = 0; b < batch; b++) {
         int io = 0;
         int jo = 0;
-        for (int i = 0; i < in_h; i += 2)
-        {
-            for (int j = 0; j < in_w; j += 2)
-            {
-                for (int k = 0; k < in_ch; k++)
-                {
+        for (int i = 0; i < in_h; i += 2) {
+            for (int j = 0; j < in_w; j += 2) {
+                for (int k = 0; k < in_ch; k++) {
                     float a0 = DATA_IN(b, i, j, k);
                     float a1 = DATA_IN(b, i, j + 1, k);
                     float a2 = DATA_IN(b, i + 1, j, k);

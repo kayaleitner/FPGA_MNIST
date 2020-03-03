@@ -7,14 +7,19 @@
 	\label{FIG:conv-channel}
 \end{figure}
 Figure \ref{FIG:conv-channel} shows the block diagram of a conv\_channel module. It uses $n$ kernel\_3x3 modules to realise $n$ input channels. 
-All kernel\_3x3 modules get a different input vector $X_{c_{i1}}$ to $X_{c_{in}}$ which are $3 \times 3$ input matrices.   
+All kernel\_3x3 modules get a different input vector $X_{c_{i1}}$ to $X_{c_{in}}$ which are $3 \times 3$ input matrices. All kernel outputs are summed up
+to one final value of length BIT\_WIDTH\_OUT.
 \subsubsection{Interface}
-\todo{define input output interface}
-
+\begin{itemize}
+	\item Input interface, same as conv2d.
+	\item Output interface connected to the pooling layer, which is a value of length BIT\_WIDTH\_OUT.
+\end{itemize}
 \subsubsection{Parameter}
 \begin{itemize}
- 	\item INPUT\_CHANNEL\_NUMBER : integer
- 	\item OUTPUT\_CHANNEL\_NUMBER : integer
- 	\item MATRIX\_WIDTH: integer
- 	\item MATRIX\_HEIGTH: integer
+ 	\item BIT\_WIDTH\_IN : integer
+ 	\item KERNEL\_WIDTH\_OUT : integer, output bit width of the kernel\_3x3 module
+ 	\item BIT\_WIDTH\_OUT: integer
+ 	\item N: integer, number of kernels
+ 	\item OUTPUT\_MSB: integer, defines which of the $n$=BIT\_WIDTH\_OUT bits is the most significant bit
+ 	\item BIAS: integer, currently unused as bias seems to not be very important in the convolutional layers
 \end{itemize}

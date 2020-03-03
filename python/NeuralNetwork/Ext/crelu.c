@@ -16,7 +16,7 @@
 
 
 #define F_RELU(x) (x > 0.0 ? x : 0)
-inline float f_relu(float x) { return x > 0.0 ? x : 0.0; }
+inline float f_relu(float x) { return x > 0.0f ? x : 0.0f; }
 
 #define BITS_OF_BYTE(n_byte) (n_byte * 8)
 
@@ -25,8 +25,8 @@ inline float f_relu(float x) { return x > 0.0 ? x : 0.0; }
  * This is a workaround because C does not allow bit manipulation on non-integer types.
  */
 union bitfloat {
-    uint32_t bits;  // the bit representation of the float value
-    float    value; // the float representation of the value
+    uint32_t bits;    // the bit representation of the float value
+    float    value;   // the float representation of the value
 };
 
 
@@ -38,15 +38,14 @@ inline float f_fast_relu(float x)
     return co.value;
 }
 
-int relu1D(float *x, const int DIM1)
+int relu1D(float* x, const int DIM1)
 {
     union bitfloat {
         uint32_t bits;
         float    value;
     };
 
-    for (int i = 0; i < DIM1; i++)
-    {
+    for (int i = 0; i < DIM1; i++) {
         union bitfloat bf;
         bf.value = x[i];   // copy value
 
@@ -60,20 +59,19 @@ int relu1D(float *x, const int DIM1)
 }
 
 
-int relu_1d_out(float * __restrict x, const int DIM1, float ** __restrict yptr, int *DIM_OUT)
+int relu_1d_out(float* __restrict x, const int DIM1, float** __restrict yptr, int* DIM_OUT)
 {
     int return_value = 0;
-    float * __restrict y = NULL;
+    float* __restrict y = NULL;
     CREATE_ARRAY(float, y, DIM1);
     *yptr = y;
     *DIM_OUT = DIM1;
 
-    for (int i = 0; i < DIM1; i++)
-    {
+    for (int i = 0; i < DIM1; i++) {
         union bitfloat bf;
-        bf.value = x[i];                        // copy value
-        bf.bits = bf.bits & (bf.bits >> 31);    // twiggle bits
-        y[i] = bf.value;                        // Assign float value
+        bf.value = x[i];                       // copy value
+        bf.bits = bf.bits & (bf.bits >> 31);   // twiggle bits
+        y[i] = bf.value;                       // Assign float value
     }
     return return_value;
 
@@ -83,30 +81,42 @@ error:
     return return_value;
 }
 
-int relu2D(float *x, const int DIM1, const int DIM2)
+int relu2D(float* x, const int DIM1, const int DIM2)
 {
-    for (int i = 0; i < DIM1 * DIM2; i++)
-    {
-        x[i] = F_RELU(x[i]);
-    }
+    for (int i = 0; i < DIM1 * DIM2; i++) { x[i] = F_RELU(x[i]); }
     return 0;
 }
 
-int relu3D(float *x, const int DIM1, const int DIM2, const int DIM3)
+int relu3D(float* x, const int DIM1, const int DIM2, const int DIM3)
 {
-    for (int i = 0; i < DIM1 * DIM2 * DIM3; i++)
-    {
-        x[i] = F_RELU(x[i]);
-    }
+    for (int i = 0; i < DIM1 * DIM2 * DIM3; i++) { x[i] = F_RELU(x[i]); }
     return 0;
 }
 
-int relu4D(float *x, const int DIM1, const int DIM2, const int DIM3, const int DIM4)
+int relu4D(float* x, const int DIM1, const int DIM2, const int DIM3, const int DIM4)
 {
     const size_t N = DIM1 * DIM2 * DIM3 * DIM4;
-    for (size_t i = 0; i < N; i++)
-    {
-        x[i] = F_RELU(x[i]);
-    }
+    for (size_t i = 0; i < N; i++) { x[i] = F_RELU(x[i]); }
     return 0;
 }
+
+
+#define new_relu_protofunc_definition(dtype)                                                       \
+    int relu_##dtype##_inplace(dtype* x, int DIM1)                                           \
+    {                                                                                              \
+        const size_t N = DIM1;                                                                     \
+        for (size_t i = 0; i < N; i++) { x[i] = F_RELU(x[i]); }                                    \
+        return 0;                                                                                  \
+    }
+
+
+new_relu_protofunc_definition(float);
+new_relu_protofunc_definition(double);
+new_relu_protofunc_definition(int8_t);
+new_relu_protofunc_definition(int16_t);
+new_relu_protofunc_definition(int32_t);
+new_relu_protofunc_definition(int64_t);
+new_relu_protofunc_definition(uint8_t);
+new_relu_protofunc_definition(uint16_t);
+new_relu_protofunc_definition(uint32_t);
+new_relu_protofunc_definition(uint64_t);

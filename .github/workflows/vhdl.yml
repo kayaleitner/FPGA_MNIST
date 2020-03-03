@@ -1,0 +1,47 @@
+name: VHDL Testbenches
+
+on: [push, pull_request]
+
+jobs:
+  vhdl_testbenches:
+    runs-on: ubuntu-16.04
+    steps:
+    - uses: actions/checkout@v1
+    
+    - name: Set up Python 3.7
+      uses: actions/setup-python@v1
+      with:
+        python-version: 3.7
+
+    - uses: actions/cache@v1
+      # Use Cache, see: https://github.com/actions/cache
+      if: startsWith(runner.os, 'Linux')
+      id: cache
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+
+    - name: Install GHDL
+      run: |
+        sudo add-apt-repository universe
+        sudo add-apt-repository ppa:mati75/ghdl # or ppa:gekkio/ghdl
+
+        sudo apt-get update
+        sudo apt-get install ghdl*
+
+    - name: GHDL Check
+      run: ghdl --version
+
+    - name: Install Python Dependencies
+      run: |
+        pwd        
+        python -m pip install --upgrade pip
+        pip install -r vivado/requirements.txt
+
+    - name: Test
+      run: |
+        pwd
+        cd vivado/NN_IP/EggNet_1.0/sim/MemCtrl/
+        python tb_MemCtrl_run_sim.py

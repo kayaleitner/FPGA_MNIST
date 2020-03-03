@@ -1,0 +1,6 @@
+conv2d_0.vhd
+conv2d_1.vhd
+*.o
+channels/
+tmp/
+pooling_test.py

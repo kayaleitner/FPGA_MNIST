@@ -13,7 +13,8 @@ if __name__ == '__main__':
     print("o2.shape = ", o2.shape)
 
     # Try to trigger exception by prividing bad kernel
-    K = np.random.rand(4, 4, 4, 8).astype(np.float32)  # only odd numbers are allowed
+    K = np.random.rand(4, 4, 4, 8).astype(
+        np.float32)  # only odd numbers are allowed
     o = nn.conv2d(img, K, 1)
 
 
@@ -24,12 +25,12 @@ def get_uniform_test_image_and_kernel(shape_image, shape_kernel):
 
 
 class NNExtensionTestCase(unittest.TestCase):
-
     NUMERIC_EPS = 1e-4
 
     def test_generic(self):
         from NeuralNetwork.Ext.NeuralNetworkExtension import conv2d, maxPool2D, relu4D
-        I, K = get_uniform_test_image_and_kernel((10, 28, 28, 10), (3, 3, 10, 20))
+        I, K = get_uniform_test_image_and_kernel(
+            (10, 28, 28, 10), (3, 3, 10, 20))
         o = conv2d(I, K, 1)
         print("o.shape = ", o.shape)
         o2 = maxPool2D(o)
@@ -37,7 +38,7 @@ class NNExtensionTestCase(unittest.TestCase):
         print("o2.shape = ", o2.shape)
 
     def test_conv(self):
-        from NeuralNetwork.NN.ConvLayer import conv2d
+        from NeuralNetwork.nn.core import conv2d
         from NeuralNetwork.Ext.NeuralNetworkExtension import conv2d as conv2d_ext
         from NeuralNetwork.Ext.NeuralNetworkExtension import conv2d_3x3
 
@@ -57,11 +58,12 @@ class NNExtensionTestCase(unittest.TestCase):
         import time
         from NeuralNetwork.Ext.NeuralNetworkExtension import conv2d_3x3
         from NeuralNetwork.Ext.NeuralNetworkExtension import conv2d as conv2d_ext
-        from NeuralNetwork.NN.ConvLayer import conv2d
+        from NeuralNetwork.nn.core import conv2d
 
         n_runs = 10
         # Get large image data set
-        I, K = get_uniform_test_image_and_kernel((10, 28, 28, 6), (3, 3, 6, 12))
+        I, K = get_uniform_test_image_and_kernel(
+            (10, 28, 28, 6), (3, 3, 6, 12))
 
         print("Code         Time")
 
@@ -92,11 +94,12 @@ class NNExtensionTestCase(unittest.TestCase):
     def test_relu_speed(self):
         import time
         from NeuralNetwork.Ext.NeuralNetworkExtension import relu4D
-        from NeuralNetwork.NN.Activations import relu
+        from NeuralNetwork.nn.core import relu
 
         n_runs = 100
         # Get large image data set
-        I, _ = get_uniform_test_image_and_kernel((10, 28, 28, 6), (3, 3, 6, 12))
+        I, _ = get_uniform_test_image_and_kernel(
+            (10, 28, 28, 6), (3, 3, 6, 12))
 
         print("Code         Time")
 
@@ -120,11 +123,12 @@ class NNExtensionTestCase(unittest.TestCase):
     def test_pool_speed(self):
         import time
         from NeuralNetwork.Ext.NeuralNetworkExtension import maxPool2D
-        from NeuralNetwork.NN.ConvLayer import pooling_max
+        from NeuralNetwork.nn.core import pooling_max
 
         n_runs = 100
         # Get large image data set
-        I, _ = get_uniform_test_image_and_kernel((10, 28, 28, 6), (3, 3, 6, 12))
+        I, _ = get_uniform_test_image_and_kernel(
+            (10, 28, 28, 6), (3, 3, 6, 12))
 
         print("Code         Time")
 
@@ -154,7 +158,7 @@ class NNExtensionTestCase(unittest.TestCase):
         self.assertTrue(np.all(negatives > -0.00000001))
 
     def test_relu_ndim(self):
-        from NeuralNetwork.NN.Activations import relu
+        from NeuralNetwork.nn.core import relu
         import NeuralNetwork.Ext.NeuralNetworkExtension as ext
 
         sizes_to_test = [
@@ -176,4 +180,14 @@ class NNExtensionTestCase(unittest.TestCase):
             else:
                 raise ValueError()
 
-            self.assertTrue(np.allclose(x_relu1, x_relu2, atol=self.NUMERIC_EPS))
+            self.assertTrue(np.allclose(
+                x_relu1, x_relu2, atol=self.NUMERIC_EPS))
+
+    def test_int(self):
+        from NeuralNetwork.nn.core import relu
+        import NeuralNetwork.Ext.NeuralNetworkExtension as NNExt
+        x1 = np.random.rand(100).astype(dtype=np.int16) * 10 - 5
+        x2 = x1.copy()
+        NNExt.relu_int16_t(x1)
+        x2 = relu(x2)
+        np.allclose(x1, x2, atol=self.NUMERIC_EPS)

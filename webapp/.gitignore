@@ -1,0 +1,14 @@
+
+# IDEs
+.idea
+.vscode
+
+# Virtual Env
+venv
+
+# Python Caches
+__pycache__
+*.pyc
+
+# Ignore the Full Admin LTE Package
+AdminLTE-3.0.1

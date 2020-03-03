@@ -5,10 +5,10 @@ use ieee.numeric_std.all;
 entity EggNet_v1_0_S00_AXI is
 	generic (
 		-- Users to add parameters here
-
+    MEM_CTRL_ADDR_WITDH   : integer range 8 to 8 := 8; -- don't change 
 		-- User parameters ends
 		-- Do not modify the parameters beyond this line
-
+  
 		-- Width of S_AXI data bus
 		C_S_AXI_DATA_WIDTH	: integer	:= 32;
 		-- Width of S_AXI address bus
@@ -16,8 +16,15 @@ entity EggNet_v1_0_S00_AXI is
 	);
 	port (
 		-- Users to add ports here
-    Status_i : in std_logic_vector(C_S_AXI_DATA_WIDTH-1 downto 0);
-		-- User ports ends
+    Status_i                : in std_logic_vector(C_S_AXI_DATA_WIDTH-1 downto 0);
+    Dbg_bram_addr_o         : out std_logic_vector(C_S_AXI_DATA_WIDTH-1 downto 0); -- BRAM address   
+    Dbg_bram_addr_check_i   : in std_logic_vector(C_S_AXI_DATA_WIDTH-1 downto 0); -- BRAM address to double
+    Dbg_bram_data_i         : in std_logic_vector(C_S_AXI_DATA_WIDTH-1 downto 0); -- 32 bit vector tile 
+    Dbg_32bit_select_o      : out std_logic_vector(3 downto 0);   
+    Dbg_enable_o            : out std_logic;  
+    AXI_layer_properties_i    : in std_logic_vector(C_S_AXI_DATA_WIDTH-1 downto 0);
+    AXI_mem_ctrl_addr_o       : out std_logic_vector(MEM_CTRL_ADDR_WITDH-1 downto 0);  
+    -- User ports ends
 		-- Do not modify the ports beyond this line
 
 		-- Global Clock Signal
@@ -345,7 +352,7 @@ begin
 	-- and the slave is ready to accept the read address.
 	slv_reg_rden <= axi_arready and S_AXI_ARVALID and (not axi_rvalid) ;
 
-	process (slv_reg0, slv_reg1, slv_reg2, slv_reg3, axi_araddr, S_AXI_ARESETN, slv_reg_rden)
+	process (Status_i, Dbg_bram_addr_check_i, Dbg_bram_data_i, AXI_layer_properties_i, axi_araddr, S_AXI_ARESETN, slv_reg_rden)
 	variable loc_addr :std_logic_vector(OPT_MEM_ADDR_BITS downto 0);
 	begin
 	    -- Address decoding for reading registers
@@ -354,11 +361,11 @@ begin
 	      when b"00" =>
 	        reg_data_out <= Status_i; -- 32 bit status register
 	      when b"01" =>
-	        reg_data_out <= slv_reg1;
+	        reg_data_out <= Dbg_bram_addr_check_i;
 	      when b"10" =>
-	        reg_data_out <= slv_reg2;
+	        reg_data_out <= Dbg_bram_data_i;
 	      when b"11" =>
-	        reg_data_out <= slv_reg3;
+	        reg_data_out <= AXI_layer_properties_i;
 	      when others =>
 	        reg_data_out  <= (others => '0');
 	    end case;
@@ -384,6 +391,11 @@ begin
 
 
 	-- Add user logic here
+  AXI_mem_ctrl_addr_o <= slv_reg0(MEM_CTRL_ADDR_WITDH-1 downto 0); 
+  Dbg_bram_addr_o <= slv_reg1; 
+  Dbg_enable_o <= slv_reg2(0);
+  Dbg_32bit_select_o <= slv_reg3(3 downto 0);
+  
 
 	-- User logic ends
 

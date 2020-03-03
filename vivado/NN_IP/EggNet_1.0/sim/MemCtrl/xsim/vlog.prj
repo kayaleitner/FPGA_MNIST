@@ -1,0 +1,9 @@
+verilog xil_defaultlib  \
+"../../../../src/blk_mem_layer_2/sim/blk_mem_layer_2.v" \
+"../../../../src/fifo_linebuffer_layer_2/sim/fifo_linebuffer_layer_2.v" \
+"../../../../src/fifo_generator_0/sim/fifo_generator_0.v" \
+"../../../../src/blk_mem_gen_0/sim/blk_mem_gen_0.v" \
+
+verilog xil_defaultlib "glbl.v"
+
+nosort

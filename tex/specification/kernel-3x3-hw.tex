@@ -1,0 +1,16 @@
+\subsection{kernel-3x3}
+This modules performs a multiplication of 9 values of length BIT\_WIDTH\_IN with their respective weights which are defined in an
+array that can be set with a generic. The multiplication results are then added up, after which a ReLu step is performed where outputs
+above 255 are clipped to 255 and outputs below 0 are clipped to 0.
+\subsubsection{Interface}
+\begin{itemize}
+	\item Input interface, a vector of 9 values of length BIT\_WIDTH\_IN.
+	\item Output interface, same as conv\_channel.
+\end{itemize}
+\subsubsection{Parameter}
+\begin{itemize}
+	\item BIT\_WIDTH\_IN: integer
+	\item BIT\_WIDTH\_OUT: integer
+	\item WEIGHT: array of 9 integers
+	\item WEIGHT\_WIDTH: integer
+\end{itemize}

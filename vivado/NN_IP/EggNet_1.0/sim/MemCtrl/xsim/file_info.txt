@@ -1,0 +1,11 @@
+blk_mem_layer_2.v,verilog,xil_defaultlib,../../../../src/blk_mem_layer_2/sim/blk_mem_layer_2.v,
+fifo_linebuffer_layer_2.v,verilog,xil_defaultlib,../../../../src/fifo_linebuffer_layer_2/sim/fifo_linebuffer_layer_2.v,
+fifo_generator_0.v,verilog,xil_defaultlib,../../../../src/fifo_generator_0/sim/fifo_generator_0.v,
+blk_mem_gen_0.v,verilog,xil_defaultlib,../../../../src/blk_mem_gen_0/sim/blk_mem_gen_0.v,
+EggNet_v1_0_S00_AXI.vhd,vhdl,xil_defaultlib,../../../../hdl/EggNet_v1_0_S00_AXI.vhd,
+EggNet_v1_0_S00_AXIS.vhd,vhdl,xil_defaultlib,../../../../hdl/EggNet_v1_0_S00_AXIS.vhd,
+MemCtrl.vhd,vhdl,xil_defaultlib,../../../../src/MemCtrl/MemCtrl.vhd,
+Shiftregister_3x3.vhd,vhdl,xil_defaultlib,../../../../src/MemCtrl/Shiftregister_3x3.vhd,
+EggNet_v1_0.vhd,vhdl,xil_defaultlib,../../../../hdl/EggNet_v1_0.vhd,
+tb_memctrl.vhd,vhdl,xil_defaultlib,../../tb_memctrl.vhd,
+glbl.v,Verilog,xil_defaultlib,glbl.v

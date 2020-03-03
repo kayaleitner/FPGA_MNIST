@@ -2,21 +2,21 @@
 
 ## Requirements
 
-- Python3
-- SWIG
+* Python3
+* SWIG
 
 ## Build
 
 Check if the build runs by opening the folder in terminal and try
 
-```bash
+``` bash
 python setup.py build_ext -f --build-lib .
 python setup.py bdist sdist
 ```
 
-or to install it into your Environment: 
+or to install it into your Environment:
 
-```bash
+``` bash
 # cd to the folder
 pip install .
 # or use
@@ -29,6 +29,14 @@ pip install path/to/folder
 |---------------|----------|
 | `conv2d`      |    236   |
 | `relu`        |     2    |
-| `max_pool_2d` |    165   
+| `max_pool_2d` |    165   |
 
 ## Test
+
+To run the python tests type:
+
+```bash
+python setup.py test
+```
+
+This requires that the extensions are build first.
