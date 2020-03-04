@@ -1403,11 +1403,11 @@
         <spirit:parameters>
           <spirit:parameter>
             <spirit:name>GENtimestamp</spirit:name>
-            <spirit:value>Mon Jan 20 10:17:16 UTC 2020</spirit:value>
+            <spirit:value>Wed Mar 04 12:42:08 UTC 2020</spirit:value>
           </spirit:parameter>
           <spirit:parameter>
             <spirit:name>outputProductCRC</spirit:name>
-            <spirit:value>7:58fddda3</spirit:value>
+            <spirit:value>7:43713a8c</spirit:value>
           </spirit:parameter>
         </spirit:parameters>
       </spirit:view>
@@ -1422,11 +1422,11 @@
         <spirit:parameters>
           <spirit:parameter>
             <spirit:name>GENtimestamp</spirit:name>
-            <spirit:value>Mon Jan 20 10:17:16 UTC 2020</spirit:value>
+            <spirit:value>Wed Mar 04 12:42:08 UTC 2020</spirit:value>
           </spirit:parameter>
           <spirit:parameter>
             <spirit:name>outputProductCRC</spirit:name>
-            <spirit:value>7:58fddda3</spirit:value>
+            <spirit:value>7:43713a8c</spirit:value>
           </spirit:parameter>
         </spirit:parameters>
       </spirit:view>
@@ -1441,11 +1441,11 @@
         <spirit:parameters>
           <spirit:parameter>
             <spirit:name>GENtimestamp</spirit:name>
-            <spirit:value>Mon Jan 20 10:17:16 UTC 2020</spirit:value>
+            <spirit:value>Wed Mar 04 12:42:08 UTC 2020</spirit:value>
           </spirit:parameter>
           <spirit:parameter>
             <spirit:name>outputProductCRC</spirit:name>
-            <spirit:value>7:58fddda3</spirit:value>
+            <spirit:value>7:43713a8c</spirit:value>
           </spirit:parameter>
         </spirit:parameters>
       </spirit:view>
@@ -1460,11 +1460,11 @@
         <spirit:parameters>
           <spirit:parameter>
             <spirit:name>GENtimestamp</spirit:name>
-            <spirit:value>Mon Jan 20 10:17:16 UTC 2020</spirit:value>
+            <spirit:value>Wed Mar 04 12:42:08 UTC 2020</spirit:value>
           </spirit:parameter>
           <spirit:parameter>
             <spirit:name>outputProductCRC</spirit:name>
-            <spirit:value>7:a97801cc</spirit:value>
+            <spirit:value>7:b520d43d</spirit:value>
           </spirit:parameter>
         </spirit:parameters>
       </spirit:view>
@@ -1479,11 +1479,11 @@
         <spirit:parameters>
           <spirit:parameter>
             <spirit:name>GENtimestamp</spirit:name>
-            <spirit:value>Mon Jan 20 10:17:16 UTC 2020</spirit:value>
+            <spirit:value>Wed Mar 04 12:42:08 UTC 2020</spirit:value>
           </spirit:parameter>
           <spirit:parameter>
             <spirit:name>outputProductCRC</spirit:name>
-            <spirit:value>7:a97801cc</spirit:value>
+            <spirit:value>7:b520d43d</spirit:value>
           </spirit:parameter>
         </spirit:parameters>
       </spirit:view>
@@ -1497,11 +1497,11 @@
         <spirit:parameters>
           <spirit:parameter>
             <spirit:name>GENtimestamp</spirit:name>
-            <spirit:value>Mon Jan 20 10:17:17 UTC 2020</spirit:value>
+            <spirit:value>Wed Mar 04 12:42:08 UTC 2020</spirit:value>
           </spirit:parameter>
           <spirit:parameter>
             <spirit:name>outputProductCRC</spirit:name>
-            <spirit:value>7:58fddda3</spirit:value>
+            <spirit:value>7:43713a8c</spirit:value>
           </spirit:parameter>
         </spirit:parameters>
       </spirit:view>
@@ -1515,11 +1515,11 @@
         <spirit:parameters>
           <spirit:parameter>
             <spirit:name>GENtimestamp</spirit:name>
-            <spirit:value>Mon Jan 20 10:17:17 UTC 2020</spirit:value>
+            <spirit:value>Wed Mar 04 12:42:08 UTC 2020</spirit:value>
           </spirit:parameter>
           <spirit:parameter>
             <spirit:name>outputProductCRC</spirit:name>
-            <spirit:value>7:58fddda3</spirit:value>
+            <spirit:value>7:43713a8c</spirit:value>
           </spirit:parameter>
         </spirit:parameters>
       </spirit:view>
@@ -3147,11 +3147,11 @@
       </spirit:modelParameter>
       <spirit:modelParameter spirit:dataType="INTEGER">
         <spirit:name>C_WRITE_DEPTH_A</spirit:name>
-        <spirit:value spirit:format="long" spirit:resolve="generated" spirit:id="MODELPARAM_VALUE.C_WRITE_DEPTH_A">1569</spirit:value>
+        <spirit:value spirit:format="long" spirit:resolve="generated" spirit:id="MODELPARAM_VALUE.C_WRITE_DEPTH_A">1568</spirit:value>
       </spirit:modelParameter>
       <spirit:modelParameter spirit:dataType="INTEGER">
         <spirit:name>C_READ_DEPTH_A</spirit:name>
-        <spirit:value spirit:format="long" spirit:resolve="generated" spirit:id="MODELPARAM_VALUE.C_READ_DEPTH_A">1569</spirit:value>
+        <spirit:value spirit:format="long" spirit:resolve="generated" spirit:id="MODELPARAM_VALUE.C_READ_DEPTH_A">1568</spirit:value>
       </spirit:modelParameter>
       <spirit:modelParameter spirit:dataType="INTEGER">
         <spirit:name>C_ADDRA_WIDTH</spirit:name>
@@ -3203,11 +3203,11 @@
       </spirit:modelParameter>
       <spirit:modelParameter spirit:dataType="INTEGER">
         <spirit:name>C_WRITE_DEPTH_B</spirit:name>
-        <spirit:value spirit:format="long" spirit:resolve="generated" spirit:id="MODELPARAM_VALUE.C_WRITE_DEPTH_B">1569</spirit:value>
+        <spirit:value spirit:format="long" spirit:resolve="generated" spirit:id="MODELPARAM_VALUE.C_WRITE_DEPTH_B">1568</spirit:value>
       </spirit:modelParameter>
       <spirit:modelParameter spirit:dataType="INTEGER">
         <spirit:name>C_READ_DEPTH_B</spirit:name>
-        <spirit:value spirit:format="long" spirit:resolve="generated" spirit:id="MODELPARAM_VALUE.C_READ_DEPTH_B">1569</spirit:value>
+        <spirit:value spirit:format="long" spirit:resolve="generated" spirit:id="MODELPARAM_VALUE.C_READ_DEPTH_B">1568</spirit:value>
       </spirit:modelParameter>
       <spirit:modelParameter spirit:dataType="INTEGER">
         <spirit:name>C_ADDRB_WIDTH</spirit:name>
@@ -3339,6 +3339,12 @@
       <spirit:enumeration>3</spirit:enumeration>
     </spirit:choice>
     <spirit:choice>
+      <spirit:name>choice_list_8112d406</spirit:name>
+      <spirit:enumeration>8</spirit:enumeration>
+      <spirit:enumeration>16</spirit:enumeration>
+      <spirit:enumeration>32</spirit:enumeration>
+    </spirit:choice>
+    <spirit:choice>
       <spirit:name>choice_list_89a27b2f</spirit:name>
       <spirit:enumeration>8</spirit:enumeration>
       <spirit:enumeration>9</spirit:enumeration>
@@ -3357,10 +3363,6 @@
       <spirit:enumeration>ECCHSIAO32-7</spirit:enumeration>
       <spirit:enumeration>ECCHSIAO64-8</spirit:enumeration>
       <spirit:enumeration>ECCHSIAO128-9</spirit:enumeration>
-    </spirit:choice>
-    <spirit:choice>
-      <spirit:name>choice_list_d8920bdd</spirit:name>
-      <spirit:enumeration>8</spirit:enumeration>
     </spirit:choice>
     <spirit:choice>
       <spirit:name>choice_pairs_07c32259</spirit:name>
@@ -3803,7 +3805,7 @@
     </spirit:parameter>
     <spirit:parameter>
       <spirit:name>Write_Depth_A</spirit:name>
-      <spirit:value spirit:format="long" spirit:resolve="user" spirit:id="PARAM_VALUE.Write_Depth_A" spirit:order="19" spirit:minimum="2" spirit:maximum="1048576" spirit:rangeType="long">1569</spirit:value>
+      <spirit:value spirit:format="long" spirit:resolve="user" spirit:id="PARAM_VALUE.Write_Depth_A" spirit:order="19" spirit:minimum="2" spirit:maximum="1048576" spirit:rangeType="long">1568</spirit:value>
       <spirit:vendorExtensions>
         <xilinx:parameterInfo>
           <xilinx:enablement>
@@ -3814,7 +3816,7 @@
     </spirit:parameter>
     <spirit:parameter>
       <spirit:name>Read_Width_A</spirit:name>
-      <spirit:value spirit:resolve="user" spirit:id="PARAM_VALUE.Read_Width_A" spirit:choiceRef="choice_list_d8920bdd" spirit:order="22">8</spirit:value>
+      <spirit:value spirit:resolve="user" spirit:id="PARAM_VALUE.Read_Width_A" spirit:choiceRef="choice_list_8112d406" spirit:order="22">8</spirit:value>
       <spirit:vendorExtensions>
         <xilinx:parameterInfo>
           <xilinx:enablement>
@@ -3847,7 +3849,7 @@
     </spirit:parameter>
     <spirit:parameter>
       <spirit:name>Write_Width_B</spirit:name>
-      <spirit:value spirit:resolve="user" spirit:id="PARAM_VALUE.Write_Width_B" spirit:choiceRef="choice_list_d8920bdd" spirit:order="25">8</spirit:value>
+      <spirit:value spirit:resolve="user" spirit:id="PARAM_VALUE.Write_Width_B" spirit:choiceRef="choice_list_8112d406" spirit:order="25">8</spirit:value>
       <spirit:vendorExtensions>
         <xilinx:parameterInfo>
           <xilinx:enablement>
@@ -3858,7 +3860,7 @@
     </spirit:parameter>
     <spirit:parameter>
       <spirit:name>Read_Width_B</spirit:name>
-      <spirit:value spirit:resolve="user" spirit:id="PARAM_VALUE.Read_Width_B" spirit:choiceRef="choice_list_d8920bdd" spirit:order="26">8</spirit:value>
+      <spirit:value spirit:resolve="user" spirit:id="PARAM_VALUE.Read_Width_B" spirit:choiceRef="choice_list_8112d406" spirit:order="26">8</spirit:value>
       <spirit:vendorExtensions>
         <xilinx:parameterInfo>
           <xilinx:enablement>

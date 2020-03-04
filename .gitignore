@@ -121,3 +121,6 @@ venv.bak/
 
 # mypy
 .mypy_cache/
+vivado/Software/.metadata/.plugins/org.eclipse.core.runtime/.settings
+vivado/Software/.metadata/.plugins
+vivado/Software/zedboard_wrapper_hw_platform_0

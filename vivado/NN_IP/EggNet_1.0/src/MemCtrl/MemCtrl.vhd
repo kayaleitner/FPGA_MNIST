@@ -31,7 +31,6 @@ entity MemCtrl_3x3 is
     M_layer_tdata_1_o : out std_logic_vector((DATA_WIDTH*IN_CHANNEL_NUMBER)-1 downto 0); --  Output vector element 1 |Vector: trans(1,2,3)
     M_layer_tdata_2_o : out std_logic_vector((DATA_WIDTH*IN_CHANNEL_NUMBER)-1 downto 0); --  Output vector element 2 |Vector: trans(1,2,3)
     M_layer_tdata_3_o : out std_logic_vector((DATA_WIDTH*IN_CHANNEL_NUMBER)-1 downto 0); --  Output vector element 3 |Vector: trans(1,2,3)
-    M_layer_tkeep_o   : out std_logic_vector(((DATA_WIDTH*IN_CHANNEL_NUMBER)*3/8)-1 downto 0); --only used if next layer is AXI-stream interface (default open)
     M_layer_tnewrow_o : out std_logic;
     M_layer_tlast_o   : out std_logic;
     M_layer_tready_i  : in std_logic;
@@ -304,7 +303,6 @@ end process;
 
 -- ********************* Read block RAM (debug off) ************************************************
 M_layer_tvalid_o <= m_layer_tvalid;
-M_layer_tkeep_o <= (others => '1') when m_layer_tvalid = '1' else (others => '0');
 Status_o(4) <= wr_invalid_block;
 
 DefaultRead: process(Layer_clk_i, Layer_aresetn_i)

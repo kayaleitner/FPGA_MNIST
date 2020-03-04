@@ -98,7 +98,6 @@ architecture tb of tb_memctrl is
       M_layer_tdata_1_o : out std_logic_vector;
       M_layer_tdata_2_o : out std_logic_vector;
       M_layer_tdata_3_o : out std_logic_vector;
-      M_layer_tkeep_o   : out std_logic_vector;
       M_layer_tnewrow_o : out std_logic;
       M_layer_tlast_o   : out std_logic;
       M_layer_tready_i  : in std_logic;
@@ -362,7 +361,6 @@ begin
     M_layer_tdata_1_o       => m_l1_tdata_1      ,
     M_layer_tdata_2_o       => m_l1_tdata_2      ,
     M_layer_tdata_3_o       => m_l1_tdata_3      ,
-    M_layer_tkeep_o         => m_l1_tkeep        ,
     M_layer_tnewrow_o       => m_l1_tnewrow      ,
     M_layer_tlast_o         => m_l1_tlast        ,
     M_layer_tready_i        => m_l1_tready       ,
@@ -473,7 +471,6 @@ begin
     M_layer_tdata_1_o       => m_l2_tdata_1      ,
     M_layer_tdata_2_o       => m_l2_tdata_2      ,
     M_layer_tdata_3_o       => m_l2_tdata_3      ,
-    M_layer_tkeep_o         => m_l2_tkeep        ,
     M_layer_tnewrow_o       => m_l2_tnewrow      ,
     M_layer_tlast_o         => m_l2_tlast        ,
     M_layer_tready_i        => m_l2_tready       ,
