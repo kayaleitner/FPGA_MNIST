@@ -16,8 +16,6 @@ entity NeuralNetwork is
 		Resetn_i : in std_logic;
 		Valid_i  : in std_logic;
 		Data_i   : in std_logic_vector(VECTOR_WIDTH -1 downto 0); 
-		Last_i   : in std_logic;
-		Ready_i  : in std_logic;
 		Ready_o  : out std_logic;
 		Valid_o  : out std_logic;   
 		Data_o   : out std_logic_vector(OUTPUT_COUNT * VECTOR_WIDTH - 1 downto 0)

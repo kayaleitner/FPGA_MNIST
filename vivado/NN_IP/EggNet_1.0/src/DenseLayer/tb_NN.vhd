@@ -31,8 +31,6 @@ begin
 		Resetn_i => s_n_Res_i,
 		Valid_i => s_Valid_i,
 		Data_i => s_Data_i,
-		Last_i => '0',
-		Ready_i => '1',
 		Valid_o => s_Valid_o,
 		Data_o => s_Data_o
 	);

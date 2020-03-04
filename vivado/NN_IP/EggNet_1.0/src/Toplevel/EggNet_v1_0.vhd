@@ -12,7 +12,8 @@ entity EggNet_v1_0 is
     L1_IN_CHANNEL_NUMBER	  : integer := 1;    
     L2_IN_CHANNEL_NUMBER	  : integer := 16;      
     L3_IN_CHANNEL_NUMBER	  : integer := 32;    
-    MEM_CTRL_NUMBER         : integer := 4; 
+    MEM_CTRL_NUMBER         : integer := 4;  
+    OUTPUT_COUNT         : integer := 10; 
     
 		-- User parameters ends
 		-- Do not modify the parameters beyond this line
@@ -222,10 +223,18 @@ architecture arch_imp of EggNet_v1_0 is
   signal l2_m_conv_tlast        : std_logic;
   signal l2_m_conv_tready       : std_logic;  
   
-  signal l3_s_tvalid	          : std_logic;
+  signal l3_s_tvalid	        : std_logic;
   signal l3_s_tdata             : std_logic_vector(((DATA_WIDTH*L3_IN_CHANNEL_NUMBER)-1) downto 0);
   signal l3_s_tlast             : std_logic;
   signal l3_s_tready            : std_logic;    
+  signal l3_m_tvalid            : std_logic;    
+  signal l3_m_tdata             : std_logic_vector(OUTPUT_COUNT*DATA_WIDTH - 1 downto 0);
+  
+  signal serializer_valid       : std_logic;
+  signal serializer_data        : std_logic_vector(DATA_WIDTH - 1 downto 0);
+  signal serializer_ready       : std_logic;
+  
+  signal output_reg             : std_logic_vector(OUTPUT_COUNT*DATA_WIDTH - 1 downto 0);
   
   signal dbg_bram_addr_in       : std_logic_vector(C_S00_AXI_DATA_WIDTH-1 downto 0);
   signal dbg_bram_addr_check    : std_logic_vector(C_S00_AXI_DATA_WIDTH-1 downto 0);  
@@ -628,29 +637,25 @@ EggNet_v1_0_S00_AXI_inst : entity work.EggNet_v1_0_S00_AXI
   generic map(
     CHANNEL_NUMBER    => L3_IN_CHANNEL_NUMBER,
     DATA_WIDTH        => DATA_WIDTH,
-    LAYER_HIGHT       => LAYER_HIGHT,
-    LAYER_WIDTH       => LAYER_WIDTH)
+    LAYER_HIGHT       => LAYER_HIGHT/2,
+    LAYER_WIDTH       => LAYER_WIDTH/2)
   port map(
     -- Clk and reset
-    Layer_clk_i		    => s00_axis_aclk,		
+    Layer_clk_i		  => s00_axis_aclk,		
     Layer_aresetn_i   => s00_axis_aresetn,
 
-    S_layer_tvalid_i	=> l2_m_conv_tvalid,
+    S_layer_tvalid_i  => l2_m_conv_tvalid,
     S_layer_tdata_i   => l2_m_conv_data,
     S_layer_tkeep_i   => (others => '1'),
     S_layer_tlast_i   => l2_m_conv_tlast,
     S_layer_tready_o  => l2_m_conv_tready,  
 
-    M_layer_tvalid_o	=> l3_s_tvalid,
+    M_layer_tvalid_o  => l3_s_tvalid,
     M_layer_tdata_o   => l3_s_tdata,
     M_layer_tkeep_o   => open,
     M_layer_tlast_o   => l3_s_tlast,
     M_layer_tready_i  => l3_s_tready
   ); 
- 
- 
- 
- 
  
   m00_axis_tvalid <= l1_s_conv_tvalid;
   m00_axis_tdata <= (l1_s_conv_data_1 & l1_s_conv_data_2 & l1_s_conv_data_3 & l1_s_conv_data_4);
@@ -659,6 +664,51 @@ EggNet_v1_0_S00_AXI_inst : entity work.EggNet_v1_0_S00_AXI
   l1_s_conv_tready <= m00_axis_tready;
   
   Res_itrp_o <= l1_s_conv_tlast;
+  
+-- *************** Layer3-4 Fully-Connected *******************************************************************
+  
+  FC_serializer: entity work.Serializer
+  generic map(
+    VECTOR_WIDTH    => DATA_WIDTH,
+    INPUT_CHANNELS  => L3_IN_CHANNEL_NUMBER
+  ) port map(
+    Clk_i    => s00_axis_aclk,
+    n_Res_i  => s00_axis_aresetn,
+	
+    Valid_i  => l3_s_tvalid,
+    Ready_o  => l3_s_tready,
+    Data_i   => l3_s_tdata,
+	
+    Valid_o  => serializer_valid,
+    Data_o   => serializer_data
+    Ready_i  => serializer_ready,
+  );
+  
+  FC_NN: entity work.NeuralNetwork
+  generic map(
+    VECTOR_WIDTH  => DATA_WIDTH,
+    INPUT_COUNT   => ((LAYER_HIGHT*LAYER_WIDTH)/16)*L3_IN_CHANNEL_NUMBER,
+    OUTPUT_COUNT  => OUTPUT_COUNT
+  ) port map (
+    Clk_i     => s00_axis_aclk,
+    Resetn_i  => s00_axis_aresetn,
+	
+    Valid_i   => serializer_valid,
+    Data_i    => serializer_data,
+    Ready_o   => serializer_ready,
+	
+    Valid_o   => l3_m_tvalid,
+    Data_o    => l3_m_tdata
+  );
+  
+  output : process(s00_axi_aclk)
+  begin
+    if rising_edge(s00_axi_aclk) and l3_m_tvalid = '1' then
+	  output_reg <= l3_m_tdata;
+	end if;
+  end process;
+  
+  
 	-- User logic ends
 
 end arch_imp;
