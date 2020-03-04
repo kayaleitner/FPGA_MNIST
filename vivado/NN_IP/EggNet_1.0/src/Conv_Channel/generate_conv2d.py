@@ -77,8 +77,8 @@ if __name__ == '__main__':
     entity_str = \
 "\tconvchan{I}" + " : entity " + "ConvChannel{J} " + "port map(\n\
 \t\tClk_i, n_Res_i,\n\
-\t\tValid_i, Valid_o, Last_i, Last_o, Ready_i, Ready_o,\n\
-\t\tX_i,\n\
+\t\tValid_i, valid_out({K}), Last_i, last_out({K}), Ready_i, ready_out({K}),\n"+  \
+"\t\tX_i,\n\
 \t\tY_o({I+1}*BIT_WIDTH_OUT - 1 downto {I}*BIT_WIDTH_OUT)\n\
 \t); \n\n"
     i_convchan = 0
@@ -93,11 +93,19 @@ if __name__ == '__main__':
         tp_str_new = tp_str_new.replace("Conv2DTemplate", "Conv2D_" + str(i))
         tp_str_new = re.sub("INPUT_CHANNELS : integer := [^\n]*\n", "INPUT_CHANNELS : integer := " + str(num_input_channels[i]) + ";\n", tp_str_new)
         tp_str_new = re.sub("OUTPUT_CHANNELS : integer := [^\n]*\n", "OUTPUT_CHANNELS : integer := " + str(num_output_channels[i]) + "\n", tp_str_new)
-        tp_str_new += "\narchitecture beh of " + "Conv2D_" + str(i) + " is\n begin\n"
+        tp_str_new += "\narchitecture beh of " + "Conv2D_" + str(i) + " is\n " + \
+                    "  signal ready_out :std_logic_vector(OUTPUT_CHANNELS-1 downto 0);\n"+ \
+                    "  signal valid_out :std_logic_vector(OUTPUT_CHANNELS-1 downto 0);\n"+ \
+                    "  signal last_out :std_logic_vector(OUTPUT_CHANNELS-1 downto 0);\n"+ \
+                    "begin\n"+\
+                    "  Ready_o <= ready_out(0);\n"+ \
+                    "  Valid_o <= valid_out(0);\n"+ \
+                    "  Last_o <= last_out(0);\n"
         
         for y in range(0, num_output_channels[i]):
             entity_str_new = entity_str.replace("{J}", str(i_convchan))
             entity_str_new = entity_str_new.replace("{I}", str(y))
+            entity_str_new = entity_str_new.replace("{K}", str(i_convchan-i_convchan_old))
             entity_str_new = entity_str_new.replace("{I+1}", str(y+1))
             tp_str_new += entity_str_new
             i_convchan += 1
