@@ -105,158 +105,14 @@ end EggNet_v1_0;
 
 architecture arch_imp of EggNet_v1_0 is
 
-  attribute X_INTERFACE_INFO of Res_itrp_o : signal is "xilinx.com:signal:interrupt:1.0 irq INTERRUPT";
-  attribute X_INTERFACE_PARAMETER of Res_itrp_o : signal is "SENSITIVITY EDGE_RISING";
+  --attribute X_INTERFACE_INFO of Res_itrp_o : signal is "xilinx.com:signal:interrupt:1.0 irq INTERRUPT";
+  --attribute X_INTERFACE_PARAMETER of Res_itrp_o : signal is "SENSITIVITY EDGE_RISING";
 
   constant L1_BRAM_ADDR_WIDTH		    : integer := 11; -- maximum = 24 
+  constant L2_BRAM_ADDR_WIDTH		    : integer := 9; -- maximum = 24 
   constant MEM_CTRL_ADDR_WITDH      : integer := 8; -- don't change
-  constant KERNEL_SIZE              : integer := 3;
 --constant M_LAYER_DIM_FEATURES : integer := 1; 
-  
-	-- component declaration
-	component EggNet_v1_0_S00_AXI is
-		generic (
-		C_S_AXI_DATA_WIDTH	: integer	:= 32;
-		C_S_AXI_ADDR_WIDTH	: integer	:= 4
-		);
-		port (
-    Status_i                : in std_logic_vector(C_S_AXI_DATA_WIDTH-1 downto 0);
-    Dbg_bram_addr_o         : out std_logic_vector(C_S00_AXI_DATA_WIDTH-1 downto 0);
-    Dbg_bram_addr_check_i   : in std_logic_vector(C_S00_AXI_DATA_WIDTH-1 downto 0); 
-    Dbg_bram_data_i         : in std_logic_vector(C_S00_AXI_DATA_WIDTH-1 downto 0); 
-    Dbg_32bit_select_o      : out std_logic_vector(3 downto 0);   
-    Dbg_enable_o            : out std_logic;  
-    AXI_mem_ctrl_addr_o     : out std_logic_vector(MEM_CTRL_ADDR_WITDH-1 downto 0);  
-    AXI_layer_properties_i  : in  std_logic_vector(C_S00_AXI_DATA_WIDTH-1 downto 0);
-		S_AXI_ACLK	            : in std_logic;
-		S_AXI_ARESETN	          : in std_logic;
-		S_AXI_AWADDR	          : in std_logic_vector(C_S_AXI_ADDR_WIDTH-1 downto 0);
-		S_AXI_AWPROT	          : in std_logic_vector(2 downto 0);
-		S_AXI_AWVALID	          : in std_logic;
-		S_AXI_AWREADY	          : out std_logic;
-		S_AXI_WDATA	            : in std_logic_vector(C_S_AXI_DATA_WIDTH-1 downto 0);
-		S_AXI_WSTRB	            : in std_logic_vector((C_S_AXI_DATA_WIDTH/8)-1 downto 0);
-		S_AXI_WVALID	          : in std_logic;
-		S_AXI_WREADY	          : out std_logic;
-		S_AXI_BRESP	            : out std_logic_vector(1 downto 0);
-		S_AXI_BVALID	          : out std_logic;
-		S_AXI_BREADY	          : in std_logic;
-		S_AXI_ARADDR	          : in std_logic_vector(C_S_AXI_ADDR_WIDTH-1 downto 0);
-		S_AXI_ARPROT	          : in std_logic_vector(2 downto 0);
-		S_AXI_ARVALID	          : in std_logic;
-		S_AXI_ARREADY	          : out std_logic;
-		S_AXI_RDATA	            : out std_logic_vector(C_S_AXI_DATA_WIDTH-1 downto 0);
-		S_AXI_RRESP	            : out std_logic_vector(1 downto 0);
-		S_AXI_RVALID	          : out std_logic;
-		S_AXI_RREADY	          : in std_logic
-		);
-	end component EggNet_v1_0_S00_AXI;
 
-component MemCtrl_3x3 is
-    Generic(
-      BRAM_ADDR_WIDTH		        : integer range 1 to 24   := 10; -- maximum = 24 
-      DATA_WIDTH		            : integer := 8; -- channel number * bit depth maximum = 512    
-      IN_CHANNEL_NUMBER		      : integer := 1;       
-      LAYER_HIGHT               : integer := 28;
-      LAYER_WIDTH               : integer := 28;   
-      AXI4_STREAM_INPUT         : integer range 0 to 1    := 0;
-      MEM_CTRL_ADDR             : integer := 255;
-      C_S_AXIS_TDATA_WIDTH	    : integer	:= 32;
-      C_S00_AXI_DATA_WIDTH	    : integer	:= 32);
-    Port (
-      -- Clk and reset
-      Layer_clk_i		    : in std_logic;
-      Layer_aresetn_i   : in std_logic;      
-      -- Previous layer interface 
-      S_layer_tvalid_i	: in std_logic;
-      S_layer_tdata_i   : in std_logic_vector(((DATA_WIDTH*L1_IN_CHANNEL_NUMBER)+(AXI4_STREAM_INPUT*C_S_AXIS_TDATA_WIDTH)-(AXI4_STREAM_INPUT*(DATA_WIDTH*L1_IN_CHANNEL_NUMBER)))-1 downto 0);-- if AXI4_STREAM_INPUT = 0 -> (DATA_WIDTH*L1_IN_CHANNEL_NUMBER) else C_S_AXIS_TDATA_WIDTH
-      S_layer_tkeep_i   : in std_logic_vector((((DATA_WIDTH*L1_IN_CHANNEL_NUMBER)+(AXI4_STREAM_INPUT*C_S_AXIS_TDATA_WIDTH)-(AXI4_STREAM_INPUT*(DATA_WIDTH*L1_IN_CHANNEL_NUMBER)))/8)-1 downto 0);  --only used if next layer is AXI-stream interface 
-      S_layer_tlast_i   : in std_logic;
-      S_layer_tready_o  : out std_logic;     
-      -- Next layer interface 
-      M_layer_tvalid_o	: out std_logic;
-      M_layer_tdata_1_o : out std_logic_vector((DATA_WIDTH*L1_IN_CHANNEL_NUMBER)-1 downto 0); --  Output vector element 1 |Vector: trans(1,2,3)
-      M_layer_tdata_2_o : out std_logic_vector((DATA_WIDTH*L1_IN_CHANNEL_NUMBER)-1 downto 0); --  Output vector element 2 |Vector: trans(1,2,3)
-      M_layer_tdata_3_o : out std_logic_vector((DATA_WIDTH*L1_IN_CHANNEL_NUMBER)-1 downto 0); --  Output vector element 3 |Vector: trans(1,2,3)
-      M_layer_tkeep_o   : out std_logic_vector(((DATA_WIDTH*L1_IN_CHANNEL_NUMBER)*KERNEL_SIZE/8)-1 downto 0); --only used if next layer is AXI-stream interface (default open)
-      M_layer_tnewrow_o : out std_logic;
-      M_layer_tlast_o   : out std_logic;
-      M_layer_tready_i  : in std_logic;      
-      -- M_layer FIFO
-      M_layer_fifo_srst_o : out std_logic;
-      M_layer_fifo_in_o   : out std_logic_vector(((DATA_WIDTH*L1_IN_CHANNEL_NUMBER)*2)-1 downto 0);
-      M_layer_fifo_wr_o   : out std_logic;
-      M_layer_fifo_rd_o   : out std_logic;
-      M_layer_fifo_out_i  : in std_logic_vector(((DATA_WIDTH*L1_IN_CHANNEL_NUMBER)*2)-1 downto 0);      
-      -- BRAM interface
-      Bram_clk_o        : out std_logic;
-      Bram_pa_addr_o    : out std_logic_vector(L1_BRAM_ADDR_WIDTH-1 downto 0);
-      Bram_pa_data_wr_o : out std_logic_vector((DATA_WIDTH*L1_IN_CHANNEL_NUMBER)-1 downto 0);
-      Bram_pa_wea_o     : out std_logic_vector(((DATA_WIDTH*L1_IN_CHANNEL_NUMBER)/8)-1  downto 0);
-      Bram_pb_addr_o    : out std_logic_vector(L1_BRAM_ADDR_WIDTH-1 downto 0);
-      Bram_pb_data_rd_i : in std_logic_vector((DATA_WIDTH*L1_IN_CHANNEL_NUMBER)-1 downto 0);       
-      -- AXI Lite dbg interface 
-      Dbg_bram_addr_i  : in std_logic_vector(C_S00_AXI_DATA_WIDTH-1 downto 0); -- BRAM address 
-      Dbg_bram_addr_o  : out std_logic_vector(C_S00_AXI_DATA_WIDTH-1 downto 0); -- BRAM address to double check if address fits to data 
-      Dbg_bram_data_o  : out std_logic_vector(C_S00_AXI_DATA_WIDTH-1 downto 0); -- 32 bit vector tile 
-      Dbg_32bit_select_i: in std_logic_vector(3 downto 0); 
-      Dbg_enable_i     : in std_logic;     
-      -- Status
-      Layer_properties_o : out std_logic_vector(C_S00_AXI_DATA_WIDTH-1 downto 0);
-      Status_o : out std_logic_vector(C_S00_AXI_DATA_WIDTH-1 downto 0));
-      
-  end component MemCtrl_3x3;
-
-  component ShiftRegister_3x3 is
-    generic(
-        DATA_WIDTH: integer := 8
-    );
-    Port (
-      -- Clk and reset
-      Clk_i           : in  STD_LOGIC; -- clock
-      nRst_i          : in  STD_LOGIC; -- active low reset 
-      
-      -- Slave interface to previous memory controller  
-      S_data_1_i      : in  STD_LOGIC_VECTOR((DATA_WIDTH - 1) downto 0); --  Input vector element 1 |Vector: trans(1,2,3)
-      S_data_2_i      : in  STD_LOGIC_VECTOR((DATA_WIDTH - 1) downto 0); --  Input vector element 2 |Vector: trans(1,2,3)
-      S_data_3_i      : in  STD_LOGIC_VECTOR((DATA_WIDTH - 1) downto 0); --  Input vector element 3 |Vector: trans(1,2,3)
-      S_tvalid_i	    : in  STD_LOGIC; -- indicates if input data is valid 
-      S_tnewrow_i     : in  STD_LOGIC; -- indicates that a new row starts 
-      S_tlast_i       : in  STD_LOGIC; -- indicates end of block 
-      S_tready_o      : out STD_LOGIC; -- indicates if shiftregister is ready to for new data 
-
-      -- Master interface to next 3x3 kernel matrix multiplier 
-      M_data_1_o      : out STD_LOGIC_VECTOR((DATA_WIDTH - 1) downto 0); -- Output matrix element 11  Matrix  : |11 , 12, 13|
-      M_data_2_o      : out STD_LOGIC_VECTOR((DATA_WIDTH - 1) downto 0); -- Output matrix element 21          : |21 , 22, 23|
-      M_data_3_o      : out STD_LOGIC_VECTOR((DATA_WIDTH - 1) downto 0); -- Output matrix element 31          : |31 , 32, 33|
-      M_data_4_o      : out STD_LOGIC_VECTOR((DATA_WIDTH - 1) downto 0); -- Output matrix element 12
-      M_data_5_o      : out STD_LOGIC_VECTOR((DATA_WIDTH - 1) downto 0); -- Output matrix element 22
-      M_data_6_o      : out STD_LOGIC_VECTOR((DATA_WIDTH - 1) downto 0); -- Output matrix element 32
-      M_data_7_o      : out STD_LOGIC_VECTOR((DATA_WIDTH - 1) downto 0); -- Output matrix element 13
-      M_data_8_o      : out STD_LOGIC_VECTOR((DATA_WIDTH - 1) downto 0); -- Output matrix element 23
-      M_data_9_o      : out STD_LOGIC_VECTOR((DATA_WIDTH - 1) downto 0); -- Output matrix element 33
-      M_tvalid_o	    : out STD_LOGIC; -- indicates if output data is valid 
-      M_tlast_o       : out STD_LOGIC; -- indicates end of block 
-      M_tready_i      : in  STD_LOGIC  -- indicates if next slave is ready to for new data   
-    );
-  end component ShiftRegister_3x3;
-
-	component EggNet_v1_0_M00_AXIS is
-		generic (
-		C_M_AXIS_TDATA_WIDTH	: integer	:= 32;
-		C_M_START_COUNT	: integer	:= 32
-		);
-		port (
-		M_AXIS_ACLK	: in std_logic;
-		M_AXIS_ARESETN	: in std_logic;
-		M_AXIS_TVALID	: out std_logic;
-		M_AXIS_TDATA	: out std_logic_vector(C_M_AXIS_TDATA_WIDTH-1 downto 0);
-		M_AXIS_TKEEP	: out std_logic_vector((C_M_AXIS_TDATA_WIDTH/8)-1 downto 0);
-		M_AXIS_TLAST	: out std_logic;
-		M_AXIS_TREADY	: in std_logic
-		);
-	end component EggNet_v1_0_M00_AXIS;
-  
   component blk_mem_gen_0 IS
     PORT (
       clka : IN STD_LOGIC;
@@ -267,30 +123,25 @@ component MemCtrl_3x3 is
       addrb : IN STD_LOGIC_VECTOR(10 DOWNTO 0);
       doutb : OUT STD_LOGIC_VECTOR(7 DOWNTO 0)
     );
-  end component blk_mem_gen_0;
-
-  component STD_FIFO
-        generic (
-          DATA_WIDTH      : integer := 8;
-          FIFO_DEPTH	    : integer := 256
-        );
-        port (
-          Clk_i     : in  STD_LOGIC;
-          Rst_i    : in  STD_LOGIC;
-          WriteEn_i : in  STD_LOGIC;
-          Data_i    : in  STD_LOGIC_VECTOR (DATA_WIDTH - 1 downto 0);
-          ReadEn_i  : in  STD_LOGIC;
-          Data_o    : out STD_LOGIC_VECTOR (DATA_WIDTH - 1 downto 0);
-          Empty_o   : out STD_LOGIC;
-          Full_o    : out STD_LOGIC
-        );
-    end component STD_FIFO;  
+  END component blk_mem_gen_0;
+  
+  component blk_mem_layer_2 IS
+    PORT (
+      clka : IN STD_LOGIC;
+      wea : IN STD_LOGIC_VECTOR(15 DOWNTO 0);
+      addra : IN STD_LOGIC_VECTOR(8 DOWNTO 0);
+      dina : IN STD_LOGIC_VECTOR(127 DOWNTO 0);
+      clkb : IN STD_LOGIC;
+      addrb : IN STD_LOGIC_VECTOR(8 DOWNTO 0);
+      doutb : OUT STD_LOGIC_VECTOR(127 DOWNTO 0)
+    );
+  END component blk_mem_layer_2;  
 
   signal l1_m_tvalid            : std_logic;
   signal l1_m_tdata_1           : std_logic_vector((DATA_WIDTH*L1_IN_CHANNEL_NUMBER)-1 downto 0);
   signal l1_m_tdata_2           : std_logic_vector((DATA_WIDTH*L1_IN_CHANNEL_NUMBER)-1 downto 0);
   signal l1_m_tdata_3           : std_logic_vector((DATA_WIDTH*L1_IN_CHANNEL_NUMBER)-1 downto 0);
-  signal l1_m_tkeep             : std_logic_vector(((DATA_WIDTH*L1_IN_CHANNEL_NUMBER)*KERNEL_SIZE/8)-1 downto 0);
+  signal l1_m_tkeep             : std_logic_vector(((DATA_WIDTH*L1_IN_CHANNEL_NUMBER)/8)-1 downto 0);
   signal l1_m_tnewrow           : std_logic;
   signal l1_m_tlast             : std_logic;
   signal l1_m_tready            : std_logic;   
@@ -306,16 +157,6 @@ component MemCtrl_3x3 is
   signal l1_bram_pb_addr        : std_logic_vector(L1_BRAM_ADDR_WIDTH-1 downto 0);
   signal l1_bram_pb_data_rd     : std_logic_vector((DATA_WIDTH*L1_IN_CHANNEL_NUMBER)-1 downto 0);       
   
-  
-  signal dbg_bram_addr_in       : std_logic_vector(C_S00_AXI_DATA_WIDTH-1 downto 0);
-  signal dbg_bram_addr_check    : std_logic_vector(C_S00_AXI_DATA_WIDTH-1 downto 0);  
-  signal dbg_bram_data_out      : std_logic_vector(C_S00_AXI_DATA_WIDTH-1 downto 0);
-  signal dbg_32bit_select       : std_logic_vector(3 downto 0); 
-  signal dbg_enable_AXI         : std_logic;   
-  signal dbg_enable             : std_logic_vector(MEM_CTRL_NUMBER downto 0);   
-  signal axi_mem_ctrl_addr      : std_logic_vector(MEM_CTRL_ADDR_WITDH-1 downto 0);  
-  signal axi_progress           : std_logic_vector(C_S00_AXI_DATA_WIDTH-1 downto 0);   
-  
   signal l1_s_conv_data_1       : std_logic_vector(((DATA_WIDTH*L1_IN_CHANNEL_NUMBER) - 1) downto 0);
   signal l1_s_conv_data_2       : std_logic_vector(((DATA_WIDTH*L1_IN_CHANNEL_NUMBER) - 1) downto 0);
   signal l1_s_conv_data_3       : std_logic_vector(((DATA_WIDTH*L1_IN_CHANNEL_NUMBER) - 1) downto 0);
@@ -328,7 +169,67 @@ component MemCtrl_3x3 is
   signal l1_s_conv_tvalid       : std_logic;
   signal l1_s_conv_tlast        : std_logic;
   signal l1_s_conv_tready       : std_logic;  
-
+  signal l1_m_conv_data         : std_logic_vector(((DATA_WIDTH*L2_IN_CHANNEL_NUMBER) - 1) downto 0);
+  signal l1_m_conv_tvalid       : std_logic;
+  signal l1_m_conv_tlast        : std_logic;
+  signal l1_m_conv_tready       : std_logic;   
+  
+  
+  signal l2_s_tvalid	          : std_logic;
+  signal l2_s_tdata             : std_logic_vector(((DATA_WIDTH*L2_IN_CHANNEL_NUMBER)-1) downto 0);
+  signal l2_s_tlast             : std_logic;
+  signal l2_s_tready            : std_logic;     
+  signal l2_m_tvalid            : std_logic;
+  signal l2_m_tdata_1           : std_logic_vector((DATA_WIDTH*L2_IN_CHANNEL_NUMBER)-1 downto 0);
+  signal l2_m_tdata_2           : std_logic_vector((DATA_WIDTH*L2_IN_CHANNEL_NUMBER)-1 downto 0);
+  signal l2_m_tdata_3           : std_logic_vector((DATA_WIDTH*L2_IN_CHANNEL_NUMBER)-1 downto 0);
+  signal l2_m_tkeep             : std_logic_vector(((DATA_WIDTH*L2_IN_CHANNEL_NUMBER)/8)-1 downto 0);
+  signal l2_m_tnewrow           : std_logic;
+  signal l2_m_tlast             : std_logic;
+  signal l2_m_tready            : std_logic;   
+  signal l2_m_fifo_srst         : std_logic;
+  signal l2_m_fifo_in           : std_logic_vector(((DATA_WIDTH*L2_IN_CHANNEL_NUMBER)*2)-1 downto 0);
+  signal l2_m_fifo_wr           : std_logic;
+  signal l2_m_fifo_rd           : std_logic;
+  signal l2_m_fifo_out          : std_logic_vector(((DATA_WIDTH*L2_IN_CHANNEL_NUMBER)*2)-1 downto 0);  
+  signal l2_bram_clk            : std_logic;
+  signal l2_bram_pa_addr        : std_logic_vector(L2_BRAM_ADDR_WIDTH-1 downto 0);
+  signal l2_bram_pa_data_wr     : std_logic_vector((DATA_WIDTH*L2_IN_CHANNEL_NUMBER)-1 downto 0);
+  signal l2_bram_pa_wea         : std_logic_vector(((DATA_WIDTH*L2_IN_CHANNEL_NUMBER)/8)-1  downto 0);
+  signal l2_bram_pb_addr        : std_logic_vector(L2_BRAM_ADDR_WIDTH-1 downto 0);
+  signal l2_bram_pb_data_rd     : std_logic_vector((DATA_WIDTH*L2_IN_CHANNEL_NUMBER)-1 downto 0);       
+  
+  signal l2_s_conv_data_1       : std_logic_vector(((DATA_WIDTH*L2_IN_CHANNEL_NUMBER) - 1) downto 0);
+  signal l2_s_conv_data_2       : std_logic_vector(((DATA_WIDTH*L2_IN_CHANNEL_NUMBER) - 1) downto 0);
+  signal l2_s_conv_data_3       : std_logic_vector(((DATA_WIDTH*L2_IN_CHANNEL_NUMBER) - 1) downto 0);
+  signal l2_s_conv_data_4       : std_logic_vector(((DATA_WIDTH*L2_IN_CHANNEL_NUMBER) - 1) downto 0);
+  signal l2_s_conv_data_5       : std_logic_vector(((DATA_WIDTH*L2_IN_CHANNEL_NUMBER) - 1) downto 0);
+  signal l2_s_conv_data_6       : std_logic_vector(((DATA_WIDTH*L2_IN_CHANNEL_NUMBER) - 1) downto 0);
+  signal l2_s_conv_data_7       : std_logic_vector(((DATA_WIDTH*L2_IN_CHANNEL_NUMBER) - 1) downto 0);
+  signal l2_s_conv_data_8       : std_logic_vector(((DATA_WIDTH*L2_IN_CHANNEL_NUMBER) - 1) downto 0);
+  signal l2_s_conv_data_9       : std_logic_vector(((DATA_WIDTH*L2_IN_CHANNEL_NUMBER) - 1) downto 0);
+  signal l2_s_conv_tvalid       : std_logic;
+  signal l2_s_conv_tlast        : std_logic;
+  signal l2_s_conv_tready       : std_logic;   
+  signal l2_m_conv_data         : std_logic_vector(((DATA_WIDTH*L2_IN_CHANNEL_NUMBER) - 1) downto 0);
+  signal l2_m_conv_tvalid       : std_logic;
+  signal l2_m_conv_tlast        : std_logic;
+  signal l2_m_conv_tready       : std_logic;  
+  
+  signal l3_s_tvalid	          : std_logic;
+  signal l3_s_tdata             : std_logic_vector(((DATA_WIDTH*L3_IN_CHANNEL_NUMBER)-1) downto 0);
+  signal l3_s_tlast             : std_logic;
+  signal l3_s_tready            : std_logic;    
+  
+  signal dbg_bram_addr_in       : std_logic_vector(C_S00_AXI_DATA_WIDTH-1 downto 0);
+  signal dbg_bram_addr_check    : std_logic_vector(C_S00_AXI_DATA_WIDTH-1 downto 0);  
+  signal dbg_bram_data_out      : std_logic_vector(C_S00_AXI_DATA_WIDTH-1 downto 0);
+  signal dbg_32bit_select       : std_logic_vector(3 downto 0); 
+  signal dbg_enable_AXI         : std_logic;   
+  signal dbg_enable             : std_logic_vector(MEM_CTRL_NUMBER downto 0);   
+  signal axi_mem_ctrl_addr      : std_logic_vector(MEM_CTRL_ADDR_WITDH-1 downto 0);  
+  signal axi_progress           : std_logic_vector(C_S00_AXI_DATA_WIDTH-1 downto 0);   
+  
   type STATUS_ARR is ARRAY (0 to MEM_CTRL_NUMBER) of std_logic_vector(C_S00_AXI_DATA_WIDTH-1 downto 0);
   signal status                 : STATUS_ARR;
   signal layer_properties       : STATUS_ARR; 
@@ -403,7 +304,7 @@ end process;
 
 
 -- Instantiation of Axi Bus Interface S00_AXI
-EggNet_v1_0_S00_AXI_inst : EggNet_v1_0_S00_AXI
+EggNet_v1_0_S00_AXI_inst : entity work.EggNet_v1_0_S00_AXI
 	generic map (
 		C_S_AXI_DATA_WIDTH	=> C_S00_AXI_DATA_WIDTH,
 		C_S_AXI_ADDR_WIDTH	=> C_S00_AXI_ADDR_WIDTH
@@ -443,7 +344,7 @@ EggNet_v1_0_S00_AXI_inst : EggNet_v1_0_S00_AXI
 -- *************** Layer1 Conv2d *******************************************************************
 
 -- Memory controller + BRAM + FIFO +ShiftRegister_3x3
-  L1_Memory_Controller: MemCtrl_3x3
+  L1_Memory_Controller: entity work.MemCtrl_3x3
     generic map(                                   
       BRAM_ADDR_WIDTH		      => L1_BRAM_ADDR_WIDTH,
       DATA_WIDTH		          => DATA_WIDTH,
@@ -500,7 +401,7 @@ EggNet_v1_0_S00_AXI_inst : EggNet_v1_0_S00_AXI
             doutb => l1_bram_pb_data_rd
   );
 
-  linebuffer_layer1: STD_FIFO
+  linebuffer_layer1: entity work.STD_FIFO
     generic map (
         DATA_WIDTH => 2*DATA_WIDTH * L1_IN_CHANNEL_NUMBER,
         FIFO_DEPTH => LAYER_WIDTH+1
@@ -517,7 +418,7 @@ EggNet_v1_0_S00_AXI_inst : EggNet_v1_0_S00_AXI
     );    
     
 
-  L1_shiftregister: ShiftRegister_3x3
+  L1_shiftregister: entity work.ShiftRegister_3x3
     generic map(
       DATA_WIDTH => (DATA_WIDTH*L1_IN_CHANNEL_NUMBER)
     )
@@ -545,8 +446,206 @@ EggNet_v1_0_S00_AXI_inst : EggNet_v1_0_S00_AXI
       M_tready_i  => l1_s_conv_tready
     );      
  
--- Memory controller + BRAM + FIFO +ShiftRegister_3x3
+-- Conv2d 
 
+  L1_conv2d : entity work.Conv2DTemplate --Todo: Edit to real name
+    generic map(
+      BIT_WIDTH_IN => DATA_WIDTH,
+      BIT_WIDTH_OUT => DATA_WIDTH,
+      INPUT_CHANNELS => L1_IN_CHANNEL_NUMBER,
+      OUTPUT_CHANNELS => L2_IN_CHANNEL_NUMBER)
+    port map(
+      Clk_i   => s00_axis_aclk,		
+      n_Res_i => s00_axis_aresetn,
+      Valid_i => l1_s_conv_tvalid,
+      Valid_o => l1_m_conv_tvalid,
+      Last_i  => l1_s_conv_tlast,
+      Last_o  => l1_m_conv_tlast,
+      Ready_i => l1_m_conv_tready,
+      Ready_o => l1_s_conv_tready,
+      X_i     => (l1_s_conv_data_1 & l1_s_conv_data_2 & l1_s_conv_data_3 & l1_s_conv_data_4 & l1_s_conv_data_5 & l1_s_conv_data_6 & l1_s_conv_data_7 & l1_s_conv_data_8 & l1_s_conv_data_9),
+      Y_o     => l1_m_conv_data
+    );
+    
+-- MaxPooling   
+  L1_maxPooling: entity work.MaxPooling
+  generic map(
+    CHANNEL_NUMBER    => L2_IN_CHANNEL_NUMBER,
+    DATA_WIDTH        => DATA_WIDTH,
+    LAYER_HIGHT       => LAYER_HIGHT,
+    LAYER_WIDTH       => LAYER_WIDTH)
+  port map(
+    -- Clk and reset
+    Layer_clk_i		    => s00_axis_aclk,		
+    Layer_aresetn_i   => s00_axis_aresetn,
+
+    S_layer_tvalid_i	=> l1_m_conv_tvalid,
+    S_layer_tdata_i   => l1_m_conv_data,
+    S_layer_tkeep_i   => (others => '1'),
+    S_layer_tlast_i   => l1_m_conv_tlast,
+    S_layer_tready_o  => l1_m_conv_tready,  
+
+    M_layer_tvalid_o	=> l2_s_tvalid,
+    M_layer_tdata_o   => l2_s_tdata,
+    M_layer_tkeep_o   => open,
+    M_layer_tlast_o   => l2_s_tlast,
+    M_layer_tready_i  => l2_s_tready
+  );
+ 
+-- *************** Layer2 Conv2d *******************************************************************
+
+-- Memory controller + BRAM + FIFO +ShiftRegister_3x3
+  L2_Memory_Controller: entity work.MemCtrl_3x3
+    generic map(                                   
+      BRAM_ADDR_WIDTH		      => L2_BRAM_ADDR_WIDTH,
+      DATA_WIDTH		          => DATA_WIDTH,
+      IN_CHANNEL_NUMBER       => L2_IN_CHANNEL_NUMBER,
+      LAYER_HIGHT             => LAYER_HIGHT/2,
+      LAYER_WIDTH             => LAYER_WIDTH/2,
+      AXI4_STREAM_INPUT       => 0,
+      MEM_CTRL_ADDR           => 2,
+      C_S_AXIS_TDATA_WIDTH    => C_S00_AXIS_TDATA_WIDTH,
+      C_S00_AXI_DATA_WIDTH    => C_S00_AXI_DATA_WIDTH
+      )       
+    port map(
+      Layer_clk_i		          => s00_axis_aclk,
+      Layer_aresetn_i         => s00_axis_aresetn,
+      S_layer_tvalid_i	      => l2_s_tvalid,
+      S_layer_tdata_i         => l2_s_tdata,
+      S_layer_tkeep_i         => (others => '1'),
+      S_layer_tlast_i         => l2_s_tlast,
+      S_layer_tready_o        => l2_s_tready,
+      M_layer_tvalid_o	      => l2_m_tvalid        ,
+      M_layer_tdata_1_o       => l2_m_tdata_1       ,
+      M_layer_tdata_2_o       => l2_m_tdata_2       ,
+      M_layer_tdata_3_o       => l2_m_tdata_3       ,
+      M_layer_tkeep_o         => l2_m_tkeep         ,
+       M_layer_tnewrow_o      => l2_m_tnewrow       ,
+      M_layer_tlast_o         => l2_m_tlast         ,
+      M_layer_tready_i        => l2_m_tready        ,
+      M_layer_fifo_srst_o     => l2_m_fifo_srst     ,
+      M_layer_fifo_in_o       => l2_m_fifo_in       ,
+      M_layer_fifo_wr_o       => l2_m_fifo_wr       ,
+      M_layer_fifo_rd_o       => l2_m_fifo_rd       ,
+      M_layer_fifo_out_i      => l2_m_fifo_out      ,
+      Bram_clk_o              => l2_bram_clk        ,
+      Bram_pa_addr_o          => l2_bram_pa_addr    ,
+      Bram_pa_data_wr_o       => l2_bram_pa_data_wr ,
+      Bram_pa_wea_o           => l2_bram_pa_wea     ,
+      Bram_pb_addr_o          => l2_bram_pb_addr    ,
+      Bram_pb_data_rd_i       => l2_bram_pb_data_rd ,
+      Dbg_bram_addr_i         => dbg_bram_addr_in ,
+      Dbg_bram_addr_o         => dbg_bram_addr_check,
+      Dbg_bram_data_o         => dbg_bram_data_out,
+      Dbg_32bit_select_i      => dbg_32bit_select  ,
+      Dbg_enable_i            => dbg_enable(2),
+      Layer_properties_o      => layer_properties(2),
+      Status_o                => status(2));
+      
+  L2_bram : blk_mem_layer_2
+  port map (clka  => l2_bram_clk,
+            wea   => l2_bram_pa_wea,
+            addra => l2_bram_pa_addr,
+            dina  => l2_bram_pa_data_wr,
+            clkb  => l2_bram_clk,
+            addrb => l2_bram_pb_addr,
+            doutb => l2_bram_pb_data_rd
+  );
+
+  linebuffer_layer2: entity work.STD_FIFO
+    generic map (
+        DATA_WIDTH => 2*DATA_WIDTH * L2_IN_CHANNEL_NUMBER,
+        FIFO_DEPTH => LAYER_WIDTH/2+1
+    )
+    port map (
+      Clk_i     => s00_axis_aclk,
+      Rst_i     => l2_m_fifo_srst     ,
+      Data_i    => l2_m_fifo_in       ,
+      WriteEn_i => l2_m_fifo_wr       ,
+      ReadEn_i  => l2_m_fifo_rd       ,
+      Data_o    => l2_m_fifo_out      ,
+      Full_o    => open,
+      Empty_o   => open
+    );    
+    
+
+  L2_shiftregister: entity work.ShiftRegister_3x3
+    generic map(
+      DATA_WIDTH => (DATA_WIDTH*L2_IN_CHANNEL_NUMBER)
+    )
+    port map(
+      Clk_i       => s00_axis_aclk,		 
+      nRst_i      => s00_axis_aresetn, 
+      S_data_1_i  => l2_m_tdata_1, 
+      S_data_2_i  => l2_m_tdata_2, 
+      S_data_3_i  => l2_m_tdata_3, 
+      S_tvalid_i  => l2_m_tvalid,
+      S_tnewrow_i => l2_m_tnewrow,
+      S_tlast_i   => l2_m_tlast, 
+      S_tready_o  => l2_m_tready, 
+      M_data_1_o  => l2_s_conv_data_1, 
+      M_data_2_o  => l2_s_conv_data_2, 
+      M_data_3_o  => l2_s_conv_data_3, 
+      M_data_4_o  => l2_s_conv_data_4, 
+      M_data_5_o  => l2_s_conv_data_5, 
+      M_data_6_o  => l2_s_conv_data_6, 
+      M_data_7_o  => l2_s_conv_data_7, 
+      M_data_8_o  => l2_s_conv_data_8, 
+      M_data_9_o  => l2_s_conv_data_9, 
+      M_tvalid_o  => l2_s_conv_tvalid,
+      M_tlast_o   => l2_s_conv_tlast , 
+      M_tready_i  => l2_s_conv_tready
+    );      
+ 
+-- Conv2d 
+
+  L2_conv2d : entity work.Conv2DTemplate --Todo: Edit to real name
+    generic map(
+      BIT_WIDTH_IN => DATA_WIDTH,
+      BIT_WIDTH_OUT => DATA_WIDTH,
+      INPUT_CHANNELS => L2_IN_CHANNEL_NUMBER,
+      OUTPUT_CHANNELS => L3_IN_CHANNEL_NUMBER)
+    port map(
+      Clk_i   => s00_axis_aclk,		
+      n_Res_i => s00_axis_aresetn,
+      Valid_i => l2_s_conv_tvalid,
+      Valid_o => l2_m_conv_tvalid,
+      Last_i  => l2_s_conv_tlast,
+      Last_o  => l2_m_conv_tlast,
+      Ready_i => l2_m_conv_tready,
+      Ready_o => l2_s_conv_tready,
+      X_i     => (l2_s_conv_data_1 & l2_s_conv_data_2 & l2_s_conv_data_3 & l2_s_conv_data_4 & l2_s_conv_data_5 & l2_s_conv_data_6 & l2_s_conv_data_7 & l2_s_conv_data_8 & l2_s_conv_data_9),
+      Y_o     => l2_m_conv_data
+    );
+    
+-- MaxPooling   
+  L2_maxPooling: entity work.MaxPooling
+  generic map(
+    CHANNEL_NUMBER    => L3_IN_CHANNEL_NUMBER,
+    DATA_WIDTH        => DATA_WIDTH,
+    LAYER_HIGHT       => LAYER_HIGHT,
+    LAYER_WIDTH       => LAYER_WIDTH)
+  port map(
+    -- Clk and reset
+    Layer_clk_i		    => s00_axis_aclk,		
+    Layer_aresetn_i   => s00_axis_aresetn,
+
+    S_layer_tvalid_i	=> l2_m_conv_tvalid,
+    S_layer_tdata_i   => l2_m_conv_data,
+    S_layer_tkeep_i   => (others => '1'),
+    S_layer_tlast_i   => l2_m_conv_tlast,
+    S_layer_tready_o  => l2_m_conv_tready,  
+
+    M_layer_tvalid_o	=> l3_s_tvalid,
+    M_layer_tdata_o   => l3_s_tdata,
+    M_layer_tkeep_o   => open,
+    M_layer_tlast_o   => l3_s_tlast,
+    M_layer_tready_i  => l3_s_tready
+  ); 
+ 
+ 
+ 
+ 
  
   m00_axis_tvalid <= l1_s_conv_tvalid;
   m00_axis_tdata <= (l1_s_conv_data_1 & l1_s_conv_data_2 & l1_s_conv_data_3 & l1_s_conv_data_4);
