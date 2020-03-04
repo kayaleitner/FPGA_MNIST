@@ -87,8 +87,7 @@ Tasks
 - [ ] CI Pipeline for VHDL/Vivado Build & Tests
 
 ## Top Level Overview
-
-![System Overview](tex/specification/svg-extract/1-NN-concept_svg-tex.png "Top Level Overview")
+![System Overview](tex/specification/svg-extract/1-NN-concept_svg-tex.pdf "Top Level Overview")
 
 For more details see the [Specification Document](tex/specification/specification.pdf)
 
