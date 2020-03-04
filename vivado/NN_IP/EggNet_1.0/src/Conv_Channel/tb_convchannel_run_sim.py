@@ -9,8 +9,8 @@ import matplotlib.pyplot as plt
 # %% import custom modules
 import vhdl_testbench as tb 
 
-file_names = ["../../../../../net/final_weights/cn1.k.txt",
-         "../../../../../net/final_weights/cn2.k.txt"]
+file_names = ["../../../../../net/final_weights/fpi/cn1.k.txt",
+         "../../../../../net/final_weights/fpi/cn2.k.txt"]
 
 # %% Helper function to split array into n roughly equal parts
 def chunk_array(seq, num):
@@ -269,8 +269,8 @@ file_nn.close()
 
 # %% Get output for dense layer
 
-denselayer_1_file_name = "../../../../../net/final_weights/fc1.w.txt"
-denselayer_2_file_name = "../../../../../net/final_weights/fc2.w.txt"
+denselayer_1_file_name = "../../../../../net/final_weights/fpi/fc1.w.txt"
+denselayer_2_file_name = "../../../../../net/final_weights/fpi/fc2.w.txt"
 
 DL1_INPUT_NEURONS = 1568
 DL1_OUTPUT_NEURONS = 32

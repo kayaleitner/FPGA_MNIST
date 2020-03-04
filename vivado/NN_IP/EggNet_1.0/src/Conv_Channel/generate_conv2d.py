@@ -6,8 +6,8 @@ import numpy as np
 import re
 
 num_layers = 2
-file_names = ["../../../../../net/final_weights/cn1.k.txt",
-         "../../../../../net/final_weights/cn2.k.txt"]
+file_names = ["../../../../../net/final_weights/fpi/cn1.k.txt",
+         "../../../../../net/final_weights/fpi/cn2.k.txt"]
 
 if __name__ == '__main__':
     num_input_channels = [None]*num_layers

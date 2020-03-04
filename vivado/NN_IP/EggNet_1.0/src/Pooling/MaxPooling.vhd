@@ -91,6 +91,7 @@ begin
       m_tvalid <= '0';
 	  state_next <= state;
 	  col_cnt_next <= col_cnt;
+	  fifo_srst <= '0';
       case(state) is 
         when INIT => 
 		  s_st <= 0;
