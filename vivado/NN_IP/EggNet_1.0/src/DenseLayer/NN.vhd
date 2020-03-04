@@ -100,7 +100,7 @@ begin
 		Rd_en_i => s_L2_Rd_en_i
 	);
 	
-	state_machine_nextstate : process(state, s_L1_Rd_en_o, s_L1_Data_o, s_L1_Finished_o, s_L2_Rd_en_o, s_L2_Data_o, s_L2_Finished_o, Valid_i, Data_i, Last_i, Ready_i, data_cnt_L1, data_cnt_L2, data_cnt_out)
+	state_machine_nextstate : process(state, s_L1_Rd_en_o, s_L1_Data_o, s_L1_Finished_o, s_L2_Rd_en_o, s_L2_Data_o, s_L2_Finished_o, Valid_i, Data_i, data_cnt_L1, data_cnt_L2, data_cnt_out)
 	begin
 		state_next <= state;
 		case state is
@@ -140,7 +140,7 @@ begin
 		end case;
 	end process;
 	
-	state_machine_output : process(state, s_L1_Rd_en_o, s_L1_Data_o, s_L1_Finished_o, s_L2_Rd_en_o, s_L2_Data_o, s_L2_Finished_o, Valid_i, Data_i, Last_i, Ready_i, data_cnt_L1, data_cnt_L2, data_cnt_out)
+	state_machine_output : process(state, s_L1_Rd_en_o, s_L1_Data_o, s_L1_Finished_o, s_L2_Rd_en_o, s_L2_Data_o, s_L2_Finished_o, Valid_i, Data_i, data_cnt_L1, data_cnt_L2, data_cnt_out)
 		variable output_L1_cropped : std_logic_vector(VECTOR_WIDTH-1 downto 0);
 		variable output_L2_cropped : std_logic_vector(VECTOR_WIDTH-1 downto 0);
 	begin
