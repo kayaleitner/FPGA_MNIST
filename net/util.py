@@ -158,16 +158,132 @@ def init_network_from_weights(qweights, from_torch):
     return our_net
 
 
-def evaluate_network(batch_size, network, train_images, train_labels):
+def evaluate_network_full(batch_size, network, train_images, train_labels):
     i = 0
     total_correct = 0
+
+    confusion_matrix = np.zeros(shape=(10, 10))
+
     while i < train_images.shape[0]:
         x = train_images[i:i + batch_size] / 255.0
         y_ = train_labels[i:i + batch_size]
         y = network.forward(x)
         y = y.argmax(-1)
+
+        # ToDo: Might be a faster way
+        for pred, label in zip(y, y_):
+            confusion_matrix[pred, label] = confusion_matrix[pred, label] + 1
+
         total_correct += np.sum(y == y_)
         i += batch_size
 
     accuracy = total_correct / train_images.shape[0]
-    return accuracy
+    return accuracy, confusion_matrix
+
+
+def evaluate_network(batch_size, network, train_images, train_labels):
+    a, _ = evaluate_network_full(batch_size, network, train_images, train_labels)
+    return a
+
+
+def plot_confusion_matrix(cm: np.ndarray, title='Confusion matrix', target_names=None, normalize=True,
+                          cmap=None, filename=None):
+    """
+
+    Plot a confusion matrix.
+
+    Taken from: https://www.kaggle.com/grfiv4/plot-a-confusion-matrix
+
+    Args:
+
+        cm: Confusion matrix itself, must be a 2D numpy array
+        title: Plot title
+        target_names: Axes labels
+        normalize: True, for normalized values, false otherwise
+        cmap: Optional color map
+        filename: Optional filename if the plot should be saved
+    Returns:
+
+    """
+    assert cm.ndim == 2
+
+    import matplotlib.pyplot as plt
+    import itertools
+
+    accuracy = np.trace(cm) / float(np.sum(cm))
+    misclass = 1 - accuracy
+
+    if cmap is None:
+        cmap = plt.get_cmap('Blues')
+
+    if normalize:
+        cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
+
+    fig = plt.figure(figsize=(8, 6))
+    ax = plt.imshow(cm, interpolation='nearest', cmap=cmap)
+
+    plt.title(title)
+    plt.colorbar()
+
+    if target_names is not None:
+        tick_marks = np.arange(len(target_names))
+        plt.xticks(tick_marks, target_names, rotation=45)
+        plt.yticks(tick_marks, target_names)
+
+    thresh = cm.max() / 1.5 if normalize else cm.max() / 2
+
+    for i, j in itertools.product(range(cm.shape[0]), range(cm.shape[1])):
+        if normalize:
+            plt.text(j, i, "{:0.2f}".format(cm[i, j]),
+                     horizontalalignment="center",
+                     color="white" if cm[i, j] > thresh else "black")
+        else:
+            plt.text(j, i, "{:,}".format(cm[i, j]),
+                     horizontalalignment="center",
+                     color="white" if cm[i, j] > thresh else "black")
+
+    plt.tight_layout()
+    plt.ylabel('True label')
+    plt.xlabel('Predicted label\naccuracy={:0.4f}; misclass={:0.4f}'.format(accuracy, misclass))
+    plt.show()
+
+    if filename is not None:
+        fig.savefig(fname=filename, dpi=300)
+
+
+def plot_convolutions(kernel, order='keras', title='Convolution Kernels', target_names=None, normalize=True,
+                      labels=None,
+                      cmap=None, filename=None):
+    if order is 'keras':
+        # Keras order is fine
+        pass
+    elif order is 'torch':
+        # Convert to keras
+        # Tensor is: [Co, Ci, H, W]
+        # Tensor should be: [H, W, Ci, Co]
+        # Use numpy for conversion
+        kernel = np.moveaxis(kernel, source=(0, 1), destination=(2, 3))
+        pass
+    else:
+        raise NotImplementedError(f'Not currently implemented. Should be "keras" or "torch" but is: {order}')
+
+    import matplotlib.pyplot as plt
+
+    fig, axes = plt.subplots(nrows=1, ncols=1)
+
+    fig.set_title(title=title)
+
+
+
+    pass
+
+
+def plot_kernel_density():
+    """
+
+    Check out:
+    https://stackoverflow.com/questions/30145957/plotting-2d-kernel-density-estimation-with-python
+    Returns:
+
+    """
+    pass

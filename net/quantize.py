@@ -3,7 +3,8 @@ import os
 import numpy as np
 
 import NeuralNetwork
-from util import read_np_torch, perform_real_quant, init_network_from_weights, evaluate_network, perform_fake_quant
+from util import read_np_torch, perform_real_quant, init_network_from_weights, evaluate_network, perform_fake_quant, \
+    plot_confusion_matrix, evaluate_network_full
 
 
 def main():
@@ -21,12 +22,20 @@ def main():
     test_labels = mnist.test_labels()
     batch_size = 50
 
+    classnames = list(map(str, range(10)))
+
     # Check network performance (might take some time)
     # Accuracy should be at least 90% even with quantization
-    # accuracy = evaluate_network(batch_size, our_net, test_images, test_labels)
-    # qaccuracy = evaluate_network(batch_size, our_quant_net, test_images, test_labels)
-    # print("Network:             ", accuracy)
-    # print("Quantised Network:   ", qaccuracy)
+    accuracy, cm = evaluate_network_full(batch_size, our_net, test_images, test_labels)
+    print("Network:             ", accuracy)
+
+    qaccuracy, qcm = evaluate_network_full(batch_size, our_quant_net, test_images, test_labels)
+    print("Quantised Network:   ", qaccuracy)
+
+    plot_confusion_matrix(cm, title='Confusion matrix (full precision)',
+                          target_names=classnames, filename='images/cm')
+    plot_confusion_matrix(qcm, title='Confusion matrix (fake fixed point 8/4)',
+                          target_names=classnames, filename='images/qcm')
 
     for key, value in qweights.items():
         filename = os.path.join('final_weights', key)
