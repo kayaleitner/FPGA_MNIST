@@ -167,14 +167,16 @@ architecture arch_imp of EggNet_v1_0 is
   signal l1_s_conv_data_7       : std_logic_vector(((DATA_WIDTH*L1_IN_CHANNEL_NUMBER) - 1) downto 0);
   signal l1_s_conv_data_8       : std_logic_vector(((DATA_WIDTH*L1_IN_CHANNEL_NUMBER) - 1) downto 0);
   signal l1_s_conv_data_9       : std_logic_vector(((DATA_WIDTH*L1_IN_CHANNEL_NUMBER) - 1) downto 0);
+  signal l1_s_conv_data_reshape : std_logic_vector(((DATA_WIDTH*L1_IN_CHANNEL_NUMBER*KERNEL_SIZE) - 1) downto 0);
   signal l1_s_conv_tvalid       : std_logic;
   signal l1_s_conv_tlast        : std_logic;
   signal l1_s_conv_tready       : std_logic;  
+  signal l1_m_conv_data_unsig   : unsigned(((DATA_WIDTH*L2_IN_CHANNEL_NUMBER) - 1) downto 0);
   signal l1_m_conv_data         : std_logic_vector(((DATA_WIDTH*L2_IN_CHANNEL_NUMBER) - 1) downto 0);
   signal l1_m_conv_tvalid       : std_logic;
   signal l1_m_conv_tlast        : std_logic;
   signal l1_m_conv_tready       : std_logic;   
-  signal l1_m_conv_data_reshape : std_logic_vector(((DATA_WIDTH*L2_IN_CHANNEL_NUMBER*KERNEL_SIZE) - 1) downto 0);
+  
    
   
   signal l2_s_tvalid	          : std_logic;
@@ -210,14 +212,15 @@ architecture arch_imp of EggNet_v1_0 is
   signal l2_s_conv_data_7       : std_logic_vector(((DATA_WIDTH*L2_IN_CHANNEL_NUMBER) - 1) downto 0);
   signal l2_s_conv_data_8       : std_logic_vector(((DATA_WIDTH*L2_IN_CHANNEL_NUMBER) - 1) downto 0);
   signal l2_s_conv_data_9       : std_logic_vector(((DATA_WIDTH*L2_IN_CHANNEL_NUMBER) - 1) downto 0);
+  signal l2_s_conv_data_reshape : std_logic_vector(((DATA_WIDTH*L2_IN_CHANNEL_NUMBER*KERNEL_SIZE) - 1) downto 0);
   signal l2_s_conv_tvalid       : std_logic;
   signal l2_s_conv_tlast        : std_logic;
   signal l2_s_conv_tready       : std_logic;   
-  signal l2_m_conv_data         : std_logic_vector(((DATA_WIDTH*L2_IN_CHANNEL_NUMBER) - 1) downto 0);
+  signal l2_m_conv_data_unsig   : unsigned(((DATA_WIDTH*L3_IN_CHANNEL_NUMBER) - 1) downto 0);
+  signal l2_m_conv_data         : std_logic_vector(((DATA_WIDTH*L3_IN_CHANNEL_NUMBER) - 1) downto 0);
   signal l2_m_conv_tvalid       : std_logic;
   signal l2_m_conv_tlast        : std_logic;
   signal l2_m_conv_tready       : std_logic;  
-  signal l2_m_conv_data_reshape : std_logic_vector(((DATA_WIDTH*L2_IN_CHANNEL_NUMBER*KERNEL_SIZE) - 1) downto 0);
   
   signal l3_s_tvalid	          : std_logic;
   signal l3_s_tdata             : std_logic_vector(((DATA_WIDTH*L3_IN_CHANNEL_NUMBER)-1) downto 0);
@@ -371,7 +374,6 @@ EggNet_v1_0_S00_AXI_inst : entity work.EggNet_v1_0_S00_AXI
       M_layer_tdata_1_o       => l1_m_tdata_1       ,
       M_layer_tdata_2_o       => l1_m_tdata_2       ,
       M_layer_tdata_3_o       => l1_m_tdata_3       ,
-      M_layer_tkeep_o         => l1_m_tkeep         ,
        M_layer_tnewrow_o      => l1_m_tnewrow       ,
       M_layer_tlast_o         => l1_m_tlast         ,
       M_layer_tready_i        => l1_m_tready        ,
@@ -450,7 +452,7 @@ EggNet_v1_0_S00_AXI_inst : entity work.EggNet_v1_0_S00_AXI
     );      
  
 -- Conv2d 
-
+  l1_s_conv_data_reshape <= (l1_s_conv_data_1 & l1_s_conv_data_2 & l1_s_conv_data_3 & l1_s_conv_data_4 & l1_s_conv_data_5 & l1_s_conv_data_6 & l1_s_conv_data_7 & l1_s_conv_data_8 & l1_s_conv_data_9);
   L1_conv2d : entity work.Conv2D_0 --Todo: Edit to real name
     generic map(
       BIT_WIDTH_IN => DATA_WIDTH,
@@ -466,10 +468,10 @@ EggNet_v1_0_S00_AXI_inst : entity work.EggNet_v1_0_S00_AXI
       Last_o  => l1_m_conv_tlast,
       Ready_i => l1_m_conv_tready,
       Ready_o => l1_s_conv_tready,
-      X_i     => (l1_s_conv_data_1 & l1_s_conv_data_2 & l1_s_conv_data_3 & l1_s_conv_data_4 & l1_s_conv_data_5 & l1_s_conv_data_6 & l1_s_conv_data_7 & l1_s_conv_data_8 & l1_s_conv_data_9),
-      Y_o     => l1_m_conv_data
+      X_i     => l1_s_conv_data_reshape,
+      Y_o     => l1_m_conv_data_unsig
     );
-    
+    l1_m_conv_data <= std_logic_vector(l1_m_conv_data_unsig);
 -- MaxPooling   
   L1_maxPooling: entity work.MaxPooling
   generic map(
@@ -522,7 +524,6 @@ EggNet_v1_0_S00_AXI_inst : entity work.EggNet_v1_0_S00_AXI
       M_layer_tdata_1_o       => l2_m_tdata_1       ,
       M_layer_tdata_2_o       => l2_m_tdata_2       ,
       M_layer_tdata_3_o       => l2_m_tdata_3       ,
-      M_layer_tkeep_o         => l2_m_tkeep         ,
        M_layer_tnewrow_o      => l2_m_tnewrow       ,
       M_layer_tlast_o         => l2_m_tlast         ,
       M_layer_tready_i        => l2_m_tready        ,
@@ -601,7 +602,8 @@ EggNet_v1_0_S00_AXI_inst : entity work.EggNet_v1_0_S00_AXI
     );      
  
 -- Conv2d 
-
+  l2_s_conv_data_reshape <= (l2_s_conv_data_1 & l2_s_conv_data_2 & l2_s_conv_data_3 & l2_s_conv_data_4 & l2_s_conv_data_5 & l2_s_conv_data_6 & l2_s_conv_data_7 & l2_s_conv_data_8 & l2_s_conv_data_9);
+  
   L2_conv2d : entity work.Conv2D_1 --Todo: Edit to real name
     generic map(
       BIT_WIDTH_IN => DATA_WIDTH,
@@ -617,10 +619,10 @@ EggNet_v1_0_S00_AXI_inst : entity work.EggNet_v1_0_S00_AXI
       Last_o  => l2_m_conv_tlast,
       Ready_i => l2_m_conv_tready,
       Ready_o => l2_s_conv_tready,
-      X_i     => (l2_s_conv_data_1 & l2_s_conv_data_2 & l2_s_conv_data_3 & l2_s_conv_data_4 & l2_s_conv_data_5 & l2_s_conv_data_6 & l2_s_conv_data_7 & l2_s_conv_data_8 & l2_s_conv_data_9),
-      Y_o     => l2_m_conv_data
+      X_i     => l2_s_conv_data_reshape,
+      Y_o     => l2_m_conv_data_unsig
     );
-    
+    l1_m_conv_data <= std_logic_vector(l1_m_conv_data_unsig);
 -- MaxPooling   
   L2_maxPooling: entity work.MaxPooling
   generic map(
