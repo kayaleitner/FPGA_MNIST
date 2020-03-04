@@ -12,7 +12,6 @@ EXTRACT_FROM_KERAS = True
 EXTRACT_FROM_TROCH = True
 
 EXPORT_DIR = 'np'
-
 SCRIPT_PATH = os.path.dirname(os.path.abspath(__file__))
 
 
