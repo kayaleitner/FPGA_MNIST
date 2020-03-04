@@ -3,17 +3,18 @@ import numpy as np
 
 from lib.convnet_drawer.matplotlib_util import save_model_to_file
 from util import read_np_torch, plot_convolutions
+import matplotlib.pyplot as plt
 
 
 def main():
-
     weights = read_np_torch(ordering='BHWC', target_dtype=np.float32)
 
     # make_conv_net_plot()
 
-    # plot_convolutions(weights['cn1.k'], nrows=1)
-    plot_convolutions(weights['cn2.k'], nrows=16)
+    make_training_plots()
 
+    # plot_convolutions(weights['cn1.k'], nrows=1)
+    # plot_convolutions(weights['cn2.k'], nrows=16)
 
 
 def make_conv_net_plot():
@@ -39,6 +40,40 @@ def make_conv_net_plot():
     # We dont need powerpoint
     # save_model_to_pptx(model, os.path.splitext(os.path.basename(__file__))[0] + ".pptx")
 
+
+def make_training_plots():
+    hist_acc = np.load('runs/history_accuracy.npy')
+    hist_loss = np.load('runs/history_loss.npy')
+
+    DATASET_LEN = 60 * 1000
+    N = 50  # filter length
+
+    x = hist_loss
+    fig = plt.figure(figsize=(8, 6))
+    plt.semilogy(x[:, 0] / DATASET_LEN, x[:, 1], label='Loss (Minibatch)')
+    x_ = np.convolve(x[:, 1], np.ones((N,)) / N, mode='same')
+    plt.semilogy(x[:-N, 0] / DATASET_LEN, x_[:-N], label='Running Mean, N=50')
+    plt.xlabel('Epochs')
+    plt.ylabel('Loss')
+    plt.title('Training Loss')
+    plt.legend()
+    plt.show()
+    fig.savefig('images/training_loss.png', dpi=300)
+
+    x = hist_acc
+    fig = plt.figure(figsize=(8, 6))
+    plt.plot(x[:, 0] / DATASET_LEN, x[:, 1], label='Accuracy (Minibatch)')
+    x_ = np.convolve(x[:, 1], np.ones((N,)) / N, mode='same')
+    plt.plot(x[:-N, 0] / DATASET_LEN, x_[:-N], label='Running Mean, N=50')
+    plt.xlabel('Epochs')
+    plt.ylabel('Accuracy')
+    plt.title('Network Accuracy')
+    plt.legend()
+    plt.show()
+    fig.savefig('images/training_accuracy.png', dpi=300)
+
+
+pass
 
 if __name__ == '__main__':
     main()

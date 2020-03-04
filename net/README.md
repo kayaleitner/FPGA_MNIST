@@ -27,6 +27,12 @@ python quantize.py
 
 or use the Jupyter notebook to train the network.
 
+## Training
+
+![Training, loss](images/training_loss.png)
+
+![Training, accuracy](images/training_accuracy.png)
+
 ## Results
 
 For quantisation fixed point quantisation has been used.
@@ -40,3 +46,4 @@ For quantisation fixed point quantisation has been used.
 ![Confusion matrix, full precision](images/cm.png)
 
 ![Confusion matrix, quantized](images/qcm.png)
+

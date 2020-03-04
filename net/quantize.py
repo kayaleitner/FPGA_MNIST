@@ -38,10 +38,30 @@ def main():
                           target_names=classnames, filename='images/qcm')
 
     for key, value in qweights.items():
-        filename = os.path.join('final_weights', key)
+        dirname = os.path.join('final_weights', 'fpi')
+        os.makedirs(dirname, exist_ok=True)
+        filename = os.path.join(dirname, key)
         x_ = value.flatten()
 
         np.savetxt(fname=filename + '.txt', X=x_, fmt='%i', header=str(value.shape))
+        np.save(file=filename, arr=value)
+
+    for key, value in fweights.items():
+        dirname = os.path.join('final_weights', 'fake_quant')
+        os.makedirs(dirname, exist_ok=True)
+        filename = os.path.join(dirname, key)
+        x_ = value.flatten()
+
+        np.savetxt(fname=filename + '.txt', X=x_, header=str(value.shape))
+        np.save(file=filename, arr=value)
+
+    for key, value in weights.items():
+        dirname = os.path.join('final_weights', 'float')
+        os.makedirs(dirname, exist_ok=True)
+        filename = os.path.join(dirname, key)
+        x_ = value.flatten()
+
+        np.savetxt(fname=filename + '.txt', X=x_, header=str(value.shape))
         np.save(file=filename, arr=value)
 
 
