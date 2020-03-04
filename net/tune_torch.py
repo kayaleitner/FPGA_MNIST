@@ -6,10 +6,10 @@ import torch.quantization
 import torch.nn as nn
 import torch.optim
 
-from extract_net_parameters import load_torch, read_np_torch
-from train_torch import evaluate, prepare_datasets, train_network, LEARNING_RATE, evaluate_labels
-from train_torch import LinearRelu, Flatten, LeNetV2, ConvBN
-from debug import LayerActivations, check_torch_conv_hook, _imshow
+from util import read_np_torch, perform_fake_quant, init_network_from_weights, evaluate_network
+from train_torch import evaluate, prepare_datasets, train_network, LEARNING_RATE, evaluate_labels, load_torch
+from train_torch import LinearRelu, Flatten
+from debug import _imshow
 
 # Import the own made network
 import NeuralNetwork
@@ -32,70 +32,6 @@ class FixedConvLayer(torch.nn.Module):
             y_ = np.moveaxis(y_np, 3, 1)
             return torch.from_numpy(y_)
             # return nnext.conv2d_3x3(x, self.kernel) + self.bias
-
-
-def perform_fake_quant(weight_dict, target_bits, frac_bits, target_dtype=np.float64):
-    """
-    Performs fake quantization, meaning all values will be rounded to
-    their expression
-    Args:
-        weight_dict: Dictionary containing numpy arrays
-        target_bits: Target bit length of the integer values
-        frac_bits: Target fraction bit width
-
-    Returns:
-        Dictionary with original keys, containing quantized values
-    """
-
-    assert target_bits > frac_bits
-
-    value_bits = target_bits - frac_bits
-
-    a_max = 2 ** (value_bits - 1) - 1
-    a_min = -2 ** (value_bits - 1)
-    scale = 1 / 2 ** frac_bits
-
-    d_out = {}
-    for key, value in weight_dict.items():
-        # round weights
-        w = np.clip(value / scale, a_min=a_min, a_max=a_max).round()
-
-        # Those are now ints, convert back to floats
-        w = (w * scale).astype(dtype=target_dtype)
-
-        d_out[key] = w
-
-    return d_out
-
-
-def perform_real_quant(weight_dict, target_bits, frac_bits):
-    """
-    Performs real quantization, meaning all values will be rounded to
-    their fixed point representation
-    Args:
-        weight_dict: Dictionary containing numpy arrays
-        target_bits: Target bit length of the integer values
-        frac_bits: Target fraction bit width
-
-    Returns:
-        Dictionary with original keys, containing quantized values
-    """
-
-    assert target_bits > frac_bits
-
-    value_bits = target_bits - frac_bits
-
-    a_max = 2 ** (value_bits - 1) - 1
-    a_min = -2 ** (value_bits - 1)
-    scale = 1 / 2 ** frac_bits
-
-    d_out = {}
-    for key, value in weight_dict.items():
-        # round weights
-        w = np.clip(value / scale, a_min=a_min, a_max=a_max).round().astype(np.int)
-        d_out[key] = w
-
-    return d_out
 
 
 def main():
@@ -161,32 +97,6 @@ def main():
     print(top1)
 
     (top1, top5) = evaluate(net, criterion, testloader)
-
-
-def evaluate_network(batch_size, network, train_images, train_labels):
-    i = 0
-    total_correct = 0
-    while i < train_images.shape[0]:
-        x = train_images[i:i + batch_size] / 255.0
-        y_ = train_labels[i:i + batch_size]
-        y = network.forward(x)
-        y = y.argmax(-1)
-        total_correct += np.sum(y == y_)
-    accuracy = total_correct / train_images.shape[0]
-    return accuracy
-
-
-def init_network_from_weights(qweights, from_torch):
-    our_net = NeuralNetwork.nn.Network.LeNet(reshape_torch=from_torch)
-    our_net.cn1.weights = qweights['cn1.k']
-    our_net.cn1.bias = qweights['cn1.b']
-    our_net.cn2.weights = qweights['cn2.k']
-    our_net.cn2.bias = qweights['cn2.b']
-    our_net.fc1.weights = qweights['fc1.w']
-    our_net.fc1.bias = qweights['fc1.b']
-    our_net.fc2.weights = qweights['fc2.w']
-    our_net.fc2.bias = qweights['fc2.b']
-    return our_net
 
 
 if __name__ == '__main__':

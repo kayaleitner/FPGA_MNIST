@@ -10,6 +10,8 @@ import torch.optim
 import torchvision
 from torch.utils.data import DataLoader
 
+from extract_net_parameters import SCRIPT_PATH, EXPORT_DIR
+
 try:
     import NeuralNetwork.Ext as nnext
 except ImportError as error:
@@ -27,6 +29,11 @@ MODEL_CKPT_PATH = os.path.join("torch", "cp.ckpt")
 MODEL_WGHTS_SAVE_PATH = os.path.join(MODEL_SAVE_DIR, 'weights.h5')
 MODEL_CONFIG_SAVE_PATH = os.path.join(MODEL_SAVE_DIR, 'model_config.json')
 
+TORCH_SAVE_DIR = os.path.join(SCRIPT_PATH, 'torch')
+TORCH_SAVE_FILE = os.path.join(TORCH_SAVE_DIR, 'LeNet.pth')
+TORCH_STATES_SAVE_FILE = os.path.join(TORCH_SAVE_DIR, 'LeNetStates.pth')
+
+
 IMG_HEIGHT = 28
 IMG_WIDTH = 28
 DEFAULT_PLOT_HISTORY = False
@@ -37,6 +44,70 @@ LEARNING_RATE = 0.001
 NUM_CALIBRATION_BATCHES = 128
 NUM_EVAL_BATCHES = 50
 LOG_MINI_BATCH_INTERVAL = 50
+
+
+def main(nepochs=DEFAULT_EPOCHS, plot_history=False):
+    """
+    data sets & data loaders
+    """
+
+    testloader, trainloader = prepare_datasets()
+
+    """
+    Setup Network
+    """
+    net = LeNetV2()
+    net.to('cpu')
+    criterion = nn.CrossEntropyLoss()
+    optimizer = torch.optim.Adam(net.parameters(), lr=LEARNING_RATE)
+    history_accuracy = train_network(net, nepochs, criterion, optimizer, trainloader)
+    print('Finished Training')
+
+    """
+    Fuse Network
+    """
+    # Set the model in evaluation mode -> Removes Dropout Layers
+    net.eval()
+    # Fuse model -> Removes batch norm layers
+    net.fuse_model()
+
+    """
+    Quant Network using Torch Quantization
+    See: https://pytorch.org/tutorials/advanced/static_quantization_tutorial.html#post-training-static-quantization
+
+    Not working!
+    """
+    # qnet = quantize_network(criterion, net, testloader, trainloader)
+    # torch.save(qnet.state_dict(), QMODEL_STATE_SAVE_PATH)
+
+    """
+    Save Network
+    """
+    torch.save(net, MODEL_SAVE_PATH)
+    torch.save(net.state_dict(), MODEL_STATE_SAVE_PATH)
+
+    save_weights_as_numpy(net)
+
+    test_accuracies = []
+    for i, data in enumerate(testloader):
+        inputs, labels = data  # get the inputs; data is a list of [inputs, labels]
+        outputs = net(inputs)
+        pred = outputs.argmax(dim=1)  # get the index of the max log-probability
+        accurracy = (pred == labels).sum() / float(len(labels))
+        test_accuracies.append(accurracy)
+
+    test_accuracy = np.mean(test_accuracies)
+    print("Test accuracy: {:3.4}%".format(100 * test_accuracy))
+
+    if plot_history:
+        import matplotlib.pyplot as plt
+        # Plot training & validation accuracy values
+        plt.figure()
+        plt.plot(history_accuracy)
+        plt.title('Model accuracy')
+        plt.ylabel('Accuracy')
+        plt.xlabel('Epoch')
+        plt.show()
 
 
 def get_lenet_model():
@@ -273,72 +344,8 @@ def train_one_epoch(model, criterion, optimizer, data_loader, device, ntrain_bat
 
 
 def save_weights_as_numpy(net):
-    from extract_net_parameters import save_torch_model_weights
     save_torch_model_weights(net)
 
-
-def train(nepochs=DEFAULT_EPOCHS, plot_history=False):
-    """
-    data sets & data loaders
-    """
-
-    testloader, trainloader = prepare_datasets()
-
-    """
-    Setup Network
-    """
-    net = LeNetV2()
-    net.to('cpu')
-    criterion = nn.CrossEntropyLoss()
-    optimizer = torch.optim.Adam(net.parameters(), lr=LEARNING_RATE)
-    history_accuracy = train_network(net, nepochs, criterion, optimizer, trainloader)
-    print('Finished Training')
-
-    """
-    Fuse Network
-    """
-    # Set the model in evaluation mode -> Removes Dropout Layers
-    net.eval()
-    # Fuse model -> Removes batch norm layers
-    net.fuse_model()
-
-    """
-    Quant Network using Torch Quantization
-    See: https://pytorch.org/tutorials/advanced/static_quantization_tutorial.html#post-training-static-quantization
-    
-    Not working!
-    """
-    # qnet = quantize_network(criterion, net, testloader, trainloader)
-    # torch.save(qnet.state_dict(), QMODEL_STATE_SAVE_PATH)
-
-    """
-    Save Network
-    """
-    torch.save(net, MODEL_SAVE_PATH)
-    torch.save(net.state_dict(), MODEL_STATE_SAVE_PATH)
-
-    save_weights_as_numpy(net)
-
-    test_accuracies = []
-    for i, data in enumerate(testloader):
-        inputs, labels = data  # get the inputs; data is a list of [inputs, labels]
-        outputs = net(inputs)
-        pred = outputs.argmax(dim=1)  # get the index of the max log-probability
-        accurracy = (pred == labels).sum() / float(len(labels))
-        test_accuracies.append(accurracy)
-
-    test_accuracy = np.mean(test_accuracies)
-    print("Test accuracy: {:3.4}%".format(100 * test_accuracy))
-
-    if plot_history:
-        import matplotlib.pyplot as plt
-        # Plot training & validation accuracy values
-        plt.figure()
-        plt.plot(history_accuracy)
-        plt.title('Model accuracy')
-        plt.ylabel('Accuracy')
-        plt.xlabel('Epoch')
-        plt.show()
 
 
 def prepare_datasets():
@@ -424,4 +431,24 @@ class Flatten(nn.Module):
 if __name__ == '__main__':
     torch.manual_seed(0)
     np.random.seed(0)
-    train()
+    main()
+
+
+def save_torch_model_weights(tmodel):
+    tmodel.eval()  # Put in eval mode
+    for key, weights in tmodel.state_dict().items():
+        weights = weights.numpy()
+        vals = weights.flatten(order='C')
+        np.savetxt(os.path.join(EXPORT_DIR, 't_{}.txt'.format(key)), vals,
+                   header=str(weights.shape))
+
+
+def load_torch(filepath=TORCH_SAVE_FILE):
+    # Create a model instance, make sure that save data and source code is in sync
+    # model = get_lenet_model()
+    # model.load_state_dict(torch.load(TORCH_STATES_SAVE_FILE))
+
+    # ToDo: Better way would be the line below but it doesnt work for me :(
+    model = torch.load(filepath)
+
+    return model

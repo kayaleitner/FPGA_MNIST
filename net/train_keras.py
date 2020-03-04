@@ -19,6 +19,10 @@ DEFAULT_PLOT_HISTORY = False
 DEFAULT_EPOCHS = 2
 BATCH_SIZE = 128
 
+KERAS_SAVE_DIR = 'keras'
+KERAS_CONFIG_FILE = os.path.join(KERAS_SAVE_DIR, 'model_config.json')
+KERAS_WEIGHTS_FILE = os.path.join(KERAS_SAVE_DIR, 'weights.h5')
+
 
 def train(nepochs=DEFAULT_EPOCHS, batch_size=BATCH_SIZE, plot_history=DEFAULT_PLOT_HISTORY):
     (x_train, y_train), (x_test, y_test) = keras.datasets.mnist.load_data()
@@ -133,3 +137,16 @@ if __name__ == '__main__':
     # plot_history = args.plot_history
     global model
     model = train()
+
+
+def load_keras() -> keras.Model:
+    if not os.path.exists(KERAS_CONFIG_FILE) or not os.path.exists(KERAS_WEIGHTS_FILE):
+        raise RuntimeError("There is no trained model data! (or the model might have the wrong filename?)")
+
+    # Reload the model from the 2 files we saved
+    with open(KERAS_CONFIG_FILE) as json_file:
+        json_config = json_file.read()
+
+    model = keras.models.model_from_json(json_config)
+    model.load_weights(KERAS_WEIGHTS_FILE)
+    return model
