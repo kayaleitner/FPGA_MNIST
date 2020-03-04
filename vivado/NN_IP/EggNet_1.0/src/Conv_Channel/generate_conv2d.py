@@ -6,8 +6,8 @@ import numpy as np
 import re
 
 num_layers = 2
-file_names = ["../../../../../net/np/k_3_conv2d_1_0.txt",
-         "../../../../../net/np/k_8_conv2d_2_0.txt"]
+file_names = ["../../../../../net/final_weights/cn1.k.txt",
+         "../../../../../net/final_weights/cn2.k.txt"]
     
 def quantize(a):
     return min(max(int(a/0.002),-128), 127)

@@ -448,7 +448,7 @@ EggNet_v1_0_S00_AXI_inst : entity work.EggNet_v1_0_S00_AXI
  
 -- Conv2d 
 
-  L1_conv2d : entity work.Conv2DTemplate --Todo: Edit to real name
+  L1_conv2d : entity work.Conv2D_0 --Todo: Edit to real name
     generic map(
       BIT_WIDTH_IN => DATA_WIDTH,
       BIT_WIDTH_OUT => DATA_WIDTH,
@@ -599,7 +599,7 @@ EggNet_v1_0_S00_AXI_inst : entity work.EggNet_v1_0_S00_AXI
  
 -- Conv2d 
 
-  L2_conv2d : entity work.Conv2DTemplate --Todo: Edit to real name
+  L2_conv2d : entity work.Conv2D_1 --Todo: Edit to real name
     generic map(
       BIT_WIDTH_IN => DATA_WIDTH,
       BIT_WIDTH_OUT => DATA_WIDTH,
