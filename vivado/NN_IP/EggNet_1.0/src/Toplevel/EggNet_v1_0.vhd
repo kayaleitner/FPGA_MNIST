@@ -1,6 +1,7 @@
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
+use work.kernel_pkg.all; -- defines kernel size
 
 entity EggNet_v1_0 is
 	generic (
@@ -173,7 +174,8 @@ architecture arch_imp of EggNet_v1_0 is
   signal l1_m_conv_tvalid       : std_logic;
   signal l1_m_conv_tlast        : std_logic;
   signal l1_m_conv_tready       : std_logic;   
-  
+  signal l1_m_conv_data_reshape : std_logic_vector(((DATA_WIDTH*L2_IN_CHANNEL_NUMBER*KERNEL_SIZE) - 1) downto 0);
+   
   
   signal l2_s_tvalid	          : std_logic;
   signal l2_s_tdata             : std_logic_vector(((DATA_WIDTH*L2_IN_CHANNEL_NUMBER)-1) downto 0);
@@ -215,6 +217,7 @@ architecture arch_imp of EggNet_v1_0 is
   signal l2_m_conv_tvalid       : std_logic;
   signal l2_m_conv_tlast        : std_logic;
   signal l2_m_conv_tready       : std_logic;  
+  signal l2_m_conv_data_reshape : std_logic_vector(((DATA_WIDTH*L2_IN_CHANNEL_NUMBER*KERNEL_SIZE) - 1) downto 0);
   
   signal l3_s_tvalid	          : std_logic;
   signal l3_s_tdata             : std_logic_vector(((DATA_WIDTH*L3_IN_CHANNEL_NUMBER)-1) downto 0);

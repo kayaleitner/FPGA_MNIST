@@ -9,6 +9,9 @@ import matplotlib.pyplot as plt
 # %% import custom modules
 import vhdl_testbench as tb 
 
+file_names = ["../../../../../net/final_weights/cn1.k.txt",
+         "../../../../../net/final_weights/cn2.k.txt"]
+
 # %% Helper function to split array into n roughly equal parts
 def chunk_array(seq, num):
     avg = len(seq) / float(num)
@@ -72,8 +75,9 @@ IMG_WIDTH = 28
 IMG_HIGTH = 28
 BLOCK_SIZE = IMG_WIDTH*IMG_HIGTH
 
-l1_weights_file_name = "../../../../../net/np/k_3_conv2d_1_0.txt"
-l2_weights_file_name = "../../../../../net/np/k_8_conv2d_2_0.txt"
+
+l1_weights_file_name = file_names[0]
+l2_weights_file_name = file_names[1]
 
 # %% create tmp folder, delete folder if not tmp exists and create new one
 if os.path.isdir('tmp'):
