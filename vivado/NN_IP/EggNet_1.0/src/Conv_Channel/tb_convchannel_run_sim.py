@@ -26,7 +26,7 @@ def chunk_array(seq, num):
 
 # %% Quantization function for floating point weights
 def quantize(a):
-    return min(max(int(a/0.002),-128), 127)
+    return a
 
 # %% Pooling function
     
@@ -97,7 +97,7 @@ l1_test_kernels = tb.get_Kernels(l1_test_vectors,IMG_WIDTH)
 
 # %% calculate Layer 1 output as new memory controller input 
 l1_weights_file = open(l1_weights_file_name, 'r')
-l1_weights = np.array(list(map(quantize, np.loadtxt(l1_weights_file)))).reshape((3,3,CI_L1,CO_L1))
+l1_weights = np.array(list(map(quantize, np.loadtxt(l1_weights_file, dtype=np.int8)))).reshape((3,3,CI_L1,CO_L1))
 l1_weights_file.close()
 
 l1_weights_reshaped = np.ndarray((CO_L1,CI_L1,3,3))
@@ -144,7 +144,7 @@ for i in range(0, CO_L1):
     file_name_emu_current = file_name_emu.replace("{I}", str(i))
     if filecmp.cmp(file_name_sim_current, file_name_emu_current) != True:
         print("Simulation and emulation output not the same for conv2d0, channel " + str(i))
-        exit
+        quit()
 
 print("Simulation and emulation output the same for conv2d0")
 
@@ -183,7 +183,7 @@ l2_test_kernels = tb.get_Kernels(l2_test_vectors,IMG_WIDTH)
 
 # %% calculate Layer 2 output as new memory controller input 
 l2_weights_file = open(l2_weights_file_name, 'r')
-l2_weights = np.array(list(map(quantize, np.loadtxt(l2_weights_file)))).reshape((3,3,CI_L2,CO_L2))
+l2_weights = np.array(list(map(quantize, np.loadtxt(l2_weights_file, dtype=np.int8)))).reshape((3,3,CI_L2,CO_L2))
 l2_weights_file.close()
 
 l2_weights_reshaped = np.ndarray((CO_L2,CI_L2,3,3))
@@ -269,8 +269,8 @@ file_nn.close()
 
 # %% Get output for dense layer
 
-denselayer_1_file_name = "../../../../../net/np/k_14_dense_1_0.txt"
-denselayer_2_file_name = "../../../../../net/np/k_17_dense_2_0.txt"
+denselayer_1_file_name = "../../../../../net/final_weights/fc1.w.txt"
+denselayer_2_file_name = "../../../../../net/final_weights/fc2.w.txt"
 
 DL1_INPUT_NEURONS = 1568
 DL1_OUTPUT_NEURONS = 32
@@ -278,11 +278,11 @@ DL2_INPUT_NEURONS = 32
 DL2_OUTPUT_NEURONS = 10
 
 dl1_weights_file = open(denselayer_1_file_name, 'r')
-dl1_weights = np.array(list(map(quantize, np.loadtxt(dl1_weights_file)))).reshape((DL1_INPUT_NEURONS, DL1_OUTPUT_NEURONS))
+dl1_weights = np.array(list(map(quantize, np.loadtxt(dl1_weights_file, dtype=np.int8)))).reshape((DL1_INPUT_NEURONS, DL1_OUTPUT_NEURONS))
 dl1_weights_file.close()
 
 dl2_weights_file = open(denselayer_2_file_name, 'r')
-dl2_weights = np.array(list(map(quantize, np.loadtxt(dl2_weights_file)))).reshape((DL2_INPUT_NEURONS, DL2_OUTPUT_NEURONS))
+dl2_weights = np.array(list(map(quantize, np.loadtxt(dl2_weights_file, dtype=np.int8)))).reshape((DL2_INPUT_NEURONS, DL2_OUTPUT_NEURONS))
 dl2_weights_file.close()
 
 file_nn = open("tmp/nn_input.txt", "r")

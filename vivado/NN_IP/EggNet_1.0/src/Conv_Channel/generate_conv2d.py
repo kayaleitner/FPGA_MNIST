@@ -8,9 +8,6 @@ import re
 num_layers = 2
 file_names = ["../../../../../net/final_weights/cn1.k.txt",
          "../../../../../net/final_weights/cn2.k.txt"]
-    
-def quantize(a):
-    return min(max(int(a/0.002),-128), 127)
 
 if __name__ == '__main__':
     num_input_channels = [None]*num_layers
@@ -33,7 +30,7 @@ if __name__ == '__main__':
         channel_def = list(map(int, regex.match(def_line).group(1).split(',')))
         num_input_channels[i] = channel_def[0]
         num_output_channels[i] = channel_def[1]
-        kernel_arrays[i] = list(map(quantize, np.loadtxt(file)))
+        kernel_arrays[i] = list(np.loadtxt(file, dtype=np.int8))
         kernel_arrays[i] = np.array(kernel_arrays[i]).reshape((3,3,num_input_channels[i], num_output_channels[i]))
         kernel_strings[i] = np.ndarray((num_input_channels[i], num_output_channels[i]), dtype=object)
 

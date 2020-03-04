@@ -188,6 +188,9 @@ begin
 		for J in 0 to INPUT_ARRAY_SIZE - 1 loop
 			wait until rising_edge(s_Clk_i);
 			while s_C0_Ready_o = '0' loop
+				s_C0_Last_i <= '0';
+				s_C0_X_i <= (others => '0');
+				s_C0_Valid_i <= '0';
 				wait until rising_edge(s_Clk_i);
 			end loop;
 			if (J mod IMG_WIDTH) = IMG_WIDTH - 1 then
@@ -207,7 +210,6 @@ begin
 		wait until rising_edge(s_Clk_i);
 		wait until rising_edge(s_Clk_i);
 		conv2d_done <= '1';
-		wait until rising_edge(s_Pool_Last_o);
 		wait until rising_edge(s_Clk_i);
 		wait until rising_edge(s_Clk_i);
 		wait until rising_edge(s_Clk_i);
