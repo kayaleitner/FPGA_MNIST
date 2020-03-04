@@ -5,7 +5,7 @@ on: [push]
 jobs:
   latex-job:
     runs-on: ubuntu-latest
-    name: A job to Compile Latex file
+    name: Specification Document Compilation
     steps:
       - uses: actions/checkout@v1
       - name: Compilation
