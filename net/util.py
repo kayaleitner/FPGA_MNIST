@@ -24,8 +24,8 @@ def read_np_torch(ordering='BCHW', target_dtype=None):
         'cn2.k': _read_np_tensor('np/t_3.0.weight.txt'),
         'fc1.b': _read_np_tensor('np/t_7.0.bias.txt'),
         'fc1.w': _read_np_tensor('np/t_7.0.weight.txt'),
-        'fc2.b': _read_np_tensor('np/t_9.0.bias.txt'),
-        'fc2.w': _read_np_tensor('np/t_9.0.weight.txt'),
+        'fc2.b': _read_np_tensor('np/t_9.bias.txt'),
+        'fc2.w': _read_np_tensor('np/t_9.weight.txt'),
     }
 
     if ordering is 'BCHW':
@@ -251,7 +251,8 @@ def plot_confusion_matrix(cm: np.ndarray, title='Confusion matrix', target_names
         fig.savefig(fname=filename, dpi=300)
 
 
-def plot_convolutions(kernel, order='keras', title='Convolution Kernels', target_names=None, normalize=True,
+def plot_convolutions(kernel, nrows=4, c_out=None, order='keras', title='Convolution Kernels', target_names=None,
+                      normalize=True,
                       labels=None,
                       cmap=None, filename=None):
     if order is 'keras':
@@ -269,13 +270,20 @@ def plot_convolutions(kernel, order='keras', title='Convolution Kernels', target
 
     import matplotlib.pyplot as plt
 
-    fig, axes = plt.subplots(nrows=1, ncols=1)
+    fh, fw, ci, co = kernel.shape
 
-    fig.set_title(title=title)
+    ncols = ci // nrows + 1
+
+    fig, axes = plt.subplots(nrows=nrows, ncols=ncols, figsize=(8, 6))
+
+    for c_out in co:
+        for r in range(nrows):
+            axes.set_ylabel('')
+            for c in range(ncols):
+                axes[r, c].matshow(np.mean(kernel[:, :, :, c_out], axis=-1))
+                plt.show()
 
 
-
-    pass
 
 
 def plot_kernel_density():
