@@ -17,8 +17,9 @@ architecture Behavioral of tb_NN is
 	type t_pixel_array is array (0 to INPUT_COUNT - 1) of integer;
 	
 	signal s_Clk_i, s_n_Res_i, s_Valid_i, s_Valid_o : std_logic;
+	signal s_Ready_i, s_Ready_o, s_Last_o : std_logic;
 	signal s_Data_i : std_logic_vector(VECTOR_WIDTH -1 downto 0);
-	signal s_Data_o : std_logic_vector(OUTPUT_COUNT * VECTOR_WIDTH -1 downto 0);
+	signal s_Data_o : std_logic_vector(VECTOR_WIDTH -1 downto 0);
 	signal sim_ended : std_logic := '0';
 	
 	file input_file : text;
@@ -32,7 +33,10 @@ begin
 		Valid_i => s_Valid_i,
 		Data_i => s_Data_i,
 		Valid_o => s_Valid_o,
-		Data_o => s_Data_o
+		Data_o => s_Data_o,
+		Ready_i => s_Ready_i,
+		Ready_o => s_Ready_o,
+		Last_o => s_Last_o
 	);
   
 	-- Generates the clock signal
@@ -58,16 +62,11 @@ begin
 	end process; 
 	
 	get_output : process(s_Clk_i, sim_ended)
-		variable output_line : line;
-        variable file_name_out : string(1 to 17) := "tmp/nn_output.txt";
+		--variable output_line : line;
+        --variable file_name_out : string(1 to 17) := "tmp/nn_output.txt";
 	begin
 		if s_Valid_o = '1' and rising_edge(s_Clk_i) then
-			file_open(output_file, file_name_out, write_mode);
-			for I in 0 to OUTPUT_COUNT - 1 loop
-				write(output_line, to_integer(unsigned(s_Data_o((I+1)*VECTOR_WIDTH - 1 downto I*VECTOR_WIDTH))));
-				writeline(output_file, output_line);
-			end loop;
-			file_close(output_file);
+			report integer'image(to_integer(unsigned(s_Data_o)));
 		end if;	
 	end process;
 
@@ -78,6 +77,7 @@ begin
         variable file_name_in : string(1 to 16) := "tmp/nn_input.txt";
 		variable K : integer := 0;
 	begin
+		s_Ready_i <= '1';
 		
 		file_open(input_file, file_name_in, read_mode);
 		K := 0;

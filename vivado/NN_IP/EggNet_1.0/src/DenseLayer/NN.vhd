@@ -16,9 +16,11 @@ entity NeuralNetwork is
 		Resetn_i : in std_logic;
 		Valid_i  : in std_logic;
 		Data_i   : in std_logic_vector(VECTOR_WIDTH -1 downto 0); 
+		Ready_i  : in std_logic;
+		Last_o   : out std_logic;
 		Ready_o  : out std_logic;
 		Valid_o  : out std_logic;   
-		Data_o   : out std_logic_vector(OUTPUT_COUNT * VECTOR_WIDTH - 1 downto 0)
+		Data_o   : out std_logic_vector(VECTOR_WIDTH - 1 downto 0)
 	);
 end NeuralNetwork;
 
@@ -39,7 +41,7 @@ architecture Behavioral of NeuralNetwork is
 	signal s_L1_Finished_o, s_L2_Finished_o : std_logic;
 	signal s_L1_Rd_en_i, s_L2_Rd_en_i : std_logic := '0';
 
-	signal Data_o_reg : std_logic_vector(OUTPUT_COUNT * VECTOR_WIDTH - 1 downto 0);
+	signal Data_o_reg, Data_o_reg_next : std_logic_vector(OUTPUT_COUNT * VECTOR_WIDTH - 1 downto 0);
 
     type state_type is (
 		ST_IDLE, 
@@ -56,6 +58,7 @@ architecture Behavioral of NeuralNetwork is
 	signal data_cnt_L1, data_cnt_L1_next   : integer range 0 to INPUT_COUNT_L1 := 0;
 	signal data_cnt_L2, data_cnt_L2_next   : integer range 0 to INPUT_COUNT_L2 := 0;
 	signal data_cnt_out, data_cnt_out_next : integer range 0 to OUTPUT_COUNT_L2 := 0;
+	signal data_o_cnt : integer range 0 to OUTPUT_COUNT := OUTPUT_COUNT;
 	
 begin
     dense_layer_1 : entity work.layer
@@ -126,7 +129,7 @@ begin
 				end if;
 			when ST_WAIT_L2 => 
 				state_temp <= 4;
-				if s_L2_Finished_o = '1' then
+				if s_L2_Finished_o = '1' and data_o_cnt = OUTPUT_COUNT then
 					state_next <= ST_OUTPUT;
 				end if;
 			when ST_OUTPUT =>
@@ -147,8 +150,6 @@ begin
 		data_cnt_L1_next <= data_cnt_L1;
 		data_cnt_L2_next <= data_cnt_L2;
 		data_cnt_out_next <= data_cnt_out;
-		Valid_o <= '0';
-		Data_o <= (others => '0');
 		Ready_o <= '0';
 		s_L1_Rd_addr_i <= (others => '0');
 		s_L2_Rd_addr_i <= (others => '0');
@@ -160,6 +161,7 @@ begin
 		s_L2_Data_i <= (others => '0');
 		s_L1_Reset_i <= '0';
 		s_L2_Reset_i <= '0';
+		Data_o_reg_next <= Data_o_reg;
 		case state is
 			when ST_IDLE => 
 				Ready_o <= '1';
@@ -169,7 +171,6 @@ begin
 					s_L1_Start_i <= '1';
 					s_L1_Data_i <= Data_i;
 				end if;
-				Data_o_reg <= (others => '0');
 			when ST_INPUT_L1 => 
 				Ready_o <= '1';
 				if Valid_i = '1' then
@@ -212,13 +213,36 @@ begin
 				else 
 					output_L2_cropped := s_L2_Data_o(VECTOR_WIDTH * 2 - 1 downto VECTOR_WIDTH);
 				end if;
-				Data_o_reg((data_cnt_out+1)*VECTOR_WIDTH - 1 downto data_cnt_out*VECTOR_WIDTH) <= output_L2_cropped;
+				Data_o_reg_next((data_cnt_out+1)*VECTOR_WIDTH - 1 downto data_cnt_out*VECTOR_WIDTH) <= output_L2_cropped;
 			when ST_END =>
-				Valid_o <= '1';
-				Data_o <= Data_o_reg;
 				data_cnt_out_next <= 0;
 				s_L2_Reset_i <= '1';
 		end case;
+	end process;
+	
+	set_output : process(Clk_i, Resetn_i)
+	begin
+		if Resetn_i = '0' then
+			Data_o <= (others => '0');
+			Last_o <= '0';
+			Valid_o <= '0';
+			data_o_cnt <= OUTPUT_COUNT;
+		elsif rising_edge(Clk_i) then
+			Data_o <= (others => '0');
+			Last_o <= '0';
+			Valid_o <= '0';
+			if state_next = ST_END then
+				data_o_cnt <= 0;
+			end if;
+			if Ready_i = '1' and data_o_cnt /= OUTPUT_COUNT then
+				Valid_o <= '1';
+				Data_o <= Data_o_reg((data_o_cnt+1)*VECTOR_WIDTH - 1 downto data_o_cnt*VECTOR_WIDTH);
+				data_o_cnt <= data_o_cnt + 1;
+				if data_o_cnt = OUTPUT_COUNT - 1 then
+					Last_o <= '1';
+				end if;
+			end if;
+		end if;
 	end process;
 	
     sync : process(Clk_i, Resetn_i)
@@ -228,11 +252,13 @@ begin
 			data_cnt_L2 <= 0;
 			data_cnt_out <= 0;
 			state <= ST_IDLE;
+			Data_o_reg <= (others => '0');
         elsif rising_edge(Clk_i) then
 			state <= state_next;
 			data_cnt_L1 <= data_cnt_L1_next;
 			data_cnt_L2 <= data_cnt_L2_next;
 			data_cnt_out <= data_cnt_out_next;
+			Data_o_reg <= Data_o_reg_next;
 		end if; 
     end process;
 	
