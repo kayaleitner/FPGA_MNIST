@@ -1,9 +1,9 @@
 library ieee;
 use ieee.std_logic_1164.ALL;
 use ieee.numeric_std.ALL;
-use ieee.math_real.all;
 use ieee.std_logic_unsigned.all;
-use work.layer;
+use work.dense_layer;
+USE work.clogb2_Pkg.all;
 
 entity NeuralNetwork is
 	generic(
@@ -25,7 +25,8 @@ entity NeuralNetwork is
 end NeuralNetwork;
 
 architecture Behavioral of NeuralNetwork is
-	constant INPUT_COUNT_L1 : integer := INPUT_COUNT;
+  
+  constant INPUT_COUNT_L1 : integer := INPUT_COUNT;
 	constant OUTPUT_COUNT_L1 : integer := 32;
 	constant INPUT_COUNT_L2 : integer := OUTPUT_COUNT_L1;
 	constant OUTPUT_COUNT_L2 : integer := OUTPUT_COUNT;
@@ -34,10 +35,10 @@ architecture Behavioral of NeuralNetwork is
 	signal s_L1_Start_i, s_L2_Start_i : std_logic := '0';
 	signal s_L1_Rd_en_o, s_L2_Rd_en_o : std_logic;
 	signal s_L1_Data_i, s_L2_Data_i : std_logic_vector(VECTOR_WIDTH-1 downto 0) := (others => '0');
-	signal s_L1_Data_o : std_logic_vector((2*VECTOR_WIDTH + integer(ceil(log2(real(INPUT_COUNT_L1)))))-1 downto 0);
-	signal s_L2_Data_o : std_logic_vector((2*VECTOR_WIDTH + integer(ceil(log2(real(INPUT_COUNT_L2)))))-1 downto 0);
-	signal s_L1_Rd_addr_i : std_logic_vector(integer(ceil(log2(real(OUTPUT_COUNT_L1))))-1 downto 0) := (others => '0');
-	signal s_L2_Rd_addr_i : std_logic_vector(integer(ceil(log2(real(OUTPUT_COUNT_L2))))-1 downto 0) := (others => '0');
+	signal s_L1_Data_o : std_logic_vector((2*VECTOR_WIDTH + clogb2(INPUT_COUNT_L1))-1 downto 0);
+	signal s_L2_Data_o : std_logic_vector((2*VECTOR_WIDTH + clogb2(INPUT_COUNT_L2))-1 downto 0);
+	signal s_L1_Rd_addr_i : std_logic_vector(clogb2(OUTPUT_COUNT_L1)-1 downto 0) := (others => '0');
+	signal s_L2_Rd_addr_i : std_logic_vector(clogb2(OUTPUT_COUNT_L2)-1 downto 0) := (others => '0');
 	signal s_L1_Finished_o, s_L2_Finished_o : std_logic;
 	signal s_L1_Rd_en_i, s_L2_Rd_en_i : std_logic := '0';
 
@@ -61,7 +62,7 @@ architecture Behavioral of NeuralNetwork is
 	signal data_o_cnt : integer range 0 to OUTPUT_COUNT := OUTPUT_COUNT;
 	
 begin
-    dense_layer_1 : entity work.layer
+    dense_layer_1 : entity work.dense_layer
     generic map(
 		VECTOR_WIDTH  => VECTOR_WIDTH,
         INPUT_COUNT   => INPUT_COUNT_L1,
@@ -82,7 +83,7 @@ begin
 		Rd_en_i => s_L1_Rd_en_i
 	);
 	
-    dense_layer_2 : entity work.layer
+    dense_layer_2 : entity work.dense_layer
     generic map(
 		VECTOR_WIDTH  => VECTOR_WIDTH,
         INPUT_COUNT   => INPUT_COUNT_L2,

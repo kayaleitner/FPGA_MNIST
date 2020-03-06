@@ -24,9 +24,8 @@ use IEEE.STD_LOGIC_1164.ALL;
 -- arithmetic functions with Signed or Unsigned values
 use IEEE.NUMERIC_STD.ALL;
 use ieee.std_logic_unsigned.all;
-use IEEE.math_real.all;
 use STD.textio.all;
-
+USE work.clogb2_Pkg.all;
 
 -- Uncomment the following library declaration if instantiating
 -- any Xilinx primitives in this code.
@@ -36,10 +35,11 @@ use STD.textio.all;
 entity romModule is
 	Generic(    DATA_WIDTH : integer := 256;
 				DATA_DEPTH : integer := 2048;
+        ADDR_WITDTH : integer := 11;
 				ROM_FILE   : string  := "rom_content.mif"
 				);
     Port ( clk_i : in  STD_LOGIC;
-           address_i : in  STD_LOGIC_VECTOR (integer(ceil(log2(real(DATA_DEPTH))))-1 downto 0);
+           address_i : in  STD_LOGIC_VECTOR (ADDR_WITDTH-1 downto 0);
            data_o : out  STD_LOGIC_VECTOR (DATA_WIDTH-1 downto 0) := (others => '0')
 			  );
 end romModule;
@@ -47,7 +47,7 @@ end romModule;
 architecture Behavioral of romModule is
 
 -- Definition of storage array.
-type mem_type is array (0 to (2**integer(ceil(log2(real(DATA_DEPTH)))))-1) of std_logic_vector(DATA_WIDTH-1 downto 0);    
+type mem_type is array (0 to DATA_DEPTH-1) of std_logic_vector(DATA_WIDTH-1 downto 0);    
 
 -- This function initializes ROM with the data from a .mif file.
 impure function init_mem(mif_file_name : in string) return mem_type is

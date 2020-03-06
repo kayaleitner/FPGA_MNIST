@@ -24,12 +24,13 @@ use IEEE.STD_LOGIC_1164.ALL;
 -- arithmetic functions with Signed or Unsigned values
 use IEEE.NUMERIC_STD.ALL;
 use ieee.std_logic_unsigned.all;
-use ieee.math_real.ceil;
-use ieee.math_real.log2;
 use STD.textio.all;
 
 LIBRARY work;
+use work.multiplier; 
+use work.accumulator;
 USE work.denseLayerPkg.all;
+USE work.clogb2_Pkg.all;
 
 -- Uncomment the following library declaration if instantiating
 -- any Xilinx primitives in this code.
@@ -48,9 +49,9 @@ entity vectorMultiplier is
 			  Clk_i : in std_logic;
 			  Rd_en_o : out std_logic;
 			  Data_i : in std_logic_vector(VECTOR_WIDTH-1 downto 0);
-			  Weights_address_o : out std_logic_vector(integer(ceil(log2(real(INPUT_COUNT))))-1 downto 0);
+			  Weights_address_o : out std_logic_vector(clogb2(INPUT_COUNT)-1 downto 0);
 			  Weights_i : in array_type(OUTPUT_COUNT-1 downto 0)(VECTOR_WIDTH-1 downto 0);
-              Output_o : out  array_type(OUTPUT_COUNT-1 downto 0)((2*VECTOR_WIDTH + integer(ceil(log2(real(INPUT_COUNT)))))-1 downto 0);
+        Output_o : out  array_type(OUTPUT_COUNT-1 downto 0)(2*VECTOR_WIDTH + clogb2(INPUT_COUNT)-1 downto 0);
 			  Start_calculation_i : in std_logic;
 			  Write_data_o : out std_logic);
 			  
@@ -68,7 +69,7 @@ architecture Behavioral of vectorMultiplier is
 	);
     signal state, state_next : state_type := ST_IDLE;
     
-    signal s_counter, s_counter_next : std_logic_vector(integer(ceil(log2(real(INPUT_COUNT))))-1 downto 0) := (others=>'0');
+    signal s_counter, s_counter_next : std_logic_vector(clogb2(INPUT_COUNT)-1 downto 0) := (others=>'0');
     
     signal s_enable_accumulation : std_logic := '0';
     
@@ -122,7 +123,7 @@ begin
         (
             BIAS_WIDTH => BIAS_WIDTH,
             INPUT_WIDTH => 2*VECTOR_WIDTH,
-            OUTPUT_WIDTH => 2*VECTOR_WIDTH + integer(ceil(log2(real(INPUT_COUNT))))
+            OUTPUT_WIDTH => 2*VECTOR_WIDTH + clogb2(INPUT_COUNT)
         )
         port map
         (
