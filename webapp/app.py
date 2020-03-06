@@ -8,7 +8,7 @@ from forms import DataToFPGA
 import numpy as np
 
 app = Flask(__name__)
-#Bootstrap(app)
+# Bootstrap(app)
 app.config["DEBUG"] = True
 app.config['SECRET_KEY'] = 'eggs-are-awesome'
 DataHandler = DataHandler(app.root_path)
@@ -76,17 +76,6 @@ def get_image_json():
         return {'error': 'index not in range 0 to 9999'}
 
 
-@app.route('/admin')
-def admin():
-    os_stats = fpga.get_system_stats()
-    return render_template('admin.html', sys_stats=os_stats)
-
-
-@app.route('/contact')
-def contact():
-    return render_template('contact.html')
-
-
 @app.errorhandler(404)
 def page_not_found(e):
     return render_template('404.html'), 404
@@ -100,7 +89,7 @@ def api_all():
 
 @app.route('/api/v1/system/stats', methods=['GET'])
 def api_get_system_stats():
-    data = fpga.get_system_stats()
+    data = fpga.get_system_stats(verbose=False)
     return jsonify(data)
 
 
