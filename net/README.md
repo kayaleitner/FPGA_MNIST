@@ -1,5 +1,7 @@
 # Neural Network Training
 
+![Machine Learning](https://imgs.xkcd.com/comics/machine_learning_2x.png)
+
 The training can be done with either Pytorch or Keras, but Pytorch is recommended because of the unreliable
 API of Tensorflow (the foundation of Keras)
 

@@ -1,32 +1,54 @@
 import numpy as np
-
+import os
 import NeuralNetwork
 
 
-def _read_np_tensor(weight_file):
-    with open(weight_file) as f:
-        init_line = f.readline()
+def _read_np_tensor(weight_file:str):
+    if weight_file.endswith('.npy'):
+        is_binary = True
+    elif weight_file.endswith('.txt'):
+        is_binary = False
+    else:
+        raise NotImplementedError()
 
-    # assume the first line is a comment
-    assert init_line[0] == '#'
-    p1 = init_line.find('(')
-    p2 = init_line.find(')')
-    dims = [int(ds) for ds in init_line[p1 + 1:p2].split(sep=',') if len(ds) > 0]
+    if is_binary:
+        return np.load(weight_file)
+    else:
+        with open(weight_file) as f:
+            init_line = f.readline()
 
-    return np.loadtxt(weight_file).reshape(dims)
+        # assume the first line is a comment
+        assert init_line[0] == '#'
+        p1 = init_line.find('(')
+        p2 = init_line.find(')')
+        dims = [int(ds) for ds in init_line[p1 + 1:p2].split(sep=',') if len(ds) > 0]
+
+        return np.loadtxt(weight_file).reshape(dims)
 
 
-def read_np_torch(ordering='BCHW', target_dtype=None):
-    d = {
-        'cn1.b': _read_np_tensor('np/t_0.0.bias.txt'),
-        'cn1.k': _read_np_tensor('np/t_0.0.weight.txt'),
-        'cn2.b': _read_np_tensor('np/t_3.0.bias.txt'),
-        'cn2.k': _read_np_tensor('np/t_3.0.weight.txt'),
-        'fc1.b': _read_np_tensor('np/t_7.0.bias.txt'),
-        'fc1.w': _read_np_tensor('np/t_7.0.weight.txt'),
-        'fc2.b': _read_np_tensor('np/t_9.bias.txt'),
-        'fc2.w': _read_np_tensor('np/t_9.weight.txt'),
-    }
+def read_np_torch(ordering='BCHW', binary=True, target_dtype=None):
+    if binary:
+        d = {
+            'cn1.b': _read_np_tensor('np/t_0.0.bias.npy'),
+            'cn1.k': _read_np_tensor('np/t_0.0.weight.npy'),
+            'cn2.b': _read_np_tensor('np/t_3.0.bias.npy'),
+            'cn2.k': _read_np_tensor('np/t_3.0.weight.npy'),
+            'fc1.b': _read_np_tensor('np/t_7.0.bias.npy'),
+            'fc1.w': _read_np_tensor('np/t_7.0.weight.npy'),
+            'fc2.b': _read_np_tensor('np/t_9.bias.npy'),
+            'fc2.w': _read_np_tensor('np/t_9.weight.npy'),
+        }
+    else:
+        d = {
+            'cn1.b': _read_np_tensor('np/t_0.0.bias.txt'),
+            'cn1.k': _read_np_tensor('np/t_0.0.weight.txt'),
+            'cn2.b': _read_np_tensor('np/t_3.0.bias.txt'),
+            'cn2.k': _read_np_tensor('np/t_3.0.weight.txt'),
+            'fc1.b': _read_np_tensor('np/t_7.0.bias.txt'),
+            'fc1.w': _read_np_tensor('np/t_7.0.weight.txt'),
+            'fc2.b': _read_np_tensor('np/t_9.bias.txt'),
+            'fc2.w': _read_np_tensor('np/t_9.weight.txt'),
+        }
 
     if ordering is 'BCHW':
         pass
@@ -79,7 +101,10 @@ def reorder(x):
     return x_
 
 
-def perform_real_quant(weight_dict, target_bits, frac_bits):
+def perform_real_quant(weight_dict,
+                       in_bits:np.ndarray,  in_frac:np.ndarray,
+                       w_bits:np.ndarray, w_frac:np.ndarray,
+                       out_bits:np.ndarray, out_frac:np.ndarray):
     """
 
     Performs real quantization, meaning all values will be rounded to
@@ -94,22 +119,39 @@ def perform_real_quant(weight_dict, target_bits, frac_bits):
         Dictionary with original keys, containing quantized values
     """
 
-    assert target_bits > frac_bits
+    # Use short notations
+    ia_b = in_bits
+    ia_f = in_frac
+    w_b = w_bits
+    w_f = w_frac
+    oa_b = out_bits
+    oa_f = out_frac
+
+    # Check if consistent: input2 must be output 1
+    assert np.all(oa_b[:-1] == ia_b[1:])
+    assert np.all(oa_f[:-1] == ia_f[1:])
+
+    # Temporary bits and fractions while adding (for bias)
+    t_b = ia_b + w_b
+    t_f = ia_f + w_f
+    shift = t_f - oa_f
+
 
     # v = Q * 2^-m
     # Q = v * 2^m
-    a_max = 2 ** (target_bits - 1) - 1
-    a_min = -2 ** (target_bits - 1)
-    scale = 2 ** frac_bits
+    a_max = 2.0 ** (target_bits - 1) - 1
+    a_min = -2.0 ** (target_bits - 1)
+    scale = 1 / 2 ** frac_bits
 
     d_out = {}
     for key, value in weight_dict.items():
         # round weights
-        w = np.clip(value * scale, a_min=a_min, a_max=a_max).round().astype(np.int64)
+        w = np.clip(value / scale, a_min=a_min, a_max=a_max).round().astype(np.int64)
         # Those are now ints, convert back to floats
         d_out[key] = w
-
     return d_out
+
+
 
 
 def perform_fake_quant(weight_dict, target_bits, frac_bits, target_dtype=np.float64):
@@ -130,8 +172,8 @@ def perform_fake_quant(weight_dict, target_bits, frac_bits, target_dtype=np.floa
 
     value_bits = target_bits - frac_bits
 
-    a_max = 2 ** (value_bits - 1) - 1
-    a_min = -2 ** (value_bits - 1)
+    a_max = 2.0 ** (value_bits - 1) - 1
+    a_min = -2.0 ** (value_bits - 1)
     scale = 1 / 2 ** frac_bits
 
     d_out = {}
@@ -144,6 +186,18 @@ def perform_fake_quant(weight_dict, target_bits, frac_bits, target_dtype=np.floa
 
     return d_out
 
+
+def init_network_from_weights(qweights, from_torch):
+    our_net = NeuralNetwork.nn.Network.LeNet(reshape_torch=from_torch)
+    our_net.cn1.weights = qweights['cn1.k']
+    our_net.cn1.bias = qweights['cn1.b']
+    our_net.cn2.weights = qweights['cn2.k']
+    our_net.cn2.bias = qweights['cn2.b']
+    our_net.fc1.weights = qweights['fc1.w']
+    our_net.fc1.bias = qweights['fc1.b']
+    our_net.fc2.weights = qweights['fc2.w']
+    our_net.fc2.bias = qweights['fc2.b']
+    return our_net
 
 def init_network_from_weights(qweights, from_torch):
     our_net = NeuralNetwork.nn.Network.LeNet(reshape_torch=from_torch)

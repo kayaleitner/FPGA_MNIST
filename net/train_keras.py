@@ -44,24 +44,20 @@ def train(nepochs=DEFAULT_EPOCHS, batch_size=BATCH_SIZE, plot_history=DEFAULT_PL
         Reshape(target_shape=(IMG_HEIGHT * IMG_WIDTH, 1), input_shape=(IMG_HEIGHT, IMG_WIDTH)),
         BatchNormalization(),
         Reshape((IMG_HEIGHT, IMG_WIDTH, 1)),  # Reshape to 3D input for the Conv layer
-        Conv2D(4, kernel_size=5, padding='same', activation='linear', use_bias=False,
+        Conv2D(filters=16, kernel_size=3, padding='same', activation='linear', use_bias=True,
                kernel_constraint=kernel_constraint),
-        BatchNormalization(axis=-1),  # Normalize along the channels (meaning last axis)
-        Dropout(0.2),
+        Dropout(0.25),
         ReLU(),
         MaxPooling2D(),
-        Conv2D(16, kernel_size=5, padding='same', activation='linear', use_bias=False,
-               kernel_constraint=kernel_constraint),
         BatchNormalization(axis=-1),  # Normalize along the channels (meaning last axis)
-        Dropout(0.2),
+        Conv2D(filters=32, kernel_size=3, padding='same', activation='linear', use_bias=True,
+               kernel_constraint=kernel_constraint),
+        Dropout(0.25),
         ReLU(),
         MaxPooling2D(),
-        Conv2D(filters=64, kernel_size=3, kernel_constraint=kernel_constraint),  # Reduce dimensionality
-        Dropout(0.2),
-        ReLU(),
         Flatten(),
         Dense(32, activation='linear', kernel_constraint=kernel_constraint),
-        Dropout(0.5),
+        Dropout(0.25),
         ReLU(),
         Dense(10, activation='softmax', kernel_constraint=kernel_constraint)
     ])
@@ -127,17 +123,6 @@ def _plot_history(history):
     plt.show()
 
 
-if __name__ == '__main__':
-    # Add argument parsing to start it from the command line
-    # parser = argparse.ArgumentParser()
-    # parser.add_argument("plot_history", help="Print the training history using matplotlib",
-    #                     default=PRINT_HISTORY_DEFAULT)
-    # parser.add_argument()
-    # args = parser.parse_args(args=sys.argv)
-    # plot_history = args.plot_history
-    global model
-    model = train()
-
 
 def load_keras() -> keras.Model:
     if not os.path.exists(KERAS_CONFIG_FILE) or not os.path.exists(KERAS_WEIGHTS_FILE):
@@ -150,3 +135,16 @@ def load_keras() -> keras.Model:
     model = keras.models.model_from_json(json_config)
     model.load_weights(KERAS_WEIGHTS_FILE)
     return model
+
+
+
+if __name__ == '__main__':
+    # Add argument parsing to start it from the command line
+    # parser = argparse.ArgumentParser()
+    # parser.add_argument("plot_history", help="Print the training history using matplotlib",
+    #                     default=PRINT_HISTORY_DEFAULT)
+    # parser.add_argument()
+    # args = parser.parse_args(args=sys.argv)
+    # plot_history = args.plot_history
+    global model
+    model = train()

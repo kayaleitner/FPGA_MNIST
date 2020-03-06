@@ -7,8 +7,9 @@ import torch.nn as nn
 import torch.optim
 
 from util import read_np_torch, perform_fake_quant, init_network_from_weights, evaluate_network
-from train_torch import evaluate, prepare_datasets, train_network, LEARNING_RATE, evaluate_labels, load_torch
-from train_torch import LinearRelu, Flatten
+from train_torch import evaluate, prepare_datasets, train_network, LEARNING_RATE, evaluate_labels, load_torch, \
+    save_torch_model_weights
+from train_torch import LinearRelu, Flatten, LeNetV2, ConvBN, ConvBNReLU
 from debug import _imshow
 
 # Import the own made network
@@ -35,7 +36,11 @@ class FixedConvLayer(torch.nn.Module):
 
 
 def main():
+
     net = load_torch(filepath='torch/LeNet.pth')
+    save_torch_model_weights(net)
+
+
     # qnet = load_torch(filepath='torch/QLeNet.pth')
     testloader, trainloader = prepare_datasets()
     criterion = nn.CrossEntropyLoss()
