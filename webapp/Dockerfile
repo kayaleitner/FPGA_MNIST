@@ -46,3 +46,7 @@ RUN pyenv global 3.6.10
 
 COPY deploy_requirements.txt /
 RUN pip install -r deploy_requirements.txt
+
+
+ENTRYPOINT ["python"]
+CMD ["app.py"]
