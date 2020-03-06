@@ -11,11 +11,14 @@
     {%- endblock metas %}
 
     {%- block styles %}
-    <!-- Bootstrap -->
+    
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/fontawesome/all.min.css') }}">
     <link href="{{ url_for('static', filename='css/eggnet.css') }}" rel="stylesheet">
+    <!-- Bootstrap -->
     <link type="text/css" rel="stylesheet" href="//unpkg.com/bootstrap/dist/css/bootstrap.min.css" />
     <link type="text/css" rel="stylesheet" href="//unpkg.com/bootstrap-vue@latest/dist/bootstrap-vue.min.css" />
-
+    <!-- JavaScript -->
     <script src="{{ url_for('static', filename='plugins/jquery/jquery.min.js') }}" type="text/javascript"></script>
     <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
     <script src="https://cdn.bokeh.org/bokeh/release/bokeh-1.4.0.min.js" type="text/javascript"></script>
@@ -24,6 +27,7 @@
     <script src="https://cdn.bokeh.org/bokeh/release/bokeh-api-1.4.0.min.js" type="text/javascript"></script>
     <script src="//unpkg.com/vue@latest/dist/vue.min.js"></script>
     <script src="//unpkg.com/bootstrap-vue@latest/dist/bootstrap-vue.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.3/Chart.min.js"></script>
     <script>
       // We use a simple dollar sign for latex input. Be aware!
       MathJax = {
