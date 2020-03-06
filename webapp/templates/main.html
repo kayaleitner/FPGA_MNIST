@@ -1,0 +1,99 @@
+{% extends 'base.html' %}
+
+{% block navbar %}
+
+{% endblock %}
+
+{% block content %}
+<b-container class="main-content">
+    <b-navbar type="dark" variant="info">
+        <b-navbar-brand>Navigation</b-navbar-brand>
+        <b-navbar-nav>
+        <b-nav-item href="#" class="margin-auto">MNIST</b-nav-item>
+        <b-nav-item href="#" class="margin-auto">Interface</b-nav-item>
+        <b-nav-item href="#" class="margin-auto">The Network</b-nav-item>
+        <b-nav-item href="#" class="margin-auto">Documentation</b-nav-item>
+        <b-nav-item href="#" class="margin-auto">System Information</b-nav-item>
+        <b-nav-item href="#" class="margin-auto">Credits</b-nav-item>
+        </b-navbar-nav>
+        <b-navbar-nav class="ml-auto">
+        <b-nav-item href="https://github.com/marbleton/FPGA_MNIST" class="margin-auto" right>GIT</b-nav-item>
+        </b-navbar-nav>
+    </b-navbar>
+
+    <b-row class="pad-15 bkg-gray">
+        <b-column class="pad-15 width-100 t-align-cent">
+            <b-row class="text-area">
+                <h1> Welcome to the EGGNET 1.0. </h1>
+            </b-row>
+
+            <b-row class="description text-area">
+                <p>This is a student project from TU Vienna in the course 384.157 SoC Design Laboratoy.
+                Goal was to develop a full system focusing on a specific topic.</p>
+            </b-row>
+            <b-row class="mnist text-area">
+                <h2> MNIST-Data Set</h2>
+                <p>The MNIST database of handwritten digits, available from <a href="http://yann.lecun.com/exdb/mnist/" style="color: blue;">this</a>
+                    page, has a training set of 60,000 examples, and a test set
+                    of 10,000 examples. It is a subset of a larger set available
+                    from NIST. The digits have been size-normalized and centered
+                    in a fixed-size image. It is a good database for people who
+                    want to try learning techniques and pattern recognition
+                    methods on real-world data while spending minimal efforts on
+                    preprocessing and formatting. </p>
+                 On the left we can see an image looks like when plotted and on the right we can see Histogram of the Test set!
+                <div class="center"> {{ im_div|safe }}
+                {{ hist_div|safe }} </div>
+
+            </b-row>
+            <b-row class="interface">
+                <b-jumbotron header="Zedboard Interface" style="width: 100%">
+                <b-column class="params" style="display:block; width:45%;">
+                    <b-list-group>
+                        <b-list-group-item> Start Image <b-input></b-input></b-list-group-item>
+                        <b-list-group-item> Ending Image <b-input></b-input></b-list-group-item>
+                    </b-list-group>
+                </b-column>
+                <b-column class="controls" style="display:block; width:45%;">
+                    <b-button variant="light"> Start</b-button>
+                    <b-table stacked :fields="fields" :items="items"></b-table>
+                </b-column>
+                </b-jumbotron>
+            </b-row>
+
+            <b-row class="network text-area">
+                <h2>Our designed Network</h2>
+                <p>Some text about Network design. Convolutional Neural Network
+                <ul>
+                    <li>Conv-Layer</li>
+                    <li></li>
+                </ul> </p>
+            </b-row>
+
+            <b-row class="documentation text-area">
+                <h2>Documentation</h2>
+                <p>Here Image of Top Level Design. And then maybe a pagination with code samples of different modules</p>
+            </b-row>
+
+            <b-row class="cpu-info">
+                <div class="card" style="margin: auto;">
+                    <div class="card-header">
+
+                        <h5 class="m-0">System Information</h5>
+                    </div>
+                    <div class="card-body">
+                       <pre>
+                           {{ sys_stats }}
+                       </pre>
+                    </div>
+                </div>
+            </b-row>
+
+            <b-row class="text-area">
+                <h2>Credits</h2>
+            </b-row>
+        </b-column>
+    </b-row>
+
+</b-container>
+{% endblock %}
