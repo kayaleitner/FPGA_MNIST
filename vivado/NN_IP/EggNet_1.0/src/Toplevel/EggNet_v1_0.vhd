@@ -3,6 +3,19 @@ use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 use work.kernel_pkg.all; -- defines kernel size
 
+use work.EggNet_v1_0_S00_AXI;
+use work.MemCtrl_3x3;
+use work.STD_FIFO;
+use work.ShiftRegister_3x3;
+use work.Conv2D_0;
+use work.MaxPooling;
+use work.Conv2D_1;
+use work.Serializer;
+use work.NeuralNetwork;
+use work.AXI_steam_master;
+
+
+
 entity EggNet_v1_0 is
 	generic (
 		-- Users to add parameters here
@@ -59,10 +72,13 @@ entity EggNet_v1_0 is
 		s00_axi_rresp	: out std_logic_vector(1 downto 0);
 		s00_axi_rvalid	: out std_logic;
 		s00_axi_rready	: in std_logic;
+    
+    
+    -- AXI stream clock and reset 
+		axis_aclk	: in std_logic;
+		axis_aresetn	: in std_logic;    
 
 		-- Ports of Axi Slave Bus Interface S00_AXIS
-		s00_axis_aclk	: in std_logic;
-		s00_axis_aresetn	: in std_logic;
 		s00_axis_tready	: out std_logic;
 		s00_axis_tdata	: in std_logic_vector(C_S00_AXIS_TDATA_WIDTH-1 downto 0);
 		s00_axis_tkeep	: in std_logic_vector((C_S00_AXIS_TDATA_WIDTH/8)-1 downto 0);
@@ -70,8 +86,6 @@ entity EggNet_v1_0 is
 		s00_axis_tvalid	: in std_logic;
 
 		-- Ports of Axi Master Bus Interface M00_AXIS
-		m00_axis_aclk	: in std_logic;
-		m00_axis_aresetn	: in std_logic;
 		m00_axis_tvalid	: out std_logic;
 		m00_axis_tdata	: out std_logic_vector(C_M00_AXIS_TDATA_WIDTH-1 downto 0);
 		m00_axis_tkeep	: out std_logic_vector((C_M00_AXIS_TDATA_WIDTH/8)-1 downto 0);
@@ -107,8 +121,8 @@ end EggNet_v1_0;
 
 architecture arch_imp of EggNet_v1_0 is
 
-  --attribute X_INTERFACE_INFO of Res_itrp_o : signal is "xilinx.com:signal:interrupt:1.0 irq INTERRUPT";
-  --attribute X_INTERFACE_PARAMETER of Res_itrp_o : signal is "SENSITIVITY EDGE_RISING";
+  attribute X_INTERFACE_INFO of Res_itrp_o : signal is "xilinx.com:signal:interrupt:1.0 irq INTERRUPT";
+  attribute X_INTERFACE_PARAMETER of Res_itrp_o : signal is "SENSITIVITY EDGE_RISING";
 
   constant L1_BRAM_ADDR_WIDTH		    : integer := 11; -- maximum = 24 
   constant L2_BRAM_ADDR_WIDTH		    : integer := 9; -- maximum = 24 
@@ -223,12 +237,14 @@ architecture arch_imp of EggNet_v1_0 is
   signal l2_m_conv_tlast        : std_logic;
   signal l2_m_conv_tready       : std_logic;  
   
-  signal l3_s_tvalid	        : std_logic;
+  signal l3_s_tvalid	          : std_logic;
   signal l3_s_tdata             : std_logic_vector(((DATA_WIDTH*L3_IN_CHANNEL_NUMBER)-1) downto 0);
   signal l3_s_tlast             : std_logic;
   signal l3_s_tready            : std_logic;    
   signal l3_m_tvalid            : std_logic;    
   signal l3_m_tdata             : std_logic_vector(OUTPUT_COUNT*DATA_WIDTH - 1 downto 0);
+  signal l3_m_tlast             : std_logic;
+  signal l3_m_tready            : std_logic;
   
   signal serializer_valid       : std_logic;
   signal serializer_data        : std_logic_vector(DATA_WIDTH - 1 downto 0);
@@ -372,8 +388,8 @@ EggNet_v1_0_S00_AXI_inst : entity work.EggNet_v1_0_S00_AXI
       C_S00_AXI_DATA_WIDTH    => C_S00_AXI_DATA_WIDTH
       )       
     port map(
-      Layer_clk_i		          => s00_axis_aclk,
-      Layer_aresetn_i         => s00_axis_aresetn,
+      Layer_clk_i		          => axis_aclk,
+      Layer_aresetn_i         => axis_aresetn,
       S_layer_tvalid_i	      => s00_axis_tvalid,
       S_layer_tdata_i         => s00_axis_tdata,
       S_layer_tkeep_i         => s00_axis_tkeep,
@@ -421,7 +437,7 @@ EggNet_v1_0_S00_AXI_inst : entity work.EggNet_v1_0_S00_AXI
         FIFO_DEPTH => LAYER_WIDTH+1
     )
     port map (
-      Clk_i     => s00_axis_aclk,
+      Clk_i     => axis_aclk,
       Rst_i     => l1_m_fifo_srst     ,
       Data_i    => l1_m_fifo_in       ,
       WriteEn_i => l1_m_fifo_wr       ,
@@ -437,8 +453,8 @@ EggNet_v1_0_S00_AXI_inst : entity work.EggNet_v1_0_S00_AXI
       DATA_WIDTH => (DATA_WIDTH*L1_IN_CHANNEL_NUMBER)
     )
     port map(
-      Clk_i       => s00_axis_aclk,		 
-      nRst_i      => s00_axis_aresetn, 
+      Clk_i       => axis_aclk,		 
+      nRst_i      => axis_aresetn, 
       S_data_1_i  => l1_m_tdata_1, 
       S_data_2_i  => l1_m_tdata_2, 
       S_data_3_i  => l1_m_tdata_3, 
@@ -469,8 +485,8 @@ EggNet_v1_0_S00_AXI_inst : entity work.EggNet_v1_0_S00_AXI
       INPUT_CHANNELS => L1_IN_CHANNEL_NUMBER,
       OUTPUT_CHANNELS => L2_IN_CHANNEL_NUMBER)
     port map(
-      Clk_i   => s00_axis_aclk,		
-      n_Res_i => s00_axis_aresetn,
+      Clk_i   => axis_aclk,		
+      n_Res_i => axis_aresetn,
       Valid_i => l1_s_conv_tvalid,
       Valid_o => l1_m_conv_tvalid,
       Last_i  => l1_s_conv_tlast,
@@ -490,8 +506,8 @@ EggNet_v1_0_S00_AXI_inst : entity work.EggNet_v1_0_S00_AXI
     LAYER_WIDTH       => LAYER_WIDTH)
   port map(
     -- Clk and reset
-    Layer_clk_i		    => s00_axis_aclk,		
-    Layer_aresetn_i   => s00_axis_aresetn,
+    Layer_clk_i		    => axis_aclk,		
+    Layer_aresetn_i   => axis_aresetn,
 
     S_layer_tvalid_i	=> l1_m_conv_tvalid,
     S_layer_tdata_i   => l1_m_conv_data,
@@ -522,8 +538,8 @@ EggNet_v1_0_S00_AXI_inst : entity work.EggNet_v1_0_S00_AXI
       C_S00_AXI_DATA_WIDTH    => C_S00_AXI_DATA_WIDTH
       )       
     port map(
-      Layer_clk_i		          => s00_axis_aclk,
-      Layer_aresetn_i         => s00_axis_aresetn,
+      Layer_clk_i		          => axis_aclk,
+      Layer_aresetn_i         => axis_aresetn,
       S_layer_tvalid_i	      => l2_s_tvalid,
       S_layer_tdata_i         => l2_s_tdata,
       S_layer_tkeep_i         => (others => '1'),
@@ -571,7 +587,7 @@ EggNet_v1_0_S00_AXI_inst : entity work.EggNet_v1_0_S00_AXI
         FIFO_DEPTH => LAYER_WIDTH/2+1
     )
     port map (
-      Clk_i     => s00_axis_aclk,
+      Clk_i     => axis_aclk,
       Rst_i     => l2_m_fifo_srst     ,
       Data_i    => l2_m_fifo_in       ,
       WriteEn_i => l2_m_fifo_wr       ,
@@ -587,8 +603,8 @@ EggNet_v1_0_S00_AXI_inst : entity work.EggNet_v1_0_S00_AXI
       DATA_WIDTH => (DATA_WIDTH*L2_IN_CHANNEL_NUMBER)
     )
     port map(
-      Clk_i       => s00_axis_aclk,		 
-      nRst_i      => s00_axis_aresetn, 
+      Clk_i       => axis_aclk,		 
+      nRst_i      => axis_aresetn, 
       S_data_1_i  => l2_m_tdata_1, 
       S_data_2_i  => l2_m_tdata_2, 
       S_data_3_i  => l2_m_tdata_3, 
@@ -620,8 +636,8 @@ EggNet_v1_0_S00_AXI_inst : entity work.EggNet_v1_0_S00_AXI
       INPUT_CHANNELS => L2_IN_CHANNEL_NUMBER,
       OUTPUT_CHANNELS => L3_IN_CHANNEL_NUMBER)
     port map(
-      Clk_i   => s00_axis_aclk,		
-      n_Res_i => s00_axis_aresetn,
+      Clk_i   => axis_aclk,		
+      n_Res_i => axis_aresetn,
       Valid_i => l2_s_conv_tvalid,
       Valid_o => l2_m_conv_tvalid,
       Last_i  => l2_s_conv_tlast,
@@ -641,8 +657,8 @@ EggNet_v1_0_S00_AXI_inst : entity work.EggNet_v1_0_S00_AXI
     LAYER_WIDTH       => LAYER_WIDTH/2)
   port map(
     -- Clk and reset
-    Layer_clk_i		  => s00_axis_aclk,		
-    Layer_aresetn_i   => s00_axis_aresetn,
+    Layer_clk_i		  => axis_aclk,		
+    Layer_aresetn_i   => axis_aresetn,
 
     S_layer_tvalid_i  => l2_m_conv_tvalid,
     S_layer_tdata_i   => l2_m_conv_data,
@@ -665,23 +681,23 @@ EggNet_v1_0_S00_AXI_inst : entity work.EggNet_v1_0_S00_AXI
   
   Res_itrp_o <= l1_s_conv_tlast;
   
--- *************** Layer3-4 Fully-Connected *******************************************************************
+-- *************** Layer3-4 Fully-Connected ********************************************************
   
   FC_serializer: entity work.Serializer
   generic map(
     VECTOR_WIDTH    => DATA_WIDTH,
     INPUT_CHANNELS  => L3_IN_CHANNEL_NUMBER
   ) port map(
-    Clk_i    => s00_axis_aclk,
-    n_Res_i  => s00_axis_aresetn,
+    Clk_i    => axis_aclk,
+    n_Res_i  => axis_aresetn,
 	
     Valid_i  => l3_s_tvalid,
     Ready_o  => l3_s_tready,
     Data_i   => l3_s_tdata,
 	
     Valid_o  => serializer_valid,
-    Data_o   => serializer_data
-    Ready_i  => serializer_ready,
+    Data_o   => serializer_data,
+    Ready_i  => serializer_ready
   );
   
   FC_NN: entity work.NeuralNetwork
@@ -690,25 +706,35 @@ EggNet_v1_0_S00_AXI_inst : entity work.EggNet_v1_0_S00_AXI
     INPUT_COUNT   => ((LAYER_HIGHT*LAYER_WIDTH)/16)*L3_IN_CHANNEL_NUMBER,
     OUTPUT_COUNT  => OUTPUT_COUNT
   ) port map (
-    Clk_i     => s00_axis_aclk,
-    Resetn_i  => s00_axis_aresetn,
-	
+    Clk_i     => axis_aclk,
+    Resetn_i  => axis_aresetn,	
     Valid_i   => serializer_valid,
     Data_i    => serializer_data,
     Ready_o   => serializer_ready,
-	
+    Ready_i   => l3_m_tready,
     Valid_o   => l3_m_tvalid,
-    Data_o    => l3_m_tdata
-  );
-  
-  output : process(s00_axi_aclk)
-  begin
-    if rising_edge(s00_axi_aclk) and l3_m_tvalid = '1' then
-	  output_reg <= l3_m_tdata;
-	end if;
-  end process;
-  
-  
+    Last_o    => l3_m_tlast,    
+    Data_o    => l3_m_tdata  );
+
+-- *************** Data Output to DMA **************************************************************
+  AXIS_Master: entity work.AXI_steam_master
+	generic map (
+    OUTPUT_NUMBER 		      => OUTPUT_COUNT,
+    DATA_WIDTH    		      => DATA_WIDTH,
+		C_M_AXIS_TDATA_o_WIDTH	=> C_M00_AXIS_TDATA_WIDTH)
+	port map(
+		Clk_i	          => axis_aclk,
+		nRst_i	        => axis_aresetn,
+    Layer_tvalid_i	=> l3_m_tvalid,
+    Layer_tdata_i   => l3_m_tdata,
+    Layer_tlast_i   => l3_m_tlast,
+    Layer_tready_o  => l3_m_tready,
+    Interrupt       => Res_itrp_o,
+		M_axis_tvalid_o	=> m00_axis_tvalid,
+		M_axis_tdata_o	=> m00_axis_tdata,
+		M_axis_tkeep_o	=> m00_axis_tkeep,
+		M_axis_tlast_o	=> m00_axis_tlast,
+		M_axis_tready_i	=> m00_axis_tready	);
 	-- User logic ends
 
 end arch_imp;
