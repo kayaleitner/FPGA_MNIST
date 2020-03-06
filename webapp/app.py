@@ -1,5 +1,4 @@
 from flask import Flask, render_template, jsonify, redirect, request
-# from flask_bootstrap import Bootstrap
 from bokeh.plotting import figure
 import bokeh.palettes
 from bokeh.embed import file_html, components
@@ -9,7 +8,7 @@ from forms import DataToFPGA
 import numpy as np
 
 app = Flask(__name__)
-# Bootstrap(app)
+#Bootstrap(app)
 app.config["DEBUG"] = True
 app.config['SECRET_KEY'] = 'eggs-are-awesome'
 DataHandler = DataHandler(app.root_path)
@@ -101,7 +100,7 @@ def api_all():
 
 @app.route('/api/v1/system/stats', methods=['GET'])
 def api_get_system_stats():
-    data = fpga.get_system_stats_dict()
+    data = fpga.get_system_stats()
     return jsonify(data)
 
 

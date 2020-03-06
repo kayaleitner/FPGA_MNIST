@@ -4,15 +4,27 @@ var eggnet = new Vue({
 
     data: {
         fields: ['Images Sent', 'Correct Guesses', 'Percent', 'Time Passed'],
-        items: {}
+        items: {},
+        systemStats: String
     },
 
     delimiters: ['[[',']]'],
 
     methods: {
+        getSystemStats: function() {
+            let path = document.location + 'api/v1/system/stats'
+            axios.get(path)
+            .then((data => {
+                console.log(data)
+                this.systemStats = data.data
+            }));
+        }
+    },
 
+    mounted() {
+        this.getSystemStats()
+        setInterval(this.getSystemStats, 5000)
     }
-
 });
 
 /*
