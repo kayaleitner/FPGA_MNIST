@@ -9,15 +9,17 @@
     <b-navbar type="dark" variant="info">
         <b-navbar-brand>Navigation</b-navbar-brand>
         <b-navbar-nav>
-        <b-nav-item href="#" class="margin-auto">MNIST</b-nav-item>
-        <b-nav-item href="#" class="margin-auto">Interface</b-nav-item>
-        <b-nav-item href="#" class="margin-auto">The Network</b-nav-item>
+        <b-nav-item href="#mnist" class="margin-auto">MNIST</b-nav-item>
+        <b-nav-item href="#interface" class="margin-auto">Interface</b-nav-item>
+        <b-nav-item href="#network" class="margin-auto">The Network</b-nav-item>
         <b-nav-item href="https://github.com/marbleton/FPGA_MNIST/raw/master/tex/specification/specification.pdf" class="margin-auto">Documentation</b-nav-item>
         <b-nav-item href="#" class="margin-auto">System Information</b-nav-item>
         <b-nav-item href="#" class="margin-auto">Credits</b-nav-item>
         </b-navbar-nav>
         <b-navbar-nav class="ml-auto">
-        <b-nav-item href="https://github.com/marbleton/FPGA_MNIST" class="margin-auto" right>GIT</b-nav-item>
+        <b-nav-item href="https://github.com/marbleton/FPGA_MNIST" class="margin-auto" right>
+            <i class="fab fa-github"></i>
+            GitHub</b-nav-item>
         </b-navbar-nav>
     </b-navbar>
 
@@ -67,20 +69,8 @@
                 <h2>Documentation</h2>
                 <p>Here Image of Top Level Design. And then maybe a pagination with code samples of different modules</p>
             </b-row>
-
-            <b-row class="cpu-info">
-                <div class="card" style="margin: auto;">
-                    <div class="card-header">
-
-                        <h5 class="m-0">System Information</h5>
-                    </div>
-                    <div class="card-body">
-                       <pre>
-                           {{ sys_stats }}
-                       </pre>
-                    </div>
-                </div>
-            </b-row>
+            
+            {% include "sysinfo.html" %}
 
             <b-row class="text-area">
                 <h2>Credits</h2>
