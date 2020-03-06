@@ -52,12 +52,16 @@ def get_system_stats():
     # number of cores
     print("Physical cores:", psutil.cpu_count(logical=False))
     print("Total cores:", psutil.cpu_count(logical=True))
+
     # CPU frequencies
-    cpufreq = psutil.cpu_freq()
-    print(f"Max Frequency: {cpufreq.max:.2f}Mhz")
-    print(f"Min Frequency: {cpufreq.min:.2f}Mhz")
-    print(f"Current Frequency: {cpufreq.current:.2f}Mhz")
+    # ToDo: cpu_freq() doesnt work on the Zedboard (Linaro/Ubuntu/Lib Error?)
+    # cpufreq = psutil.cpu_freq()
+    # if cpufreq is not None:
+    #     print(f"Max Frequency: {cpufreq.max:.2f}Mhz")
+    #     print(f"Min Frequency: {cpufreq.min:.2f}Mhz")
+    #     print(f"Current Frequency: {cpufreq.current:.2f}Mhz")
     # CPU usage
+
     print("CPU Usage Per Core:")
     for i, percentage in enumerate(psutil.cpu_percent(percpu=True)):
         print(f"Core {i}: {percentage}%")
@@ -117,11 +121,6 @@ def get_system_stats():
     {'=' * 40}    CPU    {'=' * 40}
     Physical cores: {psutil.cpu_count(logical=False)}
     Total cores: {psutil.cpu_count(logical=True)}
-    Max Frequency: {cpufreq.max:.2f}Mhz
-    Min Frequency: {cpufreq.min:.2f}Mhz
-    Current Frequency: {cpufreq.current:.2f}Mhz
-    CPU Usage Per Core:
-        # ToDo
     Total CPU Usage: {psutil.cpu_percent()}
 
     
@@ -144,14 +143,16 @@ def get_system_stats():
 def get_system_stats_dict():
     import psutil
     import platform
-    from datetime import datetime
 
     uname = platform.uname()
-    cpufreq = psutil.cpu_freq()
     if_addrs = psutil.net_if_addrs()
     net_io = psutil.net_io_counters()
     swap = psutil.swap_memory()
     svmem = psutil.virtual_memory()
+    bt = psutil.boot_time()
+
+    # ToDo: This is not supported at the moment on Linaro.
+    # cpufreq = psutil.cpu_freq()
 
     stats = {
         "System": uname.system,
@@ -166,9 +167,9 @@ def get_system_stats_dict():
         "CPU": {
             "Physical cores": psutil.cpu_count(logical=False),
             "Total cores": psutil.cpu_count(logical=True),
-            "Max Frequency": f"{cpufreq.max:.2f}Mhz",
-            "Min Frequency": f"{cpufreq.min:.2f}Mhz",
-            "Current Frequency": f"{cpufreq.current:.2f}Mhz",
+            # "Max Frequency": f"{cpufreq.max:.2f}Mhz",
+            # "Min Frequency": f"{cpufreq.min:.2f}Mhz",
+            # "Current Frequency": f"{cpufreq.current:.2f}Mhz",
             "Total CPU Usage": psutil.cpu_percent()
         },
         "Memory": {
