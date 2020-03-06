@@ -1,16 +1,31 @@
 # Configuration Panel for FPGA
 
+## Dependencies
+
+Python with Version 3.6 is used for development. Also the requirements can be installed via: 
+
+```shell script
+pip install -r requirements.txt
+```
+
 ## Run
 
-```bash
+For development this can be used.
+```shell script
 python -m flask run
+```
+
+To make it available in the local network, this can be used
+```shell script
+python -m flask run -h 0.0.0.0
 ```
 
 ## ToDo: 
 
-- [x] Add AdminLTE Theme
-- [ ] Add MNIST Test Data
-- [ ] Add More Charts  
+- [x] Add MNIST Test Data
+- [x] Add More Charts
+- [ ] Image Upload
+- [ ] Benchmark Formsheet  
 
 ## References
 
