@@ -12,7 +12,7 @@
         <b-nav-item href="#" class="margin-auto">MNIST</b-nav-item>
         <b-nav-item href="#" class="margin-auto">Interface</b-nav-item>
         <b-nav-item href="#" class="margin-auto">The Network</b-nav-item>
-        <b-nav-item href="#" class="margin-auto">Documentation</b-nav-item>
+        <b-nav-item href="https://github.com/marbleton/FPGA_MNIST/raw/master/tex/specification/specification.pdf" class="margin-auto">Documentation</b-nav-item>
         <b-nav-item href="#" class="margin-auto">System Information</b-nav-item>
         <b-nav-item href="#" class="margin-auto">Credits</b-nav-item>
         </b-navbar-nav>
@@ -26,7 +26,7 @@
             <b-row class="text-area">
                 <h1> Welcome to the EGGNET 1.0. </h1>
             </b-row>
-
+            
             <b-row class="description text-area">
                 <p>This is a student project from TU Vienna in the course 384.157 SoC Design Laboratoy.
                 Goal was to develop a full system focusing on a specific topic.</p>
@@ -61,14 +61,7 @@
                 </b-jumbotron>
             </b-row>
 
-            <b-row class="network text-area">
-                <h2>Our designed Network</h2>
-                <p>Some text about Network design. Convolutional Neural Network
-                <ul>
-                    <li>Conv-Layer</li>
-                    <li></li>
-                </ul> </p>
-            </b-row>
+            {% include "network.html" %}
 
             <b-row class="documentation text-area">
                 <h2>Documentation</h2>
