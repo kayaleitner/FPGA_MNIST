@@ -1,5 +1,5 @@
 from flask import Flask, render_template, jsonify, redirect, request
-from flask_bootstrap import Bootstrap
+# from flask_bootstrap import Bootstrap
 from bokeh.plotting import figure
 import bokeh.palettes
 from bokeh.embed import file_html, components
@@ -8,9 +8,8 @@ from DataHandler import DataHandler
 from forms import DataToFPGA
 import numpy as np
 
-
 app = Flask(__name__)
-Bootstrap(app)
+# Bootstrap(app)
 app.config["DEBUG"] = True
 app.config['SECRET_KEY'] = 'eggs-are-awesome'
 DataHandler = DataHandler(app.root_path)
@@ -21,23 +20,23 @@ def index():
     form = DataToFPGA()
     im = DataHandler.testImageData[0]
     im = np.flipud(im)
-    plot = figure(width=300, height=300,x_range=(0,28),y_range=(0,28))
+    plot = figure(width=300, height=300, x_range=(0, 28), y_range=(0, 28))
     coordinates = np.where(im)
     plot.square(coordinates[1], coordinates[0], size=10)
     im_sc, im_div = components(plot)
 
     p = figure(plot_width=300, plot_height=300)
     ld = DataHandler.testLabelData
-    x = np.arange(1,10)
-    top = [len(np.argwhere(ld==1)),
-           len(np.argwhere(ld==2)),
-           len(np.argwhere(ld==3)),
-           len(np.argwhere(ld==4)),
-           len(np.argwhere(ld==5)),
-           len(np.argwhere(ld==6)),
-           len(np.argwhere(ld==7)),
-           len(np.argwhere(ld==8)),
-           len(np.argwhere(ld==9))]
+    x = np.arange(1, 10)
+    top = [len(np.argwhere(ld == 1)),
+           len(np.argwhere(ld == 2)),
+           len(np.argwhere(ld == 3)),
+           len(np.argwhere(ld == 4)),
+           len(np.argwhere(ld == 5)),
+           len(np.argwhere(ld == 6)),
+           len(np.argwhere(ld == 7)),
+           len(np.argwhere(ld == 8)),
+           len(np.argwhere(ld == 9))]
     p.vbar(x=x, width=0.5, bottom=0,
            top=top, color="firebrick")
     hist_sc, hist_div = components(p)
@@ -48,13 +47,15 @@ def index():
         pass
 
     return render_template('main.html', images=DataHandler.testImageData, labels=DataHandler.testLabelData,
-                            form=form, im_sc=im_sc, im_div=im_div, hist_sc=hist_sc, hist_div=hist_div,sys_stats=os_stats)
+                           form=form, im_sc=im_sc, im_div=im_div, hist_sc=hist_sc, hist_div=hist_div,
+                           sys_stats=os_stats)
 
 
 @app.route('/index/upload', methods=['POST'])
 def upload():
-    #do something
+    # do something
     return redirect('/')
+
 
 @app.route('/index/<value>')
 def image_json(value):
@@ -86,6 +87,7 @@ def admin():
 def contact():
     return render_template('contact.html')
 
+
 @app.errorhandler(404)
 def page_not_found(e):
     return render_template('404.html'), 404
@@ -103,5 +105,19 @@ def api_get_system_stats():
     return jsonify(data)
 
 
+@app.after_request
+def add_header(r):
+    """
+    Add headers to both force latest IE rendering engine or Chrome Frame,
+    and also to cache the rendered page for 10 minutes.
+    """
+    r.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    r.headers["Pragma"] = "no-cache"
+    r.headers["Expires"] = "0"
+    r.headers['Cache-Control'] = 'public, max-age=0'
+    return r
+
+
 if __name__ == '__main__':
-    app.run()
+    app.debug()
+    # app.run()
