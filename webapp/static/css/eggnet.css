@@ -1,0 +1,43 @@
+.pad-15{
+    padding: 15px;
+}
+
+.width-100 {
+    width: 100%;
+}
+
+.t-align-cent {
+    text-align: center;
+}
+
+.t-align-cent .inl-blk {
+    display: inline-block;
+}
+
+.margin-auto {
+    margin: auto;
+}
+
+.main-content a {
+    color: white;
+    margin: auto;
+}
+
+.main-content .bkg-gray {
+    background-color: #f9f9f9;
+    margin-left: 0;
+    margin-right: 0;
+}
+
+.t-align-cent .text-area {
+    max-width: 57em;
+    width: 57em;
+    text-align: justify;
+    display: inline-block;
+}
+
+.interface {
+    margin-left: 0;
+    margin-right: 0;
+    display: block;
+}

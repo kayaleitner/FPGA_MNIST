@@ -1,13 +1,82 @@
-from flask import Flask, render_template, jsonify
-
+from flask import Flask, render_template, jsonify, redirect, request
+from flask_bootstrap import Bootstrap
+from bokeh.plotting import figure
+import bokeh.palettes
+from bokeh.embed import file_html, components
 import fpga
-import api
+from DataHandler import DataHandler
+from forms import DataToFPGA
+import numpy as np
+
 
 app = Flask(__name__)
+Bootstrap(app)
 app.config["DEBUG"] = True
+app.config['SECRET_KEY'] = 'eggs-are-awesome'
+DataHandler = DataHandler(app.root_path)
 
 
 @app.route('/')
+def index():
+    form = DataToFPGA()
+    im = DataHandler.testImageData[0]
+    im = np.flipud(im)
+    plot = figure(width=300, height=300,x_range=(0,28),y_range=(0,28))
+    coordinates = np.where(im)
+    plot.square(coordinates[1], coordinates[0], size=10)
+    im_sc, im_div = components(plot)
+
+    p = figure(plot_width=300, plot_height=300)
+    ld = DataHandler.testLabelData
+    x = np.arange(1,10)
+    top = [len(np.argwhere(ld==1)),
+           len(np.argwhere(ld==2)),
+           len(np.argwhere(ld==3)),
+           len(np.argwhere(ld==4)),
+           len(np.argwhere(ld==5)),
+           len(np.argwhere(ld==6)),
+           len(np.argwhere(ld==7)),
+           len(np.argwhere(ld==8)),
+           len(np.argwhere(ld==9))]
+    p.vbar(x=x, width=0.5, bottom=0,
+           top=top, color="firebrick")
+    hist_sc, hist_div = components(p)
+
+    os_stats = fpga.get_system_stats()
+
+    if form.validate_on_submit():
+        pass
+
+    return render_template('main.html', images=DataHandler.testImageData, labels=DataHandler.testLabelData,
+                            form=form, im_sc=im_sc, im_div=im_div, hist_sc=hist_sc, hist_div=hist_div,sys_stats=os_stats)
+
+
+@app.route('/index/upload', methods=['POST'])
+def upload():
+    #do something
+    return redirect('/')
+
+@app.route('/index/<value>')
+def image_json(value):
+    form = DataToFPGA()
+    if form.validate_on_submit():
+        pass
+    im = DataHandler.testImageData[int(value) - 1]
+    plot = figure(height=300, width='scaled_width')
+    return render_template('index.html', images=DataHandler.testImageData, labels=DataHandler.testLabelData,
+                           form=form, info=info)
+
+
+@app.route('/api/get_image_json', methods=['POST'])
+def get_image_json():
+    data = request.get_json()
+    if 0 <= data['index'] < 10000:
+        return {}
+    else:
+        return {'error': 'index not in range 0 to 9999'}
+
+
+@app.route('/admin')
 def admin():
     os_stats = fpga.get_system_stats()
     return render_template('admin.html', sys_stats=os_stats)
@@ -16,7 +85,6 @@ def admin():
 @app.route('/contact')
 def contact():
     return render_template('contact.html')
-
 
 @app.errorhandler(404)
 def page_not_found(e):
@@ -36,5 +104,4 @@ def api_get_system_stats():
 
 
 if __name__ == '__main__':
-    app.debug()
-    # app.run()
+    app.run()
