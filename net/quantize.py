@@ -87,8 +87,10 @@ def main():
     ia_f = np.array([8, 5, 5, 5])
 
     # Weights bits and fractions
-    w_b = np.array([4, 4, 4, 4])
-    w_f = np.array([4, 4, 4, 4])
+    #w_b = np.array([4, 4, 4, 4])
+    #w_f = np.array([4, 4, 4, 4])
+    w_b = np.array([8, 8, 8, 8])
+    w_f = np.array([7, 8, 8, 8])
 
     # Output activation bits and fractions
     oa_b = np.array([8, 8, 8, 8])
@@ -100,7 +102,17 @@ def main():
                                                   w_bits=w_b, w_frac=w_f,
                                                   out_bits=oa_b, out_frac=oa_f)
     fweights = quant2float(qweights, options)
-    # fweights = perform_fake_quant(weights, target_bits=8, frac_bits=4)
+    save_weights(fweights, qweights, weights, config=options,qprefix='int8')
+
+
+    w_b = np.array([4, 4, 4, 4])
+    w_f = np.array([3, 4, 4, 4])
+    qweights, shift, options = perform_real_quant(weights,
+                                                  in_bits=ia_b, in_frac=ia_f,
+                                                  w_bits=w_b, w_frac=w_f,
+                                                  out_bits=oa_b, out_frac=oa_f)
+    fweights = quant2float(qweights, options)
+    save_weights(fweights, qweights, weights, config=options, qprefix='int4')
 
     # Check if it has worked
     our_net = init_network_from_weights(weights, from_torch=False)
@@ -133,7 +145,7 @@ def main():
     plot_confusion_matrix(qcm, title='Confusion matrix (fake fixed point 8/4)',
                           target_names=classnames, filename='images/qcm')
 
-    save_weights(fweights, qweights, weights, config=options)
+
 
 
 def prepare_config(config):
@@ -154,7 +166,7 @@ def prepare_config(config):
     return c
 
 
-def save_weights(fweights, qweights, weights, config):
+def save_weights(fweights, qweights, weights, config, qprefix):
     """
     Saves the weights in numpy and text format. Also stores a config.json file
     Args:
@@ -170,7 +182,7 @@ def save_weights(fweights, qweights, weights, config):
     config = prepare_config(config)
 
     for key, value in qweights.items():
-        dirname = os.path.join('final_weights', 'fpi')
+        dirname = os.path.join('final_weights', f'{qprefix}_fpi')
         os.makedirs(dirname, exist_ok=True)
         filename = os.path.join(dirname, key)
         x_ = value.flatten()
@@ -181,7 +193,7 @@ def save_weights(fweights, qweights, weights, config):
         np.savetxt(fname=filename + '.txt', X=x_, fmt='%i', header=str(value.shape))
         np.save(file=filename, arr=value)
     for key, value in fweights.items():
-        dirname = os.path.join('final_weights', 'fake_quant')
+        dirname = os.path.join('final_weights', f'{qprefix}_fake_quant')
         os.makedirs(dirname, exist_ok=True)
         filename = os.path.join(dirname, key)
         x_ = value.flatten()

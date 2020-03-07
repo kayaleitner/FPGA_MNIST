@@ -137,7 +137,7 @@ def perform_real_quant(weight_dict,
                        in_bits: np.ndarray, in_frac: np.ndarray,
                        w_bits: np.ndarray, w_frac: np.ndarray,
                        out_bits: np.ndarray, out_frac: np.ndarray,
-                       additions=np.ndarray([16,32,1568,32]),
+                       additions=np.ndarray([16, 32, 1568, 32]),
                        traget_dtype=np.int32):
     """
 
@@ -173,7 +173,6 @@ def perform_real_quant(weight_dict,
     # v = Q * 2^-m
     # Q = v * 2^m
 
-
     # Scaling for weights
     bias_max = 2.0 ** (t_b - 1) - 1
     bias_min = -2.0 ** (t_b - 1)
@@ -188,6 +187,12 @@ def perform_real_quant(weight_dict,
     out_scale = 1 / 2 ** oa_b
 
     options = {
+        'input_bits': ia_b,
+        'input_frac': ia_f,
+        'output_bits': oa_b,
+        'output_frac': oa_f,
+        'weight_bits': w_b,
+        'weight_frac': w_f,
         'w_max': w_max,
         'w_min': w_min,
         'w_scale': w_scale,
@@ -199,7 +204,7 @@ def perform_real_quant(weight_dict,
         'out_max_f': out_max * out_scale,
         'out_min_f': out_min * out_scale,
         'out_scale': out_scale,
-        'shifts' : shift
+        'shifts': shift
     }
 
     # ToDo: This becomes a bit hacky
