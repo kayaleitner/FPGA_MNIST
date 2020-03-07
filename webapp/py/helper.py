@@ -28,8 +28,8 @@ def create_some_test_images(some_number=10):
 
         for j, image_index in enumerate(ix):
             pil_image = PIL.Image.fromarray(np.squeeze(imgs[image_index, :, :]))
-            os.makedirs(os.path.join('..', 'test_images', str(i)), exist_ok=True)
-            pil_image.save(f'../test_images/{i}/{j}.png')
+            os.makedirs(os.path.join('..', 'static','img','mnist', str(i)), exist_ok=True)
+            pil_image.save(f'../static/img/mnist/{i}/{j}.png')
 
 
 if __name__ == '__main__':
