@@ -33,6 +33,7 @@ architecture Behavioral of NeuralNetwork is
 
 	signal s_L1_Reset_i, s_L2_Reset_i : std_logic := '0';
 	signal s_L1_Start_i, s_L2_Start_i : std_logic := '0';
+	signal s_L1_Valid_i, s_L2_Valid_i : std_logic := '0';
 	signal s_L1_Rd_en_o, s_L2_Rd_en_o : std_logic;
 	signal s_L1_Data_i, s_L2_Data_i : std_logic_vector(VECTOR_WIDTH-1 downto 0) := (others => '0');
 	signal s_L1_Data_o : std_logic_vector((2*VECTOR_WIDTH + clogb2(INPUT_COUNT_L1))-1 downto 0);
@@ -74,6 +75,7 @@ begin
 		Resetn_i => Resetn_i,
 		Reset_calculation_i => s_L1_Reset_i,
 		Clk_i => Clk_i,
+		Valid_i => s_L1_Valid_i,
 		Start_i => s_L1_Start_i,
 		Rd_en_o => s_L1_Rd_en_o,
 		Data_i => s_L1_Data_i,
@@ -95,6 +97,7 @@ begin
 		Resetn_i => Resetn_i,
 		Reset_calculation_i => s_L2_Reset_i,
 		Clk_i => Clk_i,
+		Valid_i => s_L2_Valid_i,
 		Start_i => s_L2_Start_i,
 		Rd_en_o => s_L2_Rd_en_o,
 		Data_i => s_L2_Data_i,
@@ -115,7 +118,7 @@ begin
 				end if;
 			when ST_INPUT_L1 => 
 				state_temp <= 1;
-				if data_cnt_L1 = INPUT_COUNT_L1 - 1 then
+				if data_cnt_L1 = INPUT_COUNT_L1 - 1 and Valid_i = '1' then
 					state_next <= ST_WAIT_L1;
 				end if;
 			when ST_WAIT_L1 => 
@@ -162,12 +165,15 @@ begin
 		s_L2_Data_i <= (others => '0');
 		s_L1_Reset_i <= '0';
 		s_L2_Reset_i <= '0';
+		s_L1_Valid_i <= '0';
+		s_L2_Valid_i <= '0';
 		Data_o_reg_next <= Data_o_reg;
 		case state is
 			when ST_IDLE => 
 				Ready_o <= '1';
 				data_cnt_L1_next <= 0;
 				if Valid_i = '1' then
+					s_L1_Valid_i <= '1';
 					data_cnt_L1_next <= 1;
 					s_L1_Start_i <= '1';
 					s_L1_Data_i <= Data_i;
@@ -175,6 +181,7 @@ begin
 			when ST_INPUT_L1 => 
 				Ready_o <= '1';
 				if Valid_i = '1' then
+					s_L1_Valid_i <= '1';
 					data_cnt_L1_next <= (data_cnt_L1 + 1) mod INPUT_COUNT_L1;
 					s_L1_Data_i <= Data_i;
 				end if;
@@ -187,6 +194,7 @@ begin
 				data_cnt_L2_next <= (data_cnt_L2 + 1) mod INPUT_COUNT_L2;
 				s_L1_Rd_addr_i <= std_logic_vector(to_unsigned(data_cnt_L2, s_L1_Rd_addr_i'length));
 				s_L1_Rd_en_i <= '1';
+				s_L2_Valid_i <= '1';
 				if signed(s_L1_Data_o(s_L1_Data_o'length - 1 downto VECTOR_WIDTH)) < 0 then
 					output_L1_cropped := (others => '0');
 				elsif signed(s_L1_Data_o(s_L1_Data_o'length - 1 downto VECTOR_WIDTH)) > 255 then

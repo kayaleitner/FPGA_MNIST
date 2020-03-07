@@ -48,6 +48,7 @@ Port (
 	  Resetn_i : in STD_LOGIC;
       Reset_calculation_i : in STD_LOGIC;
       Clk_i : in  STD_LOGIC;
+	  Valid_i : in STD_LOGIC;
       Start_i : in  STD_LOGIC;
       Rd_en_o : out  STD_LOGIC;
       Data_i : in  STD_LOGIC_VECTOR (VECTOR_WIDTH-1 downto 0);
@@ -99,8 +100,9 @@ begin
                   BIAS_FILE => BIAS_FILE)
   port map
   (
-  Resetn_i => Resetn_i,
-  Reset_calculation_i => Reset_calculation_i,
+	  Valid_i => Valid_i,
+	  Resetn_i => Resetn_i,
+	  Reset_calculation_i => Reset_calculation_i,
       Clk_i => Clk_i,
       Rd_en_o => Rd_en_o,
       Data_i => Data_i,

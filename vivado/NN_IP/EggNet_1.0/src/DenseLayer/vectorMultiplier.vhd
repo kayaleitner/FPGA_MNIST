@@ -46,6 +46,7 @@ entity vectorMultiplier is
     Port ( 
 			  Resetn_i : in std_logic;
 			  Reset_calculation_i : in std_logic;
+			  Valid_i : in std_logic;
 			  Clk_i : in std_logic;
 			  Rd_en_o : out std_logic;
 			  Data_i : in std_logic_vector(VECTOR_WIDTH-1 downto 0);
@@ -139,7 +140,7 @@ begin
     Weights_address_o <= s_counter_next;
     
     -- Finite state machine, that controls the calculation of all pixels.
-    FSM : process(state, Start_calculation_i, s_counter, Reset_calculation_i)
+    FSM : process(state, Start_calculation_i, s_counter, Reset_calculation_i, Valid_i)
     begin
 		state_next <= state;
 		s_counter_next <= s_counter;
@@ -156,24 +157,28 @@ begin
 				s_counter_next <= (others=>'0');
 				
 				if(Start_calculation_i='1')then
-					s_enable_accumulation <= '1';
+					if Valid_i = '1' then
+						s_counter_next <= s_counter + '1';
+						s_enable_accumulation <= '1';
+					end if;
 					s_reset_accumulators <= '0';
 					Rd_en_o <= '1';
 					state_next <= ST_CALCULATING;
-					s_counter_next <= s_counter + '1';
 				end if;
 			
 			-- FSM is in this state until all of the pixels have been calculated.
 			when ST_CALCULATING =>
-				s_enable_accumulation <= '1';
 				s_reset_accumulators <= '0';
 				Rd_en_o <= '1';
 				Write_data_o <= '0';
 				
-				if(s_counter = INPUT_COUNT-1)then
-					state_next <= ST_WAIT_CALCULATION;
-				else
-					s_counter_next <= s_counter + '1';
+				if Valid_i = '1' then
+					s_enable_accumulation <= '1';
+					if(s_counter = INPUT_COUNT-1)then
+						state_next <= ST_WAIT_CALCULATION;
+					else
+						s_counter_next <= s_counter + '1';
+					end if;
 				end if;
 			
 			-- This state is to wait the calculation of the last pixel.
