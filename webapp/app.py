@@ -1,10 +1,9 @@
 from flask import Flask, render_template, jsonify, redirect, request
 from bokeh.plotting import figure
-import bokeh.palettes
-from bokeh.embed import file_html, components
-import fpga
-from DataHandler import DataHandler
-from forms import DataToFPGA
+from bokeh.embed import components
+from py import fpga
+from py.DataHandler import DataHandler
+from py.forms import DataToFPGA
 import numpy as np
 
 app = Flask(__name__)

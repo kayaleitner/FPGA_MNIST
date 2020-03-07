@@ -5,8 +5,17 @@ var eggnet = new Vue({
     data: {
         fields: ['Images Sent', 'Correct Guesses', 'Percent', 'Time Passed'],
         items: {},
+        mnist_results: [
+            // ToDo: Load this dynamically?
+          { age: 40, first_name: 'Dickerson', last_name: 'Macdonald' },
+          { age: 21, first_name: 'Larsen', last_name: 'Shaw' },
+          { age: 89, first_name: 'Geneva', last_name: 'Wilson' },
+          { age: 38, first_name: 'Jami', last_name: 'Carney' }
+        ],
         systemStats: String
     },
+
+
 
     delimiters: ['[[', ']]'],
 
@@ -151,9 +160,52 @@ function setup_chats() {
     }, chart_refresh_interval);
 }
 
+function add_random_mnist_images() {
+    let keys = [];
+    for (let i = 0; i < 10; i++) {
+        keys[i] = i;
+    }
+
+    const n_images_per_class = 10;
+    for (let i = 0; i < n_images_per_class; i++) {
+        for (let j = 0; j < 10; j++) {
+            shuffled_keys = shuffle(keys);
+            container = document.getElementById("mnist-image-container");
+
+            new_div = document.createElement('div');
+            new_div.setAttribute('class', 'card');
+
+            new_img = document.createElement('img');
+            new_img.src = '/static/img/mnist/' + shuffled_keys[i] +  '/' + shuffled_keys[j] + '.png';
+            new_img.setAttribute('class', 'mnist-image');
+
+
+            new_div.appendChild(new_img);
+            container.appendChild(new_div);
+        }
+    }
+
+
+}
+
+/**
+ * Shuffles array in place.
+ * @param {Array} a items An array containing the items.
+ */
+function shuffle(a) {
+    let j, x, i;
+    for (i = a.length - 1; i > 0; i--) {
+        j = Math.floor(Math.random() * (i + 1));
+        x = a[i];
+        a[i] = a[j];
+        a[j] = x;
+    }
+    return a;
+}
 
 window.onload = function () {
-    setup_chats()
+    setup_chats();
+    add_random_mnist_images();
 };
 
 

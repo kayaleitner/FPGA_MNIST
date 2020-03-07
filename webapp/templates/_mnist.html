@@ -1,0 +1,28 @@
+<section>
+    <b-row class="mnist text-area">
+        <h2> MNIST-Data Set</h2>
+        <p>The MNIST database of handwritten digits, available from <a href="http://yann.lecun.com/exdb/mnist/"
+                                                                       style="color: blue;">this</a>
+            page, has a training set of 60,000 examples, and a test set
+            of 10,000 examples. It is a subset of a larger set available
+            from NIST. The digits have been size-normalized and centered
+            in a fixed-size image. It is a good database for people who
+            want to try learning techniques and pattern recognition
+            methods on real-world data while spending minimal efforts on
+            preprocessing and formatting. </p>
+    </b-row>
+    <b-row>
+        <b-card>
+        <div id="mnist-image-container" class="scrolling-wrapper">
+            <div class="card"><img class="mnist-image"
+                                   src="{{ url_for('static', filename='img/mnist/0/0.png') }}"/></div>
+        </div>
+        </b-card>
+    </b-row>
+    <b-row class="text-area">
+        <p>On the left we can see an image looks like when plotted and on the right we can see Histogram of the Test
+            set!</p>
+        <div class="center"> {{ im_div|safe }}
+            {{ hist_div|safe }} </div>
+    </b-row>
+</section>
