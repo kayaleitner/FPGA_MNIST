@@ -5,9 +5,9 @@ import os
 
 import keras
 import keras.layers as layers
+import numpy as np
 from keras.layers import BatchNormalization, Reshape, Conv2D, ReLU, Dropout, MaxPooling2D, Flatten, Dense
 
-# CONSTANTS
 MODEL_SAVE_PATH = "keras"
 MODEL_CKPT_PATH = os.path.join("keras", "cp.ckpt")
 MODEL_WGHTS_SAVE_PATH = os.path.join(MODEL_SAVE_PATH, 'weights.h5')
@@ -16,12 +16,15 @@ MODEL_CONFIG_SAVE_PATH = os.path.join(MODEL_SAVE_PATH, 'model_config.json')
 IMG_HEIGHT = 28
 IMG_WIDTH = 28
 DEFAULT_PLOT_HISTORY = False
-DEFAULT_EPOCHS = 2
+DEFAULT_EPOCHS = 10
 BATCH_SIZE = 128
 
 KERAS_SAVE_DIR = 'keras'
 KERAS_CONFIG_FILE = os.path.join(KERAS_SAVE_DIR, 'model_config.json')
 KERAS_WEIGHTS_FILE = os.path.join(KERAS_SAVE_DIR, 'weights.h5')
+
+EXPORT_DIR = 'np'
+SCRIPT_PATH = os.path.dirname(os.path.abspath(__file__))
 
 
 def train(nepochs=DEFAULT_EPOCHS, batch_size=BATCH_SIZE, plot_history=DEFAULT_PLOT_HISTORY):
@@ -41,24 +44,25 @@ def train(nepochs=DEFAULT_EPOCHS, batch_size=BATCH_SIZE, plot_history=DEFAULT_PL
     """
     model = keras.models.Sequential(name="KerasEggNet", layers=[
         # Hack: Reshape the image to 1D to make the Keras BatchNorm layer work
-        Reshape(target_shape=(IMG_HEIGHT * IMG_WIDTH, 1), input_shape=(IMG_HEIGHT, IMG_WIDTH)),
-        BatchNormalization(),
-        Reshape((IMG_HEIGHT, IMG_WIDTH, 1)),  # Reshape to 3D input for the Conv layer
+        # Reshape(target_shape=(IMG_HEIGHT * IMG_WIDTH, 1), input_shape=(IMG_HEIGHT, IMG_WIDTH)),
+        # BatchNormalization(),
+        Reshape((IMG_HEIGHT, IMG_WIDTH, 1), input_shape=(IMG_HEIGHT, IMG_WIDTH)),
+        # Reshape to 3D input for the Conv layer
         Conv2D(filters=16, kernel_size=3, padding='same', activation='linear', use_bias=True,
                kernel_constraint=kernel_constraint),
         Dropout(0.25),
-        ReLU(),
+        ReLU(max_value=4.0),
         MaxPooling2D(),
-        BatchNormalization(axis=-1),  # Normalize along the channels (meaning last axis)
+        # BatchNormalization(axis=-1),  # Normalize along the channels (meaning last axis)
         Conv2D(filters=32, kernel_size=3, padding='same', activation='linear', use_bias=True,
                kernel_constraint=kernel_constraint),
         Dropout(0.25),
-        ReLU(),
+        ReLU(max_value=4.0),
         MaxPooling2D(),
         Flatten(),
         Dense(32, activation='linear', kernel_constraint=kernel_constraint),
         Dropout(0.25),
-        ReLU(),
+        ReLU(max_value=4.0),
         Dense(10, activation='softmax', kernel_constraint=kernel_constraint)
     ])
 
@@ -92,6 +96,8 @@ def train(nepochs=DEFAULT_EPOCHS, batch_size=BATCH_SIZE, plot_history=DEFAULT_PL
     model.save_weights(MODEL_WGHTS_SAVE_PATH)
     model.evaluate(x_test, y_test, verbose=2)
 
+    save_lenet_keras_weights(model=model)
+
     if plot_history:
         _plot_history(history=history)
 
@@ -123,7 +129,6 @@ def _plot_history(history):
     plt.show()
 
 
-
 def load_keras() -> keras.Model:
     if not os.path.exists(KERAS_CONFIG_FILE) or not os.path.exists(KERAS_WEIGHTS_FILE):
         raise RuntimeError("There is no trained model data! (or the model might have the wrong filename?)")
@@ -136,6 +141,46 @@ def load_keras() -> keras.Model:
     model.load_weights(KERAS_WEIGHTS_FILE)
     return model
 
+
+def save_keras_weights(kmodel):
+    for l_ix, layer in enumerate(kmodel.layers):
+        # print(layer.get_config(), layer.get_weights())
+        for w_ix, weight in enumerate(layer.get_weights()):
+            # T
+            vals = weight.flatten(order='C')  # Save to np format
+            np.savetxt(os.path.join(EXPORT_DIR, 'k_{}_{}_{}.txt'.format(l_ix, layer.name, w_ix)), vals,
+                       header=str(weight.shape))
+
+
+def save_lenet_keras_weights(model):
+    model.weights[0].numpy()
+    model.weights[1].numpy()
+    model.weights[2].numpy()
+    model.weights[3].numpy()
+    model.weights[4].numpy()
+    model.weights[5].numpy()
+    model.weights[6].numpy()
+    model.weights[7].numpy()
+
+    # Save Binary
+    np.save(file=os.path.join(EXPORT_DIR, 'k_cn1.weight'), arr=model.weights[0].numpy())
+    np.save(file=os.path.join(EXPORT_DIR, 'k_cn1.bias'), arr=model.weights[1].numpy())
+    np.save(file=os.path.join(EXPORT_DIR, 'k_cn2.weight'), arr=model.weights[2].numpy())
+    np.save(file=os.path.join(EXPORT_DIR, 'k_cn2.bias'), arr=model.weights[3].numpy())
+    np.save(file=os.path.join(EXPORT_DIR, 'k_fc1.weight'), arr=model.weights[4].numpy())
+    np.save(file=os.path.join(EXPORT_DIR, 'k_fc1.bias'), arr=model.weights[5].numpy())
+    np.save(file=os.path.join(EXPORT_DIR, 'k_fc2.weight'), arr=model.weights[6].numpy())
+    np.save(file=os.path.join(EXPORT_DIR, 'k_fc2.bias'), arr=model.weights[7].numpy())
+
+    # Save as TXT
+    np.savetxt(fname=os.path.join(EXPORT_DIR, 'k_cn1.weight.txt'), X=model.weights[0].numpy().flatten(),header=str(model.weights[0].numpy().shape))
+    np.savetxt(fname=os.path.join(EXPORT_DIR, 'k_cn1.bias.txt'), X=model.weights[1].numpy().flatten(),header=str(model.weights[1].numpy().shape))
+    np.savetxt(fname=os.path.join(EXPORT_DIR, 'k_cn2.weight.txt'), X=model.weights[2].numpy().flatten(),header=str(model.weights[2].numpy().shape))
+    np.savetxt(fname=os.path.join(EXPORT_DIR, 'k_cn2.bias.txt'), X=model.weights[3].numpy().flatten(),header=str(model.weights[3].numpy().shape))
+    np.savetxt(fname=os.path.join(EXPORT_DIR, 'k_fc1.weight.txt'), X=model.weights[4].numpy().flatten(),header=str(model.weights[4].numpy().shape))
+    np.savetxt(fname=os.path.join(EXPORT_DIR, 'k_fc1.bias.txt'), X=model.weights[5].numpy().flatten(),header=str(model.weights[5].numpy().shape))
+    np.savetxt(fname=os.path.join(EXPORT_DIR, 'k_fc2.weight.txt'), X=model.weights[6].numpy().flatten(),header=str(model.weights[6].numpy().shape))
+    np.savetxt(fname=os.path.join(EXPORT_DIR, 'k_fc2.bias.txt'), X=model.weights[7].numpy().flatten(),header=str(model.weights[7].numpy().shape))
 
 
 if __name__ == '__main__':

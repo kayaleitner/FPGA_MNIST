@@ -3,7 +3,7 @@ import os
 import NeuralNetwork
 
 
-def _read_np_tensor(weight_file:str):
+def _read_np_tensor(weight_file: str):
     if weight_file.endswith('.npy'):
         is_binary = True
     elif weight_file.endswith('.txt'):
@@ -89,6 +89,38 @@ def read_np_torch(ordering='BCHW', binary=True, target_dtype=None):
     return d
 
 
+def read_np_keras(binary=True, target_dtype=None):
+    if binary:
+        d = {
+            'cn1.b': _read_np_tensor('np/k_cn1.bias.npy'),
+            'cn1.k': _read_np_tensor('np/k_cn1.weight.npy'),
+            'cn2.b': _read_np_tensor('np/k_cn2.bias.npy'),
+            'cn2.k': _read_np_tensor('np/k_cn2.weight.npy'),
+            'fc1.b': _read_np_tensor('np/k_fc1.bias.npy'),
+            'fc1.w': _read_np_tensor('np/k_fc1.weight.npy'),
+            'fc2.b': _read_np_tensor('np/k_fc2.bias.npy'),
+            'fc2.w': _read_np_tensor('np/k_fc2.weight.npy'),
+        }
+    else:
+        d = {
+            'cn1.b': _read_np_tensor('np/k_0.0.bias.txt'),
+            'cn1.k': _read_np_tensor('np/k_0.0.weight.txt'),
+            'cn2.b': _read_np_tensor('np/k_3.0.bias.txt'),
+            'cn2.k': _read_np_tensor('np/k_3.0.weight.txt'),
+            'fc1.b': _read_np_tensor('np/k_7.0.bias.txt'),
+            'fc1.w': _read_np_tensor('np/k_7.0.weight.txt'),
+            'fc2.b': _read_np_tensor('np/k_9.bias.txt'),
+            'fc2.w': _read_np_tensor('np/k_9.weight.txt'),
+        }
+
+    if target_dtype is not None:
+        d_old = d
+        d = {}
+        for key, values in d_old.items():
+            d[key] = values.astype(target_dtype)
+    return d
+
+
 def reorder(x):
     co, ci, h, w, = x.shape
     x_ = np.zeros(shape=(h, w, ci, co), dtype=x.dtype)
@@ -102,9 +134,11 @@ def reorder(x):
 
 
 def perform_real_quant(weight_dict,
-                       in_bits:np.ndarray,  in_frac:np.ndarray,
-                       w_bits:np.ndarray, w_frac:np.ndarray,
-                       out_bits:np.ndarray, out_frac:np.ndarray):
+                       in_bits: np.ndarray, in_frac: np.ndarray,
+                       w_bits: np.ndarray, w_frac: np.ndarray,
+                       out_bits: np.ndarray, out_frac: np.ndarray,
+                       additions=np.ndarray([16,32,1568,32]),
+                       traget_dtype=np.int32):
     """
 
     Performs real quantization, meaning all values will be rounded to
@@ -136,22 +170,73 @@ def perform_real_quant(weight_dict,
     t_f = ia_f + w_f
     shift = t_f - oa_f
 
-
     # v = Q * 2^-m
     # Q = v * 2^m
-    a_max = 2.0 ** (target_bits - 1) - 1
-    a_min = -2.0 ** (target_bits - 1)
-    scale = 1 / 2 ** frac_bits
 
+
+    # Scaling for weights
+    bias_max = 2.0 ** (t_b - 1) - 1
+    bias_min = -2.0 ** (t_b - 1)
+    bias_scale = 1 / 2 ** t_f
+
+    w_max = 2.0 ** (w_bits - 1) - 1
+    w_min = -2.0 ** w_bits - 1
+    w_scale = 1 / 2 ** w_f
+
+    out_max = 2.0 ** (oa_b - 1) - 1
+    out_min = -2.0 ** (oa_b)
+    out_scale = 1 / 2 ** oa_b
+
+    options = {
+        'w_max': w_max,
+        'w_min': w_min,
+        'w_scale': w_scale,
+        'bias_max': bias_max,
+        'bias_min': bias_min,
+        'bias_scale': bias_scale,
+        'out_max': out_max,
+        'out_min': out_min,
+        'out_max_f': out_max * out_scale,
+        'out_min_f': out_min * out_scale,
+        'out_scale': out_scale,
+        'shifts' : shift
+    }
+
+    # ToDo: This becomes a bit hacky
+    wi = 0
+    bi = 0
     d_out = {}
-    for key, value in weight_dict.items():
-        # round weights
-        w = np.clip(value / scale, a_min=a_min, a_max=a_max).round().astype(np.int64)
+    for i, (key, value) in enumerate(weight_dict.items()):
+        # check key if it is weight or bias
+        if key.endswith('.b'):
+            w = np.clip(value / bias_scale[bi], a_min=bias_min[bi], a_max=bias_max[bi]).round().astype(traget_dtype)
+            bi += 1
+        else:
+            w = np.clip(value / w_scale[wi], a_min=w_min[wi], a_max=w_max[wi]).round().astype(traget_dtype)
+            wi += 1
+        # Those are now ints, convert back to floats
+        d_out[key] = w
+    return d_out, shift, options
+
+
+def quant2float(qweights, options):
+    w_scale = options['w_scale']
+    bias_scale = options['bias_scale']
+
+    wi = 0
+    bi = 0
+    d_out = {}
+    for i, (key, value) in enumerate(qweights.items()):
+        # check key if it is weight or bias
+        if key.endswith('.b'):
+            w = value * bias_scale[bi]
+            bi += 1
+        else:
+            w = value * w_scale[wi]
+            wi += 1
         # Those are now ints, convert back to floats
         d_out[key] = w
     return d_out
-
-
 
 
 def perform_fake_quant(weight_dict, target_bits, frac_bits, target_dtype=np.float64):
@@ -199,27 +284,30 @@ def init_network_from_weights(qweights, from_torch):
     our_net.fc2.bias = qweights['fc2.b']
     return our_net
 
-def init_network_from_weights(qweights, from_torch):
-    our_net = NeuralNetwork.nn.Network.LeNet(reshape_torch=from_torch)
-    our_net.cn1.weights = qweights['cn1.k']
-    our_net.cn1.bias = qweights['cn1.b']
-    our_net.cn2.weights = qweights['cn2.k']
-    our_net.cn2.bias = qweights['cn2.b']
-    our_net.fc1.weights = qweights['fc1.w']
-    our_net.fc1.bias = qweights['fc1.b']
-    our_net.fc2.weights = qweights['fc2.w']
-    our_net.fc2.bias = qweights['fc2.b']
+
+def init_fake_network_from_weights(qweights, shift, options):
+    our_net = NeuralNetwork.nn.Network.FpiLeNet(qweights, shifts=shift, options=options, real_quant=False)
     return our_net
 
 
-def evaluate_network_full(batch_size, network, train_images, train_labels):
+def init_quant_network_from_weights(qweights, shift, options):
+    our_net = NeuralNetwork.nn.Network.FpiLeNet(qweights, shifts=shift, options=options, real_quant=True)
+    return our_net
+
+
+def evaluate_network_full(batch_size, network, train_images, train_labels, images_as_int=False):
     i = 0
     total_correct = 0
 
     confusion_matrix = np.zeros(shape=(10, 10))
 
     while i < train_images.shape[0]:
-        x = train_images[i:i + batch_size] / 255.0
+
+        if images_as_int:
+            x = train_images[i:i + batch_size].astype(np.int32)
+        else:
+            x = train_images[i:i + batch_size] / 255.0
+
         y_ = train_labels[i:i + batch_size]
         y = network.forward(x)
         y = y.argmax(-1)
@@ -336,8 +424,6 @@ def plot_convolutions(kernel, nrows=4, c_out=None, order='keras', title='Convolu
             for c in range(ncols):
                 axes[r, c].matshow(np.mean(kernel[:, :, :, c_out], axis=-1))
                 plt.show()
-
-
 
 
 def plot_kernel_density():

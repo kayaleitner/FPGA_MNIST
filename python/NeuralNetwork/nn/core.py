@@ -349,7 +349,7 @@ def pooling_max(data_in: ndarray, pool_size: int, stride=2):
         for j in range(0, in_w, stride):
             data_slice = data_in[:, i:i + pool_size, j:j + pool_size, :]
             data_slice_max = np.amax(data_slice, axis=(1, 2))
-            pool_out[:, i_out, j_out, :] = data_slice_max
+            pool_out[:, i_out, j_out, :] = data_slice_max.astype(data_in.dtype)
             j_out += 1
         i_out += 1
         j_out = 0

@@ -6,7 +6,7 @@ import numpy as np
 import NeuralNetwork.nn as nn
 from NeuralNetwork.nn.core import mean_squared_error
 from NeuralNetwork.nn.Layer import Layer, FullyConnectedLayer, MaxPool2dLayer, Conv2dLayer, ReshapeLayer, \
-    CustomReshapeLayer
+    CustomReshapeLayer, RescaleLayer, ScaleLayer, ShiftLayer, SimpleShiftLayer
 from NeuralNetwork.nn.quant import QuantConvLayerType, QuantFullyConnectedType, quantize_vector
 
 
@@ -79,7 +79,7 @@ class Network:
     def forward_intermediate(self, inputs):
         z = inputs
         zs = []
-        for layer in self.layers:
+        for ix, layer in enumerate(self.layers):
             z = layer(z)
             zs.append(z)
         return z, zs
@@ -392,46 +392,8 @@ def _get_layers(weights_dict, target_bits, fraction_bits):
 
 class FpiLeNet(Network):
 
-    def __init__(self, weights, use_integer,
-                 target_bits_weights, fraction_bits_weights,
-                 target_bits_activations, fraction_bits_activations):
+    def __init__(self, weights, options, shifts, real_quant=False):
         # Check input
-
-        target_bits_weights = np.ndarray(target_bits_weights)
-        fraction_bits_weights = np.ndarray(fraction_bits_weights)
-        target_bits_activations = np.ndarray(target_bits_activations)
-        fraction_bits_activations = np.ndarray(fraction_bits_activations)
-
-        assert target_bits_weights.ndim == 1
-
-        w_scaling = 2.0 ** fraction_bits_weights
-        w_arg_max = 2.0 ** (target_bits_weights - 1) - 1
-        w_arg_min = -2.0 ** (target_bits_weights - 1)
-
-        a_act_scaling = 2.0 ** fraction_bits_activations
-        a_arg_max = 2.0 ** (target_bits_activations - 1) - 1
-        a_arg_min = -2.0 ** (target_bits_activations - 1)
-
-        """
-        
-        Input   Weights     Output (raw)      Output desired 
-        m1      mw1          m2 = m1 + mw1            
-        m2      mw2          m3 = m2 + mw2
-        m3      mw3          m4 = m3 + mw3
-        m4      mw4          m5 = m4 + mw4
-        """
-        fraction_bits_weights * fraction_bits_activations
-
-        # Check dimensions
-        if len(target_bits_weights) == 1:
-            # scalar mode
-
-            pass
-        elif len(target_bits_weights) == 4:
-            # layer mode
-            pass
-        else:
-            raise NotImplementedError()
 
         r1 = ReshapeLayer(newshape=[-1, 28, 28, 1])
         cn1 = Conv2dLayer(in_channels=1, out_channels=16, kernel_size=3, activation='relu',
@@ -441,7 +403,28 @@ class FpiLeNet(Network):
         mp2 = MaxPool2dLayer(size=2)  # [?  7  7 32]
         r2 = ReshapeLayer(newshape=[-1, 32 * 7 * 7])
         fc1 = FullyConnectedLayer(input_size=32 * 7 * 7, output_size=32, activation='relu', dtype=np.float32)
-        fc2 = FullyConnectedLayer(input_size=32, output_size=10, activation='softmax')
+
+        if real_quant:
+            fc2 = FullyConnectedLayer(input_size=32, output_size=10, activation=None)
+        else:
+            fc2 = FullyConnectedLayer(input_size=32, output_size=10, activation='softmax')
+
+        if real_quant:
+            rs1 = SimpleShiftLayer(shift=shifts[0], a_min=options['out_min'][0], a_max=options['out_max'][0])
+            rs2 = SimpleShiftLayer(shift=shifts[1], a_min=options['out_min'][1], a_max=options['out_max'][1])
+            rs3 = SimpleShiftLayer(shift=shifts[2], a_min=options['out_min'][2], a_max=options['out_max'][2])
+            rs4 = SimpleShiftLayer(shift=shifts[3], a_min=options['out_min'][3], a_max=options['out_max'][3])
+        else:
+            # scales = 2.0 ** (-shifts)
+            scales = np.ones(shape=(4,))
+            rs1 = ScaleLayer(scale=scales[0], a_min=options['out_min_f'][0], a_max=options['out_max_f'][0])
+            rs2 = ScaleLayer(scale=scales[1], a_min=options['out_min_f'][1], a_max=options['out_max_f'][1])
+            rs3 = ScaleLayer(scale=scales[2], a_min=options['out_min_f'][2], a_max=options['out_max_f'][2])
+            rs4 = ScaleLayer(scale=scales[3], a_min=options['out_min_f'][3], a_max=options['out_max_f'][3])
+        self.rs1 = rs1
+        self.rs2 = rs2
+        self.rs3 = rs3
+        self.rs4 = rs4
 
         # Store a reference to each layer
         self.r1 = r1
@@ -462,6 +445,11 @@ class FpiLeNet(Network):
         self.fc2.weights = weights['fc2.w']
         self.fc2.bias = weights['fc2.b']
 
-        self.lenet_layers = [r1, cn1, mp1, cn2, mp2, r2, fc1, fc2]
+        self.lenet_layers = [r1,
+                             cn1, mp1, rs1,
+                             cn2, mp2, rs2,
+                             r2,
+                             fc1, rs3,
+                             fc2, rs4]
 
         super(FpiLeNet, self).__init__(self.lenet_layers)

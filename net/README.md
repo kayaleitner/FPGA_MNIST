@@ -41,8 +41,9 @@ For quantisation fixed point quantisation has been used.
 
 | Network              | Accuracy |
 |----------------------|---------:|
-| Network:             | 0.9832   |
-| FPI Network (8/4):   | 0.9349   |
+| Float                | 0.9832   |
+| Fake Quant           | 0.9832   |
+| Quant:               | 0.9349   |
 
 
 ![Confusion matrix, full precision](images/cm.png)
