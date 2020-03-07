@@ -72,3 +72,12 @@
     margin: 20px;
 }
 
+.figure {
+    text-align: center;
+}
+
+.figure * {
+    width: 60%;
+    margin-left: auto;
+    margin-right: auto;
+}
