@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.15)
-project(EggnetDriver)
+project(EggnetDriver C)
 
 
 
@@ -35,9 +35,7 @@ swig_add_library(EggnetDriver
             src/eggstatus.c
             src/egguio.c
             src/helper.c
-            src/mem.c
-        src/callback.cpp
-)
+            src/mem.c)
 
 target_include_directories(${SWIG_MODULE_EggnetDriver_REAL_NAME}
         PRIVATE
