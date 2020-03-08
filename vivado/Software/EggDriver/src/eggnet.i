@@ -12,7 +12,7 @@
 
 
 /* Defines the name of the (python) module */
-%module EggNetDriverCore
+%module EggnetDriver
 
 
 %{
