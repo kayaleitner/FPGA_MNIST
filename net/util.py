@@ -183,7 +183,7 @@ def perform_real_quant(weight_dict,
     w_scale = 1 / 2 ** w_f
 
     out_max = 2.0 ** (oa_b - 1) - 1
-    out_min = -2.0 ** (oa_b)
+    out_min = -2.0 ** (oa_b -1)
     out_scale = 1 / 2 ** oa_b
 
     options = {
