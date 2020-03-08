@@ -15,7 +15,6 @@ import numpy
 import wget
 from setuptools import Extension
 from setuptools import setup, find_packages
-from setuptools.command.build_ext import build_ext
 
 try:
     # Obtain the numpy include directory.  This logic works across numpy versions.
@@ -25,9 +24,8 @@ except AttributeError:
 
 
 def readme():
-    with open('./README.md') as f:
+    with open('../README.md') as f:
         return f.read()
-
 
 
 def download_numpy_interface(path):
@@ -53,7 +51,8 @@ def download_numpy_interface(path):
 
     return
 
-NUMPY_SWIG_FILE_PATH = 'src/numpy.i'
+
+NUMPY_SWIG_FILE_PATH = 'numpy.i'
 
 # Download numpy.i if needed
 if not os.path.exists(NUMPY_SWIG_FILE_PATH):
@@ -62,15 +61,15 @@ if not os.path.exists(NUMPY_SWIG_FILE_PATH):
     download_numpy_interface(path=NUMPY_SWIG_FILE_PATH)
 
 source_files = [
-    #'src/attr.c',
-    #'src/base.c',
-    'src/eggdma.c',
-    'src/eggnet.c',
-    'src/eggnet.i',
-    'src/eggstatus.c',
-    'src/egguio.c',
-    'src/helper.c',
-    'src/mem.c'
+    # 'src/attr.c',
+    # 'src/base.c',
+    'eggdma.c',
+    'eggnet.c',
+    'eggnet.i',
+    'eggstatus.c',
+    'egguio.c',
+    'helper.c',
+    'mem.c'
 ]
 
 # Convert file paths to absolute paths to avoid any confusion, when changing directories
@@ -78,12 +77,12 @@ source_files = [os.path.abspath(sfile) for sfile in source_files]
 print("************************ SOURCE FILES *************************")
 print(source_files)
 print("************************ SOURCE FILES *************************")
-include_dirs = [os.path.abspath('./src'), numpy_include]
+include_dirs = [os.path.abspath('.'), numpy_include]
 
 # Simple Platform Check (not entirely accurate because here should the compiler be checked)
 # ToDo: Should be done better for example via CMake -> https://www.benjack.io/2017/06/12/python-cpp-tests.html
 if platform.system() == 'Linux':
-    
+
     # Numpy uses restrict pointers, so we need at least c99
     extra_args = ['-std=gnu99']
 
@@ -102,19 +101,22 @@ else:
 
 extra_link_args = []
 
-
 # --------
 # Setup
 # --------
 
+# Fix some annoyance things:
+# https://stackoverflow.com/questions/12491328/python-distutils-not-include-the-swig-generated-module
+
+
 EggnetDriver = Extension('_EggnetDriver',
-                              sources=source_files,
-                              include_dirs=include_dirs,
-                              swig_opts=['-py3'],
-                              extra_compile_args=extra_args,
-                              extra_link_args=extra_link_args,
-                              depends=['numpy'],
-                              optional=True)
+                         sources=source_files,
+                         include_dirs=include_dirs,
+                         swig_opts=['-py3'],
+                         extra_compile_args=extra_args,
+                         extra_link_args=extra_link_args,
+                         depends=['numpy'],
+                         optional=True)
 
 setup(name='EggnetDriver',
       version='1.0',
@@ -123,15 +125,6 @@ setup(name='EggnetDriver',
       license="MIT",
       description="""Wrapper for the Linux Device Driver of the EggNet""",
       url='https://github.com/marbleton/FPGA_MNIST',
-      long_description=readme(),
-      long_description_content_type="text/markdown",
-      packages=find_packages(),
-      package_data={
-          # If any package contains *.txt or *.rst files, include them:
-          '': ['*.txt', '*.rst', '*.i', '*.c', '*.h', '*.md'],
-      },
       ext_modules=[EggnetDriver],
       install_requires=['numpy', 'wget'],
       )
-
-print("Finished")
