@@ -399,6 +399,16 @@ class ReshapeLayer(Layer):
         return self.newshape
 
 
+class FlattenLayer(Layer):
+
+    def __init__(self):
+        super(FlattenLayer, self).__init__()
+
+    def __call__(self, *args, **kwargs):
+        x = args[0]
+        return np.reshape(x, newshape=(x.shape[0], -1))
+
+
 class CustomReshapeLayer(Layer):
 
     def __init__(self, custom_reshape_func):

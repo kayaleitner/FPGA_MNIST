@@ -6,7 +6,7 @@ import numpy as np
 import NeuralNetwork.nn as nn
 from NeuralNetwork.nn.core import mean_squared_error
 from NeuralNetwork.nn.Layer import Layer, FullyConnectedLayer, MaxPool2dLayer, Conv2dLayer, ReshapeLayer, \
-    CustomReshapeLayer, RescaleLayer, ScaleLayer, ShiftLayer, SimpleShiftLayer
+    CustomReshapeLayer, RescaleLayer, ScaleLayer, ShiftLayer, SimpleShiftLayer, FlattenLayer
 from NeuralNetwork.nn.quant import QuantConvLayerType, QuantFullyConnectedType, quantize_vector
 
 
@@ -179,10 +179,7 @@ class LeNet(Network):
         mp1 = MaxPool2dLayer(size=2)  # [? 14 14 16]
         cn2 = Conv2dLayer(in_channels=16, out_channels=32, kernel_size=3, activation='relu')  # [? 14 14 32]
         mp2 = MaxPool2dLayer(size=2)  # [?  7  7 32]
-        if reshape_torch:
-            r2 = CustomReshapeLayer(custom_reshape_func=CustomReshapeLayer.reshape_for_torch)
-        else:
-            r2 = ReshapeLayer(newshape=[-1, 32 * 7 * 7])
+        r2 = FlattenLayer()
         fc1 = FullyConnectedLayer(input_size=32 * 7 * 7, output_size=32, activation='relu', dtype=np.float32)
         fc2 = FullyConnectedLayer(input_size=32, output_size=10, activation='softmax')
 
@@ -401,7 +398,7 @@ class FpiLeNet(Network):
         mp1 = MaxPool2dLayer(size=2)  # [? 14 14 16]
         cn2 = Conv2dLayer(in_channels=16, out_channels=32, kernel_size=3, activation='relu')  # [? 14 14 32]
         mp2 = MaxPool2dLayer(size=2)  # [?  7  7 32]
-        r2 = ReshapeLayer(newshape=[-1, 32 * 7 * 7])
+        r2 = FlattenLayer()
         fc1 = FullyConnectedLayer(input_size=32 * 7 * 7, output_size=32, activation='relu', dtype=np.float32)
 
         if real_quant:

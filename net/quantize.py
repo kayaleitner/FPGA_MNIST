@@ -76,19 +76,19 @@ def _quant_weight_error_plot(fweights, weights, layer):
 def main():
     weights = read_np_keras(target_dtype=np.float32)
     # weights = read_np_torch(ordering="BHWC", target_dtype=np.float32)
-    #_plot_histogram_array(weights['cn1.k'])
-    #_plot_histogram_array(weights['cn2.k'])
+    # _plot_histogram_array(weights['cn1.k'])
+    # _plot_histogram_array(weights['cn2.k'])
 
-    #_plot_histogram_fc(weights['fc1.w'])
-    #_plot_histogram_fc(weights['fc2.w'])
+    # _plot_histogram_fc(weights['fc1.w'])
+    # _plot_histogram_fc(weights['fc2.w'])
 
     # Input activation bits and fractions
     ia_b = np.array([8, 8, 8, 8])
     ia_f = np.array([8, 5, 5, 5])
 
     # Weights bits and fractions
-    #w_b = np.array([4, 4, 4, 4])
-    #w_f = np.array([4, 4, 4, 4])
+    # w_b = np.array([4, 4, 4, 4])
+    # w_f = np.array([4, 4, 4, 4])
     w_b = np.array([8, 8, 8, 8])
     w_f = np.array([7, 8, 8, 8])
 
@@ -102,8 +102,7 @@ def main():
                                                   w_bits=w_b, w_frac=w_f,
                                                   out_bits=oa_b, out_frac=oa_f)
     fweights = quant2float(qweights, options)
-    save_weights(fweights, qweights, weights, config=options,qprefix='int8')
-
+    save_weights(fweights, qweights, weights, config=options, qprefix='int8')
 
     w_b = np.array([4, 4, 4, 4])
     w_f = np.array([3, 4, 4, 4])
@@ -144,8 +143,6 @@ def main():
                           target_names=classnames, filename='images/cm')
     plot_confusion_matrix(qcm, title='Confusion matrix (fake fixed point 8/4)',
                           target_names=classnames, filename='images/qcm')
-
-
 
 
 def prepare_config(config):
