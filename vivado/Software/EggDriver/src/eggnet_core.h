@@ -62,7 +62,8 @@ typedef enum egg_error_e {
     EGG_ERROR_NULL_PTR,   /// NULL Pointer Error
     EGG_ERROR_DEVICE_COMMUNICATION_FAILED,
     EGG_ERROR_INIT_FAILDED,
-    EGG_ERROR_UDEF
+    EGG_ERROR_UDEF,
+    EGG_ERROR_MALLOC_FAIL
 } egg_error_t;
 
 typedef struct uio_singleton_s {

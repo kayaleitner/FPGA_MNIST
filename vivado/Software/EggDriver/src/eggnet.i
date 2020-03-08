@@ -72,12 +72,12 @@ import_array();
       (uint8_t **data_out, int *batch_out, int *out_h, int *out_w, int *out_ch)    
 };
 
-%apply (int** ARGOUTVIEW_ARRAY2, int *DIM1, int *DIM2) {
+%apply (int** ARGOUTVIEWM_ARRAY2, int *DIM1, int *DIM2) {
     (int **results, int *batch_out, int *n)
 };
 
-%apply (uint8_t *ARGOUT_ARRAY1[ANY]) {
-    (uint8_t results[batch])
+%apply (uint8_t **ARGOUTVIEWM_ARRAY1, int *DIM1) {
+    (uint8_t **results, int *p_res_batch)
 };
 
 // Inplace array typemaps

@@ -67,7 +67,7 @@ egg_error_t egg_close_network(network_t* network)
 
 egg_error_t egg_inference(const uint8_t * restrict image_buffer,
         int batch, int height, int width, int channels,
-                          uint8_t results[batch]) {
+                          uint8_t **results, int *p_res_batch) {
 
     egg_error_t return_value = EGG_ERROR_NONE;
     network_t _network = {0};
@@ -79,6 +79,13 @@ egg_error_t egg_inference(const uint8_t * restrict image_buffer,
     debug("Input image tensor: [%d %d %d %d]", batch, height, width, channels);
     log_info("Note: Only first image of batch will be used");
 
+    // -- Allocate Memory for output. Numpy will free it
+    _results_buffer = calloc(batch, sizeof(uint8_t));
+    CHECK_AND_SET(_results_buffer != NULL, return_value, EGG_ERROR_MALLOC_FAIL, "Memory allocation failed!");
+
+    // If they are valid, assign to output
+    *results = _results_buffer;
+    *p_res_batch = batch;
 
     debug("**** Start main ****\n");
     debug("Initialize network...");
