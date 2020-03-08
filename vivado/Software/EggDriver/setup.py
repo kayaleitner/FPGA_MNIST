@@ -25,7 +25,7 @@ except AttributeError:
 
 
 def readme():
-    with open('../README.md') as f:
+    with open('./README.md') as f:
         return f.read()
 
 
@@ -85,9 +85,8 @@ include_dirs = [os.path.abspath('./src'), numpy_include]
 if platform.system() == 'Linux':
     
     # Numpy uses restrict pointers, so we need at least c99
-    # extra_args = ['-std=c99']
-    # Using the std=c99 flag causes problems
-    
+    extra_args = ['-std=gnu99']
+
     # Force to use the ARM GCC compiler
     os.environ['CC'] = 'arm-linux-gnueabihf-gcc'
     os.environ['CXX'] = 'arm-linux-gnueabihf-g++'
@@ -129,7 +128,7 @@ setup(name='EggnetDriver',
       packages=find_packages(),
       package_data={
           # If any package contains *.txt or *.rst files, include them:
-          '': ['*.txt', '*.rst', '*.i', '*.c', '*.h'],
+          '': ['*.txt', '*.rst', '*.i', '*.c', '*.h', '*.md'],
       },
       ext_modules=[EggnetDriver],
       install_requires=['numpy', 'wget'],
