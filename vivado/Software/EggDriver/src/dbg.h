@@ -60,7 +60,7 @@
             errno = 0;                                                                             \
             goto error;                                                                            \
         }                                                                                          \
-    } while (0);
+    } while (0)
 
 /**
  * @brief Check if a variable is not null. If it is null, an error message is

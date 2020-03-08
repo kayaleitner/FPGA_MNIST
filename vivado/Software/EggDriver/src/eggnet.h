@@ -27,6 +27,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include "eggnet_core.h"
+#include "callback.h"
 
 typedef uint8_t byte_t;
 
@@ -60,6 +61,7 @@ void *egg_tx_img_thread(void* network);
  */
 void *egg_rx_img_thread(void* network);
 
+
 /**
  * Gets results
  * @param results Pointer to result matrix
@@ -67,6 +69,25 @@ void *egg_rx_img_thread(void* network);
  * @return Error code
  */
 egg_error_t get_results(pixel_t*** results, uint32_t* result_number, network_t* network);
+
+/**
+ * Runs an inference on the FPGA
+ *
+ *
+ *
+ * @param image_data
+ * @param batch_size
+ * @param height
+ * @param width
+ * @param channels
+ * @param results
+ * @return
+ */
+egg_error_t egg_inference(const uint8_t * __restrict image_buffer,
+                          int batch, int height, int width, int channels,
+                          uint8_t results[batch]);
+
+
 /**********************************************************************************************************************
  *
  *  Status Functions

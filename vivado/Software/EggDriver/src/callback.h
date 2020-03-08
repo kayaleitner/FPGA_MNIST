@@ -2,10 +2,11 @@
 // Created by benjaminkulnik on 3/8/20.
 //
 
-#ifndef EGGNETDRIVER_EGG_EVENT_HANDLER_H
-#define EGGNETDRIVER_EGG_EVENT_HANDLER_H
+#ifndef EGGNETDRIVER_CALLBACK_H
+#define EGGNETDRIVER_CALLBACK_H
 
 #include <iostream>
+
 
 class Callback {
 public:
@@ -25,4 +26,9 @@ public:
 };
 
 
-#endif //EGGNETDRIVER_EGG_EVENT_HANDLER_H
+/**
+ * A wrapper function to safely call the function from C
+ */
+extern "C" void run_callback(Callback* c);
+
+#endif //EGGNETDRIVER_CALLBACK_H

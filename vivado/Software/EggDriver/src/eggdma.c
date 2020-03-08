@@ -90,7 +90,9 @@ egg_error_t egg_tx_img(network_t* network)
 
 	// lock the global rx interface
 	pthread_mutex_lock(&tx_lock);
-	tx_proxy_interface_p->length = network->layers[1]->width*network->layers[1]->height;
+
+	// ToDo: Maybe set this manually to 28x28?
+	tx_proxy_interface_p->length = network->layers[1]->width * network->layers[1]->height;
 
 	for (i = 0; i < tx_proxy_interface_p->length; i++)
 	{
@@ -116,9 +118,12 @@ egg_error_t egg_tx_img(network_t* network)
 }
 
 
-/* The following function is the receive thread to allow to receive.
+/**
+ * The following function is the receive thread to allow to receive.
  * The function is called when the interrupt of the uio device occurs.
  * The ioctl calls are blocking such that a thread is needed.
+ * @param network Pointer to a network interface
+ * @return Error code, 0 if none
  */
 egg_error_t egg_rx_img(network_t* network)
 {

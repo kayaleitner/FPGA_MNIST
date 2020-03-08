@@ -1,4 +1,5 @@
 #include "eggnet.h"
+#include "eggnet_core.h"
 #include <stdio.h>
 #include <unistd.h>
 #include "dbg.h"
@@ -13,9 +14,8 @@
  */
 egg_error_t egg_init_network(const char *ip_name, network_t* network)
 {
-	egg_error_t code;
-	network = calloc(1,sizeof(network_t));
-	CHECK(network != NULL,"Error allocating network sturcture")
+	egg_error_t code = EGG_ERROR_NONE;
+	CHECK(network != NULL,"Error allocating network structure");
 	// Initialize DMA
 	debug("Initializing DMA...");
 	code = egg_init_dma();
@@ -48,7 +48,7 @@ egg_error_t egg_init_network(const char *ip_name, network_t* network)
  */
 egg_error_t egg_close_network(network_t* network)
 {
-	egg_error_t code;
+	egg_error_t code = EGG_ERROR_NONE;
 	code = egg_close_dma();
 	CHECK(code == EGG_ERROR_NONE,"Error closing DMA");
 
@@ -61,6 +61,44 @@ egg_error_t egg_close_network(network_t* network)
 	return EGG_ERROR_NONE;
 	error:
 		return EGG_ERROR_UDEF;
+}
+
+
+
+egg_error_t egg_inference(const uint8_t * __restrict image_buffer,
+        int batch, int height, int width, int channels,
+                          uint8_t results[batch]) {
+
+    egg_error_t return_value = EGG_ERROR_NONE;
+    network_t _network = {0};
+    network_t *network = &_network;
+    const char* ip_name = "NeuralNetwork";
+    uint8_t *_results_buffer = NULL;
+
+    debug("**** Start Inference ****\n");
+    debug("Input image tensor: [%d %d %d %d]", batch, height, width, channels);
+    log_info("Note: Only first image of batch will be used");
+
+
+    debug("**** Start main ****\n");
+    debug("Initialize network...");
+    network->img_ptr = image_buffer;
+
+    debug("**** Start main ****\n");
+    debug("Initialize network...");
+    return_value = egg_init_network(ip_name, network) == EGG_ERROR_NONE);
+    CHECK(return_value == EGG_ERROR_NONE, "egg_init_network() return with non zero exit code");
+    return_value = print_network(network);
+    CHECK(return_value == EGG_ERROR_NONE, "egg_init_network() return with non zero exit code");
+
+
+    return_value = egg_tx_img(network);
+
+
+    error:
+    free(_results_buffer);
+    egg_close_network(network);
+    return return_value;
 }
 
 
@@ -197,7 +235,7 @@ egg_error_t print_network(network_t *network)
 void *egg_tx_img_thread(void* network)
 {
 	network_t* net = network;
-	if (egg_tx_img_thread(net)==EGG_ERROR_NONE)
+	if (egg_tx_img(net)==EGG_ERROR_NONE)
 	{
 		pthread_exit((void*) EGG_ERROR_DEVICE_COMMUNICATION_FAILED);
 	}
@@ -217,7 +255,7 @@ void *egg_tx_img_thread(void* network)
 void *egg_rx_img_thread(void* network)
 {
 	network_t* net = network;
-	if (egg_rx_img_thread(net)==EGG_ERROR_NONE)
+	if (egg_rx_img(net)==EGG_ERROR_NONE)
 	{
 		pthread_exit((void*) EGG_ERROR_DEVICE_COMMUNICATION_FAILED);
 	}

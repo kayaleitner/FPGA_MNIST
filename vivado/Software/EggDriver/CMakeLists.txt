@@ -22,6 +22,8 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 # https://wiki.gentoo.org/wiki/Project:AMD64/Fixing_-fPIC_Errors_Guide
 
 
+
+
 swig_add_library(EggnetDriver
         LANGUAGE python
         SOURCES
@@ -31,10 +33,12 @@ swig_add_library(EggnetDriver
             src/eggdma.c
             src/eggnet.c
             src/eggstatus.c
+            src/egguio.c
             src/helper.c
             src/mem.c
-            src/egg_event_handler.cpp
+        src/callback.cpp
 )
+
 target_include_directories(${SWIG_MODULE_EggnetDriver_REAL_NAME}
         PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/src

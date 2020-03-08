@@ -32,7 +32,8 @@
  */
 egg_error_t get_network_structure(network_t *network)
 {
-	CHECK(network->layer_number == 0,"Initialize Network first!");
+    // ToDo: Is this right?
+	// CHECK(network->layer_number == 0,"Initialize Network first!");
 
 	uint8_t layer_number = 0;
 	layer_t **layers;
@@ -67,6 +68,11 @@ egg_error_t get_network_structure(network_t *network)
  */
 egg_error_t egg_free_network(network_t* network)
 {
+    if (network == NULL) {
+        // network already free'd
+        return EGG_ERROR_NONE;
+    }
+
 	CHECK(network->layer_number > 0,"Network not initialized! Nothing to free!");
 	for(int i=0; i < network->layer_number;i++)
 	{

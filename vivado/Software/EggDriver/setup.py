@@ -25,7 +25,7 @@ except AttributeError:
 
 
 def readme():
-    with open('README.md') as f:
+    with open('../README.md') as f:
         return f.read()
 
 
@@ -53,7 +53,7 @@ def download_numpy_interface(path):
 
     return
 
-NUMPY_SWIG_FILE_PATH = 'EggDriver/src/numpy.i'
+NUMPY_SWIG_FILE_PATH = 'src/numpy.i'
 
 # Download numpy.i if needed
 if not os.path.exists(NUMPY_SWIG_FILE_PATH):

@@ -91,7 +91,7 @@ typedef struct network_s {
     layer_t**  				layers;
     pixel_t**         		results;
     uint32_t		 		result_number;
-    const pixel_t* restrict	img_ptr;
+    const pixel_t* __restrict	img_ptr;
     uint8_t           		debug_active;
     uint8_t           		selected_layer;   // 0 = No channel selected -> overall status
 
