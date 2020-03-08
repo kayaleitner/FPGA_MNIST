@@ -15,13 +15,6 @@
 %module EggNetDriverCore
 
 
-// For Python 2 compatibiltiy 
-%pythonbegin %{
-    from __future__ import absolute_import, print
-%}
-
-
-
 %{
     #define SWIG_FILE_WITH_INIT // This has to be declared so the %init block gets called
     #include "eggnet.h"
@@ -81,6 +74,10 @@ import_array();
 
 %apply (int** ARGOUTVIEW_ARRAY2, int *DIM1, int *DIM2) {
     (int **results, int *batch_out, int *n)
+};
+
+%apply (uint8_t *ARGOUT_ARRAY1[ANY]) {
+    (uint8_t results[batch])
 };
 
 // Inplace array typemaps

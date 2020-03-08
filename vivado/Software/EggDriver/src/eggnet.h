@@ -24,14 +24,13 @@
 #define extern "C" {
 #endif
 
+
 #include <stdlib.h>
 #include <stdint.h>
 #include "eggnet_core.h"
 
 
-#ifndef __restrict
-#define __restrict restrict
-#endif
+
 
 typedef uint8_t byte_t;
 
@@ -87,7 +86,7 @@ egg_error_t get_results(pixel_t*** results, uint32_t* result_number, network_t* 
  * @param results
  * @return
  */
-egg_error_t egg_inference(const uint8_t *__restrict image_buffer,
+egg_error_t egg_inference(const uint8_t * image_buffer,
                           int batch, int height, int width, int channels,
                           uint8_t results[batch]);
 

@@ -65,7 +65,7 @@ egg_error_t egg_close_network(network_t* network)
 
 
 
-egg_error_t egg_inference(const uint8_t * __restrict image_buffer,
+egg_error_t egg_inference(const uint8_t * restrict image_buffer,
         int batch, int height, int width, int channels,
                           uint8_t results[batch]) {
 

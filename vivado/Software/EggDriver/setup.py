@@ -85,7 +85,8 @@ include_dirs = [os.path.abspath('./src'), numpy_include]
 if platform.system() == 'Linux':
     
     # Numpy uses restrict pointers, so we need at least c99
-    extra_args = ['-std=c99']
+    # extra_args = ['-std=c99']
+    # Using the std=c99 flag causes problems
     
     # Force to use the ARM GCC compiler
     os.environ['CC'] = 'arm-linux-gnueabihf-gcc'
