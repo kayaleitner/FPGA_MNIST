@@ -27,7 +27,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include "eggnet_core.h"
-#include "callback.h"
+
 
 #ifndef __restrict
 #define __restrict restrict

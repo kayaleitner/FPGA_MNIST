@@ -35,6 +35,11 @@
 
 #include "libuio_internal.h"
 
+#ifndef PATH_MAX
+#define PATH_MAX 2048
+#endif
+
+
 /**
  * @defgroup libuio_attr libuio attribute functions
  * @ingroup libuio_public

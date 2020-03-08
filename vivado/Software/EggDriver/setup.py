@@ -62,9 +62,9 @@ if not os.path.exists(NUMPY_SWIG_FILE_PATH):
     download_numpy_interface(path=NUMPY_SWIG_FILE_PATH)
 
 source_files = [
-    'src/attr.c',
-    'src/base.c',
-    'src/eggdma.c'
+    #'src/attr.c',
+    #'src/base.c',
+    'src/eggdma.c',
     'src/eggnet.c',
     'src/eggnet.i',
     'src/eggstatus.c',

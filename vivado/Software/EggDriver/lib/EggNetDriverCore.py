@@ -82,6 +82,9 @@ def rx_img_thread(network: "void *") -> "void *":
 def get_results(results: "pixel_t ***", result_number: "uint32_t *", network: "network_t *") -> "egg_error_t":
     return _EggnetDriver.get_results(results, result_number, network)
 
+def inference(image_buffer: "uint8_t const *", results: "uint8_t [batch]") -> "egg_error_t":
+    return _EggnetDriver.inference(image_buffer, results)
+
 def print_err(code: "egg_error_t") -> "char const *":
     return _EggnetDriver.print_err(code)
 

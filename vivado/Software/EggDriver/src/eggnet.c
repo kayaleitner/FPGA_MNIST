@@ -86,7 +86,7 @@ egg_error_t egg_inference(const uint8_t * __restrict image_buffer,
 
     debug("**** Start main ****\n");
     debug("Initialize network...");
-    return_value = egg_init_network(ip_name, network) == EGG_ERROR_NONE);
+    return_value = egg_init_network(ip_name, network);
     CHECK(return_value == EGG_ERROR_NONE, "egg_init_network() return with non zero exit code");
     return_value = print_network(network);
     CHECK(return_value == EGG_ERROR_NONE, "egg_init_network() return with non zero exit code");
