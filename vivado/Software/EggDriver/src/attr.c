@@ -35,9 +35,7 @@
 
 #include "libuio_internal.h"
 
-#ifndef PATH_MAX
-#define PATH_MAX 2048
-#endif
+
 
 
 /**

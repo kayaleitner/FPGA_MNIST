@@ -40,6 +40,10 @@
 #endif
 #define N_(Text) Text
 
+#ifndef PATH_MAX
+#define PATH_MAX 2048
+#endif
+
 struct uio_map_t {
 	unsigned long addr;
 	size_t size;
