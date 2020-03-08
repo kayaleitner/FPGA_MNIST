@@ -62,14 +62,16 @@ if not os.path.exists(NUMPY_SWIG_FILE_PATH):
     download_numpy_interface(path=NUMPY_SWIG_FILE_PATH)
 
 source_files = [
-    'EggDriver/src/attr.c',
-    'EggDriver/src/base.c',
-    'EggDriver/src/eggnet.c',
-    'EggDriver/src/eggnet.i',
-    'EggDriver/src/eggstatus.c',
-    'EggDriver/src/egguio.c',
-    'EggDriver/src/helper.c',
-    'EggDriver/src/mem.c']
+    'src/attr.c',
+    'src/base.c',
+    'src/eggdma.c'
+    'src/eggnet.c',
+    'src/eggnet.i',
+    'src/eggstatus.c',
+    'src/egguio.c',
+    'src/helper.c',
+    'src/mem.c'
+]
 
 # Convert file paths to absolute paths to avoid any confusion, when changing directories
 source_files = [os.path.abspath(sfile) for sfile in source_files]
