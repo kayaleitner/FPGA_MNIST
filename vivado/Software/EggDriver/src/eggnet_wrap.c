@@ -3145,6 +3145,53 @@ fail:
 }
 
 
+SWIGINTERN PyObject *_wrap_get_results(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  pixel_t ***arg1 = (pixel_t ***) 0 ;
+  uint32_t *arg2 = (uint32_t *) 0 ;
+  network_t *arg3 = (network_t *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  void *argp2 = 0 ;
+  int res2 = 0 ;
+  void *argp3 = 0 ;
+  int res3 = 0 ;
+  PyObject *swig_obj[3] ;
+  egg_error_t result;
+  
+  if (!SWIG_Python_UnpackTuple(args, "get_results", 3, 3, swig_obj)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_p_p_pixel_t, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "get_results" "', argument " "1"" of type '" "pixel_t ***""'"); 
+  }
+  arg1 = (pixel_t ***)(argp1);
+  res2 = SWIG_ConvertPtr(swig_obj[1], &argp2,SWIGTYPE_p_unsigned_int, 0 |  0 );
+  if (!SWIG_IsOK(res2)) {
+    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "get_results" "', argument " "2"" of type '" "uint32_t *""'"); 
+  }
+  arg2 = (uint32_t *)(argp2);
+  res3 = SWIG_ConvertPtr(swig_obj[2], &argp3,SWIGTYPE_p_network_t, 0 |  0 );
+  if (!SWIG_IsOK(res3)) {
+    SWIG_exception_fail(SWIG_ArgError(res3), "in method '" "get_results" "', argument " "3"" of type '" "network_t *""'"); 
+  }
+  arg3 = (network_t *)(argp3);
+  result = get_results(arg1,arg2,arg3);
+  resultobj = SWIG_NewPointerObj((egg_error_t *)memcpy((egg_error_t *)calloc(1,sizeof(egg_error_t)),&result,sizeof(egg_error_t)), SWIGTYPE_p_egg_error_t, SWIG_POINTER_OWN |  0 );
+  
+  // Apply a typemap to every function that has egg_error_t as a return value
+  // Check if it is 0 (no error) or otherwise trigger an exception in Python
+  if(result != EGG_ERROR_NONE) {
+    SWIG_exception(SWIG_RuntimeError, egg_print_err(result));
+  }
+  resultobj = Py_None;  // do not output anything
+  Py_INCREF(Py_None); // Py_None is a singleton so increment its reference if used.
+  
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
 SWIGINTERN PyObject *_wrap_print_err(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
   PyObject *resultobj = 0;
   egg_error_t arg1 ;
@@ -3448,6 +3495,7 @@ static PyMethodDef SwigMethods[] = {
 	 { "close_network", _wrap_close_network, METH_O, NULL},
 	 { "tx_img_thread", _wrap_tx_img_thread, METH_O, NULL},
 	 { "rx_img_thread", _wrap_rx_img_thread, METH_O, NULL},
+	 { "get_results", _wrap_get_results, METH_VARARGS, NULL},
 	 { "print_err", _wrap_print_err, METH_O, NULL},
 	 { "print_network", _wrap_print_network, METH_O, NULL},
 	 { "read_pixel", _wrap_read_pixel, METH_VARARGS, NULL},

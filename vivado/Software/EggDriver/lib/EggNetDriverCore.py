@@ -15,9 +15,9 @@ if _swig_python_version_info < (2, 7, 0):
 
 # Import the low-level C/C++ module
 if __package__ or "." in __name__:
-    from . import _EggNetDriverCore
+    from . import _EggnetDriver
 else:
-    import _EggNetDriverCore
+    import _EggnetDriver
 
 try:
     import builtins as __builtin__
@@ -68,36 +68,36 @@ class _SwigNonDynamicMeta(type):
 
 
 def init_network(ip_name: "char const *", network: "network_t *") -> "egg_error_t":
-    return _EggNetDriverCore.init_network(ip_name, network)
+    return _EggnetDriver.init_network(ip_name, network)
 
 def close_network(network: "network_t *") -> "egg_error_t":
-    return _EggNetDriverCore.close_network(network)
+    return _EggnetDriver.close_network(network)
 
 def tx_img_thread(network: "void *") -> "void *":
-    return _EggNetDriverCore.tx_img_thread(network)
+    return _EggnetDriver.tx_img_thread(network)
 
 def rx_img_thread(network: "void *") -> "void *":
-    return _EggNetDriverCore.rx_img_thread(network)
+    return _EggnetDriver.rx_img_thread(network)
 
 def get_results(results: "pixel_t ***", result_number: "uint32_t *", network: "network_t *") -> "egg_error_t":
-    return _EggNetDriverCore.get_results(results, result_number, network)
+    return _EggnetDriver.get_results(results, result_number, network)
 
 def print_err(code: "egg_error_t") -> "char const *":
-    return _EggNetDriverCore.print_err(code)
+    return _EggnetDriver.print_err(code)
 
 def print_network(network: "network_t *") -> "egg_error_t":
-    return _EggNetDriverCore.print_network(network)
+    return _EggnetDriver.print_network(network)
 
 def read_pixel(pixel: "pixel_t *", network: "network_t *", layer: "uint8_t", row: "uint16_t", col: "uint16_t", channel: "uint8_t") -> "egg_error_t":
-    return _EggNetDriverCore.read_pixel(pixel, network, layer, row, col, channel)
+    return _EggnetDriver.read_pixel(pixel, network, layer, row, col, channel)
 
 def read_row(pixel: "pixel_t **", network: "network_t *", layer: "uint8_t", row: "uint16_t", channel: "uint8_t") -> "egg_error_t":
-    return _EggNetDriverCore.read_row(pixel, network, layer, row, channel)
+    return _EggnetDriver.read_row(pixel, network, layer, row, channel)
 
 def read_channel(pixel: "pixel_t **", network: "network_t *", layer: "uint8_t", channel: "uint8_t") -> "egg_error_t":
-    return _EggNetDriverCore.read_channel(pixel, network, layer, channel)
+    return _EggnetDriver.read_channel(pixel, network, layer, channel)
 
 def read_layer(pixel: "pixel_t ***", network: "network_t *", layer: "uint8_t") -> "egg_error_t":
-    return _EggNetDriverCore.read_layer(pixel, network, layer)
+    return _EggnetDriver.read_layer(pixel, network, layer)
 
 

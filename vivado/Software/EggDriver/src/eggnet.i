@@ -47,6 +47,9 @@
 /* Include support for numpy */
 %include "numpy.i"
 
+/* turn on director wrapping Callback */
+%feature("director") EggCallback;
+
 %init %{
 // Import Numpy Arrays
 import_array(); 
