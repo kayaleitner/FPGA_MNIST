@@ -2,6 +2,7 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 use work.kernel_pkg.all;
+use work.clogb2_Pkg.all;
 
 entity Conv2DTemplate is
 	generic(

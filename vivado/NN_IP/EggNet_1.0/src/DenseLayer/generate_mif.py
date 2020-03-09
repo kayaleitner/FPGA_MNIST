@@ -1,8 +1,11 @@
 # -*- coding: utf-8 -*-
 import numpy as np
+import json
 
-def get_binstr(a):
-    binstr = list(format(abs(a), '08b'))
+config_file_name = "../../../../../net/final_weights/int8_fpi/config.json"
+
+def get_binstr(a, n=8):
+    binstr = list(format(abs(a), '0' + str(n) +'b'))
     if(a < 0):
         for k in range(0, len(binstr)):
             if(binstr[k] == '1'):
@@ -17,26 +20,29 @@ def get_binstr(a):
                 binstr[k] = '0'
     return "".join(binstr)
 
-denselayer_1_file_name = "../../../../../net/final_weights/fpi/fc1.w.txt"
-denselayer_2_file_name = "../../../../../net/final_weights/fpi/fc2.w.txt"
-denselayer_1_bias_file_name = "../../../../../net/final_weights/fpi/fc1.b.txt"
-denselayer_2_bias_file_name = "../../../../../net/final_weights/fpi/fc2.b.txt"
+denselayer_1_file_name = "../../../../../net/final_weights/int8_fpi/fc1.w.txt"
+denselayer_2_file_name = "../../../../../net/final_weights/int8_fpi/fc2.w.txt"
+denselayer_1_bias_file_name = "../../../../../net/final_weights/int8_fpi/fc1.b.txt"
+denselayer_2_bias_file_name = "../../../../../net/final_weights/int8_fpi/fc2.b.txt"
 
 INPUT_IMAGE_WIDTH = 7
 INPUT_IMAGE_HIGHT = 7
 INPUT_IMAGE_SIZE = INPUT_IMAGE_WIDTH*INPUT_IMAGE_HIGHT
-CL2_OUTPUT_CHANNELS = 32
-DL1_INPUT_NEURONS = 1568
+CL2_OUTPUT_CHANNELS = 24
+DL1_INPUT_NEURONS = INPUT_IMAGE_SIZE*CL2_OUTPUT_CHANNELS
 DL1_OUTPUT_NEURONS = 32
 DL2_INPUT_NEURONS = 32
 DL2_OUTPUT_NEURONS = 10
+
+fp_json = open(config_file_name, 'r')
+config_data = json.load(fp_json)
 
 dl1_weights_file = open(denselayer_1_file_name, 'r')
 dl1_weights = np.array(list(np.loadtxt(dl1_weights_file, dtype=np.int8))).reshape((DL1_INPUT_NEURONS, DL1_OUTPUT_NEURONS))
 dl1_weights_file.close()
 
 dl1_bias_file = open(denselayer_1_bias_file_name, 'r')
-dl1_bias = np.loadtxt(dl1_bias_file, dtype=np.int8);
+dl1_bias = np.loadtxt(dl1_bias_file, dtype=np.int16);
 dl1_bias_file.close()
 
 permutation = [None]*DL1_INPUT_NEURONS
@@ -53,7 +59,7 @@ dl2_weights = np.array(list(np.loadtxt(dl2_weights_file, dtype=np.int8))).reshap
 dl2_weights_file.close()
 
 dl2_bias_file = open(denselayer_2_bias_file_name, 'r')
-dl2_bias = np.loadtxt(dl2_bias_file, dtype=np.int8);
+dl2_bias = np.loadtxt(dl2_bias_file, dtype=np.int16);
 dl2_bias_file.close()
 
 dl1_mif_file_name = "dense_layer_1.mif"
@@ -84,7 +90,7 @@ dl1_bias_mif_file_name = "bias_terms_L1.mif"
 dl1_bias_mif_file = open(dl1_bias_mif_file_name, 'w')
 
 for i in range(0, DL1_OUTPUT_NEURONS):
-    line = get_binstr(dl1_bias[i]) + "00000000"
+    line = get_binstr(dl1_bias[i], 16)
     dl1_bias_mif_file.write(line + "\n")
 
 dl1_bias_mif_file.close()
@@ -93,7 +99,7 @@ dl2_bias_mif_file_name = "bias_terms_L2.mif"
 dl2_bias_mif_file = open(dl2_bias_mif_file_name, 'w')
 
 for i in range(0, DL2_OUTPUT_NEURONS):
-    line = get_binstr(dl2_bias[i]) + "00000000"
+    line = get_binstr(dl2_bias[i], 16)
     dl2_bias_mif_file.write(line + "\n")
 
 dl2_bias_mif_file.close()

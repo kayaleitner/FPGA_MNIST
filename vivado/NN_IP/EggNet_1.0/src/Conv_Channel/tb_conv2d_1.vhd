@@ -16,7 +16,7 @@ architecture beh of tb_conv2d_1 is
 	constant BIT_WIDTH_IN : integer := 8;
 	constant BIT_WIDTH_OUT : integer := 8;
 	constant INPUT_CHANNELS : integer := 16;
-	constant OUTPUT_CHANNELS : integer := 32;
+	constant OUTPUT_CHANNELS : integer := 24;
 	constant CLK_PERIOD : time := 10 ns; -- 100MHz
 	constant IMG_WIDTH : integer := 14;
 	constant IMG_HEIGHT : integer := 14;

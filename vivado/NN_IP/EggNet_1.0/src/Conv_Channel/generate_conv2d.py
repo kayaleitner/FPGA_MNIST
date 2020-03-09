@@ -11,6 +11,8 @@ config_file_name = "../../../../../net/final_weights/int8_fpi/config.json"
 file_names = ["../../../../../net/final_weights/int8_fpi/cn1.k.txt",
          "../../../../../net/final_weights/int8_fpi/cn2.k.txt"]
 
+DATA_WIDTH = 8
+
 if __name__ == '__main__':
     num_input_channels = [None]*num_layers
     num_output_channels = [None]*num_layers
@@ -30,7 +32,7 @@ if __name__ == '__main__':
     config_data = json.load(fp_json)
     
     for i in range(0, num_layers):
-        msb[i] = config_data["shifts"][i] + 7
+        msb[i] = config_data["shifts"][i] + DATA_WIDTH - 1
         file = open(file_names[i], 'r')
         def_line = file.readline()
         regex = re.compile("# \(3, 3, (.*?)\)\n")
