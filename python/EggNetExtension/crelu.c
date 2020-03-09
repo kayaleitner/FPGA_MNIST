@@ -30,7 +30,8 @@ union bitfloat {
 };
 
 
-inline float f_fast_relu(float x)
+static inline float
+f_fast_relu(float x)
 {
     union bitfloat co;
     co.value = x;

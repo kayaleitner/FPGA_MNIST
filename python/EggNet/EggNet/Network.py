@@ -3,14 +3,10 @@ from typing import List
 
 import numpy as np
 
-import NeuralNetwork as nn
-from NeuralNetwork.core import mean_squared_error
-from NeuralNetwork.Layer import Layer, FullyConnectedLayer, MaxPool2dLayer, Conv2dLayer, ReshapeLayer, \
-    ScaleLayer, SimpleShiftLayer, FlattenLayer
-from NeuralNetwork.quant import QuantConvLayerType, QuantFullyConnectedType
+import EggNet
 
 
-def check_layers(list_of_layers: List[Layer]):
+def check_layers(list_of_layers):
     """
 
     :type list_of_layers: List[Layer]
@@ -43,9 +39,8 @@ def metric_accuracy(y1: np.ndarray, y2: np.ndarray, metric_state):
 
 
 class Network:
-    layers: List[Layer]
 
-    def __init__(self, list_of_layers: List[Layer]):
+    def __init__(self, list_of_layers):
         """
 
         :type list_of_layers: List[Layer]
@@ -86,7 +81,7 @@ class Network:
 
     def backprop(self, x, y_):
         y, zs = self.forward_intermediate(x)
-        loss = mean_squared_error(y, y_)
+        loss = EggNet.mean_squared_error(y, y_)
         delta = y - y_
         deltas = []
         for layer in self.layers:
@@ -114,8 +109,8 @@ class Network:
             return net
 
     def quantize_network(self, new_dtype, max_value, min_value,
-                         full_layer_quant_type=QuantFullyConnectedType.FULL_LAYER,
-                         conv_layer_quant_type=QuantConvLayerType.PER_CHANNEL):
+                         full_layer_quant_type,
+                         conv_layer_quant_type):
         """
         Quantizes the weights and activations of the network and returns a copy
 
@@ -145,10 +140,10 @@ class Network:
         weights_dict = {}
 
         for i, layer in enumerate(self.layers):
-            if isinstance(layer, FullyConnectedLayer):
+            if isinstance(layer, EggNet.FullyConnectedLayer):
                 weights_dict["{}:FC:W".format(i)] = layer.weights
                 weights_dict["{}:FC:b".format(i)] = layer.bias
-            elif isinstance(layer, Conv2dLayer):
+            elif isinstance(layer, EggNet.Conv2dLayer):
                 weights_dict["{}:Conv2D:kernel".format(i)] = layer.weights
                 weights_dict["{}:Conv2D:b".format(i)] = layer.bias
 
@@ -173,15 +168,15 @@ class LeNet(Network):
             reshape_torch: set this, if the training parameters came from Pytorch which requires a custom reshape
         """
         self.reshape_torch = reshape_torch
-        r1 = ReshapeLayer(newshape=[-1, 28, 28, 1])
-        cn1 = Conv2dLayer(in_channels=1, out_channels=16, kernel_size=3, activation='relu',
-                          dtype=np.float32)  # [? 28 28 16]
-        mp1 = MaxPool2dLayer(size=2)  # [? 14 14 16]
-        cn2 = Conv2dLayer(in_channels=16, out_channels=32, kernel_size=3, activation='relu')  # [? 14 14 32]
-        mp2 = MaxPool2dLayer(size=2)  # [?  7  7 32]
-        r2 = FlattenLayer()
-        fc1 = FullyConnectedLayer(input_size=32 * 7 * 7, output_size=32, activation='relu', dtype=np.float32)
-        fc2 = FullyConnectedLayer(input_size=32, output_size=10, activation='softmax')
+        r1 = EggNet.ReshapeLayer(newshape=[-1, 28, 28, 1])
+        cn1 = EggNet.Conv2dLayer(in_channels=1, out_channels=16, kernel_size=3, activation='relu',
+                                 dtype=np.float32)  # [? 28 28 16]
+        mp1 = EggNet.MaxPool2dLayer(size=2)  # [? 14 14 16]
+        cn2 = EggNet.Conv2dLayer(in_channels=16, out_channels=32, kernel_size=3, activation='relu')  # [? 14 14 32]
+        mp2 = EggNet.MaxPool2dLayer(size=2)  # [?  7  7 32]
+        r2 = EggNet.FlattenLayer()
+        fc1 = EggNet.FullyConnectedLayer(input_size=32 * 7 * 7, output_size=32, activation='relu', dtype=np.float32)
+        fc2 = EggNet.FullyConnectedLayer(input_size=32, output_size=10, activation='softmax')
 
         # Store a reference to each layer
         self.r1 = r1
@@ -201,7 +196,7 @@ class LeNet(Network):
         import keras
 
         if save_dir is not None:
-            return NeuralNetwork.util.open_keras_model(save_dir=save_dir)
+            return EggNet.util.open_keras_model(save_dir=save_dir)
 
         IMG_HEIGHT, IMG_WIDTH = 28, 28
         (x_train, y_train), (x_test, y_test) = keras.datasets.mnist.load_data()
@@ -359,29 +354,30 @@ def _get_layers(weights_dict, target_bits, fraction_bits):
     dfrac_bits = 2 * fraction_bits
 
     layers = [
-        nn.Layer.ReshapeLayer(newshape=(-1, 28, 28, 1)),
-        nn.Layer.Conv2dLayer(in_channels=1, out_channels=3, kernel_size=3, kernel_init_weights=qk1,
-                             bias_init_weights=qb1, use_bias=True),
-        nn.Layer.ShiftLayer(target_bits=target_bits, target_frac_bits=fraction_bits, source_bits=16,
-                            source_frac_bits=dfrac_bits),
-        nn.Layer.ReluActivationLayer(),
-        nn.Layer.MaxPool2dLayer(),
-        nn.Layer.Conv2dLayer(in_channels=3, out_channels=9, kernel_size=3, kernel_init_weights=qk2,
-                             bias_init_weights=qb2, use_bias=True),
-        nn.Layer.ShiftLayer(target_bits=target_bits, target_frac_bits=fraction_bits, source_bits=16,
-                            source_frac_bits=dfrac_bits),
-        nn.Layer.ReluActivationLayer(),
-        nn.Layer.MaxPool2dLayer(),
-        nn.Layer.FlattenLayer(),
-        nn.Layer.BreakpointLayer(enabled=False),
-        nn.Layer.FullyConnectedLayer(input_size=ni3, output_size=no3, dtype=np.int16, weights=qw3, bias=qb3),
-        nn.Layer.ShiftLayer(target_bits=target_bits, target_frac_bits=fraction_bits, source_bits=16,
-                            source_frac_bits=dfrac_bits),
-        nn.Layer.ReluActivationLayer(),
-        nn.Layer.FullyConnectedLayer(input_size=ni4, output_size=no4, dtype=np.int16, weights=qw4, bias=qb4),
-        nn.Layer.ShiftLayer(target_bits=target_bits, target_frac_bits=fraction_bits, source_bits=16,
-                            source_frac_bits=dfrac_bits),
-        nn.Layer.SoftmaxLayer()
+
+        EggNet.ReshapeLayer(newshape=(-1, 28, 28, 1)),
+        EggNet.Conv2dLayer(in_channels=1, out_channels=3, kernel_size=3, kernel_init_weights=qk1,
+                          bias_init_weights=qb1, use_bias=True),
+        EggNet.ShiftLayer(target_bits=target_bits, target_frac_bits=fraction_bits, source_bits=16,
+                         source_frac_bits=dfrac_bits),
+        EggNet.ReluActivationLayer(),
+        EggNet.MaxPool2dLayer(),
+        EggNet.Conv2dLayer(in_channels=3, out_channels=9, kernel_size=3, kernel_init_weights=qk2,
+                          bias_init_weights=qb2, use_bias=True),
+        EggNet.ShiftLayer(target_bits=target_bits, target_frac_bits=fraction_bits, source_bits=16,
+                         source_frac_bits=dfrac_bits),
+        EggNet.ReluActivationLayer(),
+        EggNet.MaxPool2dLayer(),
+        EggNet.FlattenLayer(),
+        EggNet.BreakpointLayer(enabled=False),
+        EggNet.FullyConnectedLayer(input_size=ni3, output_size=no3, dtype=np.int16, weights=qw3, bias=qb3),
+        EggNet.ShiftLayer(target_bits=target_bits, target_frac_bits=fraction_bits, source_bits=16,
+                         source_frac_bits=dfrac_bits),
+        EggNet.ReluActivationLayer(),
+        EggNet.FullyConnectedLayer(input_size=ni4, output_size=no4, dtype=np.int16, weights=qw4, bias=qb4),
+        EggNet.ShiftLayer(target_bits=target_bits, target_frac_bits=fraction_bits, source_bits=16,
+                         source_frac_bits=dfrac_bits),
+        EggNet.SoftmaxLayer()
     ]
 
     return layers
@@ -392,32 +388,32 @@ class FpiLeNet(Network):
     def __init__(self, weights, options, shifts, real_quant=False):
         # Check input
 
-        r1 = ReshapeLayer(newshape=[-1, 28, 28, 1])
-        cn1 = Conv2dLayer(in_channels=1, out_channels=16, kernel_size=3, activation='relu',
-                          dtype=np.float32)  # [? 28 28 16]
-        mp1 = MaxPool2dLayer(size=2)  # [? 14 14 16]
-        cn2 = Conv2dLayer(in_channels=16, out_channels=32, kernel_size=3, activation='relu')  # [? 14 14 32]
-        mp2 = MaxPool2dLayer(size=2)  # [?  7  7 32]
-        r2 = FlattenLayer()
-        fc1 = FullyConnectedLayer(input_size=32 * 7 * 7, output_size=32, activation='relu', dtype=np.float32)
+        r1 = EggNet.ReshapeLayer(newshape=[-1, 28, 28, 1])
+        cn1 = EggNet.Conv2dLayer(in_channels=1, out_channels=16, kernel_size=3, activation='relu',
+                                 dtype=np.float32)  # [? 28 28 16]
+        mp1 = EggNet.MaxPool2dLayer(size=2)  # [? 14 14 16]
+        cn2 = EggNet.Conv2dLayer(in_channels=16, out_channels=32, kernel_size=3, activation='relu')  # [? 14 14 32]
+        mp2 = EggNet.MaxPool2dLayer(size=2)  # [?  7  7 32]
+        r2 = EggNet.FlattenLayer()
+        fc1 = EggNet.FullyConnectedLayer(input_size=32 * 7 * 7, output_size=32, activation='relu', dtype=np.float32)
 
         if real_quant:
-            fc2 = FullyConnectedLayer(input_size=32, output_size=10, activation=None)
+            fc2 = EggNet.FullyConnectedLayer(input_size=32, output_size=10, activation=None)
         else:
-            fc2 = FullyConnectedLayer(input_size=32, output_size=10, activation='softmax')
+            fc2 = EggNet.FullyConnectedLayer(input_size=32, output_size=10, activation='softmax')
 
         if real_quant:
-            rs1 = SimpleShiftLayer(shift=shifts[0], a_min=options['out_min'][0], a_max=options['out_max'][0])
-            rs2 = SimpleShiftLayer(shift=shifts[1], a_min=options['out_min'][1], a_max=options['out_max'][1])
-            rs3 = SimpleShiftLayer(shift=shifts[2], a_min=options['out_min'][2], a_max=options['out_max'][2])
-            rs4 = SimpleShiftLayer(shift=shifts[3], a_min=options['out_min'][3], a_max=options['out_max'][3])
+            rs1 = EggNet.SimpleShiftLayer(shift=shifts[0], a_min=options['out_min'][0], a_max=options['out_max'][0])
+            rs2 = EggNet.SimpleShiftLayer(shift=shifts[1], a_min=options['out_min'][1], a_max=options['out_max'][1])
+            rs3 = EggNet.SimpleShiftLayer(shift=shifts[2], a_min=options['out_min'][2], a_max=options['out_max'][2])
+            rs4 = EggNet.SimpleShiftLayer(shift=shifts[3], a_min=options['out_min'][3], a_max=options['out_max'][3])
         else:
             # scales = 2.0 ** (-shifts)
             scales = np.ones(shape=(4,))
-            rs1 = ScaleLayer(scale=scales[0], a_min=options['out_min_f'][0], a_max=options['out_max_f'][0])
-            rs2 = ScaleLayer(scale=scales[1], a_min=options['out_min_f'][1], a_max=options['out_max_f'][1])
-            rs3 = ScaleLayer(scale=scales[2], a_min=options['out_min_f'][2], a_max=options['out_max_f'][2])
-            rs4 = ScaleLayer(scale=scales[3], a_min=options['out_min_f'][3], a_max=options['out_max_f'][3])
+            rs1 = EggNet.ScaleLayer(scale=scales[0], a_min=options['out_min_f'][0], a_max=options['out_max_f'][0])
+            rs2 = EggNet.ScaleLayer(scale=scales[1], a_min=options['out_min_f'][1], a_max=options['out_max_f'][1])
+            rs3 = EggNet.ScaleLayer(scale=scales[2], a_min=options['out_min_f'][2], a_max=options['out_max_f'][2])
+            rs4 = EggNet.ScaleLayer(scale=scales[3], a_min=options['out_min_f'][3], a_max=options['out_max_f'][3])
         self.rs1 = rs1
         self.rs2 = rs2
         self.rs3 = rs3

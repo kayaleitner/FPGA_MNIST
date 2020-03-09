@@ -1,6 +1,5 @@
 import numpy as np
-import os
-import NeuralNetwork
+import EggNet
 
 
 def _read_np_tensor(weight_file: str):

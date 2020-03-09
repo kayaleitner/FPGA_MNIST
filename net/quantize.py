@@ -3,9 +3,9 @@ import os
 import numpy as np
 import json
 
-import NeuralNetwork
-from util import read_np_torch, perform_real_quant, init_network_from_weights, evaluate_network, perform_fake_quant, \
-    plot_confusion_matrix, evaluate_network_full, quant2float, init_fake_network_from_weights, read_np_keras, \
+import EggNet
+import EggNet.Reader
+from util import perform_real_quant, init_network_from_weights, plot_confusion_matrix, evaluate_network_full, quant2float, init_fake_network_from_weights, read_np_keras, \
     init_quant_network_from_weights
 
 
@@ -118,7 +118,7 @@ def main():
     fake_net = init_fake_network_from_weights(qweights=fweights, shift=shift, options=options)
     quant_net = init_quant_network_from_weights(qweights=qweights, shift=shift, options=options)
 
-    mnist = NeuralNetwork.Reader.MNIST(folder_path='/tmp/mnist/')
+    mnist = EggNet.Reader.MNIST(folder_path='/tmp/mnist/')
     test_images = mnist.test_images()
     test_labels = mnist.test_labels()
     batch_size = 50

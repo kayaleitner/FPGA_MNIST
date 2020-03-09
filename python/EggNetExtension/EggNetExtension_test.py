@@ -1,21 +1,22 @@
 import unittest
 import numpy as np
 
-if __name__ == '__main__':
-    import NeuralNetworkExtension as nn
+
+def self_test():
+    import EggNetExtension
 
     img = np.random.rand(100, 28, 28, 4).astype(np.float32)
     K = np.random.rand(3, 3, 4, 8).astype(np.float32)
-    o = nn.conv2d(img, K, 1)
+    o = EggNetExtension.conv2d(img, K, 1)
     print("o.shape = ", o.shape)
-    o2 = nn.maxPool2D(o)
-    nn.relu4D(o2)
+    o2 = EggNetExtension.maxPool2D(o)
+    EggNetExtension.relu4D(o2)
     print("o2.shape = ", o2.shape)
 
     # Try to trigger exception by prividing bad kernel
     K = np.random.rand(4, 4, 4, 8).astype(
         np.float32)  # only odd numbers are allowed
-    o = nn.conv2d(img, K, 1)
+    o = EggNetExtension.conv2d(img, K, 1)
 
 
 def get_uniform_test_image_and_kernel(shape_image, shape_kernel):
@@ -28,7 +29,7 @@ class NNExtensionTestCase(unittest.TestCase):
     NUMERIC_EPS = 1e-4
 
     def test_generic(self):
-        from NeuralNetwork.Ext.NeuralNetworkExtension import conv2d, maxPool2D, relu4D
+        from EggNetExtension import conv2d, maxPool2D, relu4D
         I, K = get_uniform_test_image_and_kernel(
             (10, 28, 28, 10), (3, 3, 10, 20))
         o = conv2d(I, K, 1)
@@ -38,9 +39,9 @@ class NNExtensionTestCase(unittest.TestCase):
         print("o2.shape = ", o2.shape)
 
     def test_conv(self):
-        from NeuralNetwork.core import conv2d
-        from NeuralNetwork.Ext.NeuralNetworkExtension import conv2d as conv2d_ext
-        from NeuralNetwork.Ext.NeuralNetworkExtension import conv2d_3x3
+        from EggNet import conv2d
+        from EggNetExtension import conv2d as conv2d_ext
+        from EggNetExtension import conv2d_3x3
 
         # Get images and kernel and keep workload small
         I, K = get_uniform_test_image_and_kernel((5, 14, 14, 3), (3, 3, 3, 6))
@@ -56,9 +57,9 @@ class NNExtensionTestCase(unittest.TestCase):
 
     def test_conv_speed(self):
         import time
-        from NeuralNetwork.Ext.NeuralNetworkExtension import conv2d_3x3
-        from NeuralNetwork.Ext.NeuralNetworkExtension import conv2d as conv2d_ext
-        from NeuralNetwork.core import conv2d
+        from EggNetExtension import conv2d_3x3
+        from EggNetExtension import conv2d as conv2d_ext
+        from EggNet import conv2d
 
         n_runs = 10
         # Get large image data set
@@ -93,8 +94,8 @@ class NNExtensionTestCase(unittest.TestCase):
 
     def test_relu_speed(self):
         import time
-        from NeuralNetwork.Ext.NeuralNetworkExtension import relu4D
-        from NeuralNetwork.core import relu
+        from EggNetExtension import relu4D
+        from EggNet import relu
 
         n_runs = 100
         # Get large image data set
@@ -122,8 +123,8 @@ class NNExtensionTestCase(unittest.TestCase):
 
     def test_pool_speed(self):
         import time
-        from NeuralNetwork.Ext.NeuralNetworkExtension import maxPool2D
-        from NeuralNetwork.core import pooling_max
+        from EggNetExtension import maxPool2D
+        from EggNet import pooling_max
 
         n_runs = 100
         # Get large image data set
@@ -150,7 +151,7 @@ class NNExtensionTestCase(unittest.TestCase):
         print("Speedup:  ", t_py / t_cext)
 
     def test_relu_1(self):
-        from NeuralNetwork.Ext.NeuralNetworkExtension import relu1D
+        from EggNetExtension import relu1D
         negatives = np.random.rand(1000).astype(np.float32) - 10
         self.assertTrue(np.all(negatives < 0))
         relu1D(negatives)
@@ -158,8 +159,8 @@ class NNExtensionTestCase(unittest.TestCase):
         self.assertTrue(np.all(negatives > -0.00000001))
 
     def test_relu_ndim(self):
-        from NeuralNetwork.core import relu
-        import NeuralNetwork.Ext.NeuralNetworkExtension as ext
+        from EggNet import relu
+        import EggNetExtension
 
         sizes_to_test = [
             (100, 100),
@@ -172,11 +173,11 @@ class NNExtensionTestCase(unittest.TestCase):
             x_relu2 = relu(x)
 
             if x.ndim == 2:
-                ext.relu2D(x_relu1)
+                EggNetExtension.relu2D(x_relu1)
             elif x.ndim == 3:
-                ext.relu3D(x_relu1)
+                EggNetExtension.relu3D(x_relu1)
             elif x.ndim == 4:
-                ext.relu4D(x_relu1)
+                EggNetExtension.relu4D(x_relu1)
             else:
                 raise ValueError()
 
@@ -184,10 +185,15 @@ class NNExtensionTestCase(unittest.TestCase):
                 x_relu1, x_relu2, atol=self.NUMERIC_EPS))
 
     def test_int(self):
-        from NeuralNetwork.core import relu
-        import NeuralNetwork.Ext.NeuralNetworkExtension as NNExt
+        from EggNet import relu
+        import EggNetExtension
         x1 = np.random.rand(100).astype(dtype=np.int16) * 10 - 5
         x2 = x1.copy()
-        NNExt.relu_int16_t(x1)
+        EggNetExtension.relu_int16_t_inplace(x1)
         x2 = relu(x2)
         np.allclose(x1, x2, atol=self.NUMERIC_EPS)
+
+
+if __name__ == '__main__':
+    self_test()
+    unittest.main()

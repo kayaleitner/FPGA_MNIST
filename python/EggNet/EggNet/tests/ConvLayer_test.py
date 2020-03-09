@@ -3,8 +3,7 @@ import unittest
 import numpy as np
 import tensorflow as tf
 import keras.backend.numpy_backend
-import NeuralNetwork
-from NeuralNetwork.Layer import MaxPool2dLayer, Conv2dLayer
+import EggNet
 
 
 def indices(a, func):
@@ -25,7 +24,7 @@ def ind2sub(ind, shape):
 class PoolLayerTest(unittest.TestCase):
 
     def test_pool(self):
-        pl = MaxPool2dLayer(size=2)
+        pl = EggNet.MaxPool2dLayer(size=2)
 
         img = np.array([
             [1, 2, 1, 1],
@@ -51,12 +50,15 @@ class PoolLayerTest(unittest.TestCase):
         b = 0
         test_img = np.random.rand(10, 128, 128, 3)  # create 4 test images
 
-        y_tf = keras.backend.numpy_backend.pool2d(test_img, pool_size=2, strides=(2,2))
+        y_tf = keras.backend.numpy_backend.pool2d(test_img,
+                                                  pool_size=(2, 2),
+                                                  strides=(2, 2),
+                                                  padding=None,
+                                                  data_format='channels_last',
+                                                  pool_mode='max')
         # y_tf = max_pool2d(test_img, ksize=2, strides=2, padding='same', data_format='NHWC')
-        y_tf = y_tf.numpy()  # calculate numpy array
 
-        mp = MaxPool2dLayer(size=2)
-        y = mp(test_img)
+        y = EggNet.pooling_max(data_in=test_img, pool_size=2, stride=2)
 
         self.assertEqual(y_tf.shape, y.shape)
 
@@ -67,7 +69,7 @@ class PoolLayerTest(unittest.TestCase):
 class ConvLayerTest(unittest.TestCase):
 
     def test_conv(self):
-        cl = Conv2dLayer(in_channels=1, out_channels=3, kernel_size=5)
+        cl = EggNet.Conv2dLayer(in_channels=1, out_channels=3, kernel_size=5)
 
         test_img = np.random.rand(4, 28, 28, 1)  # create 4 test images
 
@@ -81,10 +83,9 @@ class ConvLayerTest(unittest.TestCase):
         b = np.zeros(16)
 
         x = np.random.rand(5, 28, 28, 8)  # create 4 test images
-        
-        y_tf = keras.backend.numpy_backend.conv2d(x, kernel, strides=1, padding='same')
-        y_tf = y_tf.numpy()  # calculate numpy array
-        cl = Conv2dLayer(in_channels=1, out_channels=3, kernel_size=5)
+
+        y_tf = keras.backend.numpy_backend.conv2d(x, kernel, padding='same', data_format='channels_last')
+        cl = EggNet.Conv2dLayer(in_channels=1, out_channels=3, kernel_size=5)
         cl.kernel = kernel
         cl.b = b
         y = cl(x)
@@ -104,10 +105,8 @@ class ConvLayerTest(unittest.TestCase):
         b = np.zeros(3)
 
         x = np.random.rand(5, 28, 28, 1)  # create 4 test images
-
-        y_tf = keras.backend.numpy_backend.conv2d(x, kernel, strides=1, padding='same')
-        y_tf = y_tf.numpy()  # calculate numpy array
-        cl = Conv2dLayer(in_channels=1, out_channels=3, kernel_size=5)
+        y_tf = keras.backend.numpy_backend.conv2d(x, kernel, padding='same', data_format='channels_last')
+        cl = EggNet.Conv2dLayer(in_channels=1, out_channels=3, kernel_size=5)
         cl.kernel = kernel
         cl.b = b
         y = cl(x)
@@ -125,10 +124,11 @@ class ConvLayerTest(unittest.TestCase):
         kernel = np.random.rand(5, 5, 8, 16)
         b = np.zeros(16)
         x = np.random.rand(5, 28, 28, 8)  # create 4 test images
-        
-        y_tf = keras.backend.numpy_backend.conv2d(x, kernel, strides=1, padding='same')
-        y_tf = y_tf.numpy()  # calculate numpy array
-        cl = Conv2dLayer(in_channels=8, out_channels=16, kernel_size=5)
+
+        y_tf = keras.backend.numpy_backend.conv2d(x, kernel,
+                                                  padding='same',
+                                                  data_format='channels_last')
+        cl = EggNet.Conv2dLayer(in_channels=8, out_channels=16, kernel_size=5)
         cl.kernel = kernel
         cl.b = b
         y = cl(x)
@@ -146,10 +146,9 @@ class ConvLayerTest(unittest.TestCase):
         b = np.zeros(16)
         x = np.random.rand(30, 28, 28, 8)  # create 4 test images
 
-        y_tf = keras.backend.numpy_backend.conv2d(x, kernel, strides=1, padding='same')
+        y_tf = keras.backend.numpy_backend.conv2d(x, kernel, padding='same', data_format='channels_last')
         y_tf = keras.backend.numpy_backend.relu(y_tf)
-        y_tf = y_tf.numpy()  # calculate numpy array
-        cl = Conv2dLayer(in_channels=8, out_channels=16, kernel_size=5, activation='relu')
+        cl = EggNet.Conv2dLayer(in_channels=8, out_channels=16, kernel_size=5, activation='relu')
         cl.kernel = kernel
         cl.b = b
         y = cl(x)
@@ -162,7 +161,6 @@ class ConvLayerTest(unittest.TestCase):
 
     def test_keras_compare(self):
 
-
         mnist = tf.keras.datasets.mnist
 
         IMG_HEIGHT = 28
@@ -174,11 +172,12 @@ class ConvLayerTest(unittest.TestCase):
         x = x_train[0:10, :, :]
         xr = np.reshape(x, newshape=(-1, IMG_HEIGHT, IMG_WIDTH, 1))
 
-        cl = NeuralNetwork.Conv2dLayer(in_channels=1, out_channels=16, kernel_size=3, activation='relu')
+        cl = EggNet.Conv2dLayer(in_channels=1, out_channels=16, kernel_size=3, activation='relu')
         model = tf.keras.models.Sequential([
             keras.layers.Reshape((IMG_HEIGHT, IMG_WIDTH, 1), input_shape=(IMG_HEIGHT, IMG_WIDTH)),
             keras.layers.Conv2D(16, 3, padding='same', activation='relu'),
         ])
+
         keras_conv_layer = model.layers[1]
         model.compile(optimizer='adam',
                       loss='sparse_categorical_crossentropy',

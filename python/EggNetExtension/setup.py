@@ -25,7 +25,7 @@ except AttributeError:
 
 
 def readme():
-    with open('README.md') as f:
+    with open('../README.md') as f:
         return f.read()
 
 
@@ -142,20 +142,19 @@ class CMakeBuild(build_ext):
 
 
 # Download numpy.i if needed
-if not os.path.exists('NeuralNetwork/Ext/numpy.i'):
+if not os.path.exists('./numpy.i'):
     print('Downloading numpy.i')
     project_dir = os.path.dirname(os.path.abspath(__file__))
-    i_numpy_path = os.path.join(project_dir, 'NeuralNetwork', 'Ext')
-    download_numpy_interface(path=i_numpy_path)
+    download_numpy_interface(path='.')
 
-source_files = ['./NeuralNetwork/Ext/NNExtension.i', './NeuralNetwork/Ext/cconv.c',
-                './NeuralNetwork/Ext/cpool.c', './NeuralNetwork/Ext/crelu.c',
-                './NeuralNetwork/Ext/cmatmul.c', './NeuralNetwork/Ext/chelper.c']
+source_files = ['./NNExtension.i', './cconv.c',
+                './cpool.c', './crelu.c',
+                'cmatmul.c', './chelper.c']
 source_files = [os.path.abspath(sfile) for sfile in source_files]
 print("************************ SOURCE FILES *************************")
 print(source_files)
 print("************************ SOURCE FILES *************************")
-include_dirs = [os.path.abspath('./NeuralNetwork/Ext/'), numpy_include]
+include_dirs = [os.path.abspath('NeuralNetwork/Ext/'), numpy_include]
 
 # Simple Platform Check (not entirely accurate because here should the compiler be checked)
 # ToDo: Should be done better for example via CMake -> https://www.benjack.io/2017/06/12/python-cpp-tests.html
@@ -170,7 +169,7 @@ else:
     raise RuntimeError('Operating System not supported?')
 extra_link_args = []
 
-NN_ext_module = SwigExtension('NeuralNetwork/Ext/' + '_NeuralNetworkExtension',
+NN_ext_module = SwigExtension('_EggNetExtension',
                               sources=source_files,
                               include_dirs=include_dirs,
                               swig_opts=['-py3'],
@@ -179,7 +178,7 @@ NN_ext_module = SwigExtension('NeuralNetwork/Ext/' + '_NeuralNetworkExtension',
                               depends=['numpy'],
                               optional=True)
 
-setup(name='NeuralNetwork',
+setup(name='EggNetExtension',
       version='1.0',
       author="Benjamin Kulnik",
       author_email="benjamin.kulnik@student.tuwien.ac.com",
@@ -198,4 +197,4 @@ setup(name='NeuralNetwork',
       install_requires=['numpy', 'wget', 'idx2numpy'],
       )
 
-print("Finished")
+

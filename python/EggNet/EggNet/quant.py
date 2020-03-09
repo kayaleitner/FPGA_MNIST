@@ -6,7 +6,7 @@ from math import inf
 
 import numpy as np
 
-import NeuralNetwork as nn
+import EggNet as nn
 
 
 def np_limits(dtype):

@@ -1,4 +1,3 @@
-%module NeuralNetworkExtension
 // Neural Network C Extension SWIG Wrapper File
 //
 // Written by: Benjamin Kulnik
@@ -6,6 +5,8 @@
 //
 //
 // Good reference: https://www.numpy.org.cn/en/reference/swig/interface-file.html#other-situations
+
+%module EggNetExtension
 
 %pythonbegin %{
 from __future__ import absolute_import
@@ -137,20 +138,20 @@ import_array();
 %apply (uint64_t *INPLACE_ARRAY1, int DIM1) {  (uint64_t *x, int d1) };
 
 // Typemaps for RELU_2D
-%apply (float *INPLACE_ARRAY2, int DIM1, int DIM2) {  (float *x, int d1, int d2) };
-%apply (double *INPLACE_ARRAY2, int DIM1, int DIM2) {  (double *x, int d1, int d2) };
-%apply (int8_t *INPLACE_ARRAY2, int DIM1, int DIM2) {  (int8_t *x, int d1, int d2) };
-%apply (int16_t *INPLACE_ARRAY2, int DIM1, int DIM2) {  (int16_t *x, int d1, int d2) };
-%apply (int32_t *INPLACE_ARRAY2, int DIM1, int DIM2) {  (int32_t *x, int d1, int d2) };
-%apply (int64_t *INPLACE_ARRAY2, int DIM1, int DIM2) {  (int64_t *x, int d1, int d2) };
-%apply (uint8_t *INPLACE_ARRAY2, int DIM1, int DIM2) {  (uint8_t *x, int d1, int d2) };
-%apply (uint16_t *INPLACE_ARRAY2, int DIM1, int DIM2) {  (uint16_t *x, int d1, int d2) };
-%apply (uint32_t *INPLACE_ARRAY2, int DIM1, int DIM2) {  (uint32_t *x, int d1, int d2) };
-%apply (uint64_t *INPLACE_ARRAY2, int DIM1, int DIM2) {  (uint64_t *x, int d1, int d2) };
+%apply (float *INPLACE_ARRAY2, int DIM1, int DIM2) {  (float *x2, int d1, int d2) };
+%apply (double *INPLACE_ARRAY2, int DIM1, int DIM2) {  (double *x2, int d1, int d2) };
+%apply (int8_t *INPLACE_ARRAY2, int DIM1, int DIM2) {  (int8_t *x2, int d1, int d2) };
+%apply (int16_t *INPLACE_ARRAY2, int DIM1, int DIM2) {  (int16_t *x2, int d1, int d2) };
+%apply (int32_t *INPLACE_ARRAY2, int DIM1, int DIM2) {  (int32_t *x2, int d1, int d2) };
+%apply (int64_t *INPLACE_ARRAY2, int DIM1, int DIM2) {  (int64_t *x2, int d1, int d2) };
+%apply (uint8_t *INPLACE_ARRAY2, int DIM1, int DIM2) {  (uint8_t *x2, int d1, int d2) };
+%apply (uint16_t *INPLACE_ARRAY2, int DIM1, int DIM2) {  (uint16_t *x2, int d1, int d2) };
+%apply (uint32_t *INPLACE_ARRAY2, int DIM1, int DIM2) {  (uint32_t *x2, int d1, int d2) };
+%apply (uint64_t *INPLACE_ARRAY2, int DIM1, int DIM2) {  (uint64_t *x2, int d1, int d2) };
 
 
-%apply (float *INPLACE_ARRAY3, int DIM1, int DIM2, int DIM3) {  (float *x, int d1, int d2, int d3) };
-%apply (float *INPLACE_ARRAY4, int DIM1, int DIM2, int DIM3, int DIM4) { (float *x, int d1, int d2, int d3, int d4) };
+%apply (float *INPLACE_ARRAY3, int DIM1, int DIM2, int DIM3) {  (float *x3, int d1, int d2, int d3) };
+%apply (float *INPLACE_ARRAY4, int DIM1, int DIM2, int DIM3, int DIM4) { (float *x4, int d1, int d2, int d3, int d4) };
 
 
 // ------------------------------------ Error Handling ----------------------------------------

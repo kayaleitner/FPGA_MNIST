@@ -1,7 +1,6 @@
 import unittest
 import numpy as np
-
-import NeuralNetwork.core
+import EggNet
 
 
 class ActionFuncsCase(unittest.TestCase):
@@ -9,7 +8,7 @@ class ActionFuncsCase(unittest.TestCase):
     def test_relu1(self):
         x = np.array([-1, -2, 2, 1])
         x_exp = np.array([0, 0, 2, 1])
-        x_relu = NeuralNetwork.core.relu(x)
+        x_relu = EggNet.core.relu(x)
         print(x_relu)
         self.assertTrue(np.all(np.equal(x_relu, x_exp)))
 
@@ -23,7 +22,7 @@ class ActionFuncsCase(unittest.TestCase):
         print(x)
         print(x_exp)
 
-        x_relu = np.apply_along_axis(NeuralNetwork.core.relu, -2, x)
+        x_relu = np.apply_along_axis(EggNet.core.relu, -2, x)
         # x_relu = relu(x)
         self.assertTrue(np.all(np.equal(x_relu, x_exp)))
 

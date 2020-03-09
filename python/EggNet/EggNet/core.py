@@ -1,3 +1,10 @@
+"""
+EggNet Core
+===========
+
+This module provides the core functionality
+
+"""
 import numpy as np
 from numpy.core.multiarray import ndarray
 
@@ -155,7 +162,7 @@ def conv2d_torch(data_in: ndarray, kernel: ndarray, stride: int = 1):
     """
 
     # Obtain shapes
-    kout_ch, kin_ch, fh, fw,  = kernel.shape
+    kout_ch, kin_ch, fh, fw, = kernel.shape
     batch, in_ch, in_h, in_w = data_in.shape
 
     if kin_ch != in_ch:
@@ -248,7 +255,8 @@ def fpi_conv2d(data_in: ndarray,
     fh2 = (fh - 1) // 2
     fw2 = (fw - 1) // 2
 
-    import NeuralNetwork.quant as quant
+    # Import Quant Module
+    import EggNet.quant as quant
 
     """ Output bytes """
     # the patch has shape e.g. (3,3,3)
@@ -298,10 +306,6 @@ def fpi_conv2d(data_in: ndarray,
     return out, out_m, outbits
 
 
-def q_matmul(w, x, b):
-    pass
-
-
 def conv2d_fast(data_in, kernel, stride=1):
     """
     Calculates a fast convolution using the C module
@@ -313,23 +317,23 @@ def conv2d_fast(data_in, kernel, stride=1):
     Returns:
         the convolution result
     """
-    import NeuralNetwork.Ext.NeuralNetworkExtension as nnext
+    import EggNetExtension
     # ToDo: Find a way to move this type checking to the wrapper layer in C
 
     if data_in.dtype == np.float32:
-        return nnext.conv2d_float(data_in=data_in, kernel=kernel, stride=stride)
+        return EggNetExtension.conv2d_float(data_in=data_in, kernel=kernel, stride=stride)
 
     elif data_in.dtype == np.float64:
-        return nnext.conv2d_double(data_in=data_in, kernel=kernel, stride=stride)
+        return EggNetExtension.conv2d_double(data_in=data_in, kernel=kernel, stride=stride)
 
     elif data_in.dtype == np.int8:
-        return nnext.conv2d_int8_t(data_in=data_in, kernel=kernel, stride=stride)
+        return EggNetExtension.conv2d_int8_t(data_in=data_in, kernel=kernel, stride=stride)
 
     elif data_in.dtype == np.int16:
-        return nnext.conv2d_int16_t(data_in=data_in, kernel=kernel, stride=stride)
+        return EggNetExtension.conv2d_int16_t(data_in=data_in, kernel=kernel, stride=stride)
 
     elif data_in.dtype == np.int32:
-        return nnext.conv2d_int32_t(data_in=data_in, kernel=kernel, stride=stride)
+        return EggNetExtension.conv2d_int32_t(data_in=data_in, kernel=kernel, stride=stride)
 
     else:
         # ToDo: Add missing types
@@ -337,6 +341,16 @@ def conv2d_fast(data_in, kernel, stride=1):
 
 
 def pooling_max(data_in: ndarray, pool_size: int, stride=2):
+    """
+    Selects the maximum value from each pool window
+    Args:
+        data_in: Input numpy array
+        pool_size: side length of pool window
+        stride: distance
+
+    Returns:
+        the array with the maximum values for each pool window
+    """
     batch, in_h, in_w, in_ch = data_in.shape
 
     out_h = int(in_h / stride)
@@ -366,6 +380,7 @@ def apply_pool(data_in: ndarray, pool_size: int, f, stride=2):
     value (e.g. the maximum)
     :param stride: The stride between to pool processes
     :type data_in: ndarray
+
     """
 
     batch, in_h, in_w, in_ch = data_in.shape
@@ -419,7 +434,7 @@ def relu(x: np.ndarray) -> np.ndarray:
     :param x: values
     :return:
     """
-    return x.clip(min=0)
+    return np.clip(x, a_min=0, a_max=np.inf)
 
 
 def drelu(x: np.ndarray) -> np.ndarray:

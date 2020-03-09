@@ -6,8 +6,8 @@ import numpy as np
 from numpy import reshape
 from numpy.core.multiarray import ndarray
 
-from NeuralNetwork.core import softmax, pooling_max, conv2d_fast, fpi_conv2d, relu, conv2d, init_kernel, apply_pool
-from NeuralNetwork.quant import to_fpi, datatype_for_bits, np_bits, next_pow2, quantize_vector
+from EggNet import softmax, pooling_max, conv2d_fast, fpi_conv2d, relu, conv2d, init_kernel, apply_pool
+from EggNet.quant import to_fpi, datatype_for_bits, np_bits, next_pow2, quantize_vector
 
 
 class Layer:
@@ -19,9 +19,19 @@ class Layer:
         raise NotImplementedError()
 
     def backprop(self, *args):
+        """
+        Calculates the layer in reverse order
+        Args:
+            *args:
+        """
         raise NotImplementedError()
 
     def update_weights(self, *args):
+        """
+        Updates the weights of the layer
+        Args:
+            *args:
+        """
         raise NotImplementedError()
 
     def __add__(self, other: object) -> list:
@@ -80,15 +90,11 @@ class Layer:
         pass
 
 
-class FunctionalLayer(Layer):
-    pass
-
-
-class ParameterizedLayer(Layer):
-    pass
-
-
 class FullyConnectedLayer(Layer):
+    """
+    Implements a fully connected layer.
+    """
+
     activation: Optional[str]
     W: ndarray  # Weights of the layer, dimensions: [IN x OUT]
     b: ndarray  # bias of the layer

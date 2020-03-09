@@ -112,10 +112,10 @@ int maxPool2D(const float* data_in,
               int*         out_ch);
 
 
-int relu1D(float* x, const int d1);
-int relu2D(float* x, const int d1, const int d2);
-int relu3D(float* x, const int d1, const int d2, const int d3);
-int relu4D(float* x, const int d1, const int d2, const int d3, const int d4);
+int relu1D(float* x, int d1);
+int relu2D(float* x2, int d1, int d2);
+int relu3D(float* x3, int d1, int d2, int d3);
+int relu4D(float* x4, int d1, int d2, int d3, int d4);
 
 #ifdef __cplusplus
 }

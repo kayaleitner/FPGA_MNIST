@@ -5,7 +5,7 @@ from torch.autograd import Function
 from torch.nn.modules.module import Module
 from torch.nn.parameter import Parameter
 
-import NeuralNetwork.Ext.NeuralNetworkExtension as NNExt
+import EggNet.NeuralNetwork.Ext.NeuralNetworkExtension as NNExt
 
 
 class ReLU_FPGA(torch.autograd.Function):

@@ -6,18 +6,15 @@ import numpy as np
 import tensorflow.keras.backend as K
 from tensorflow import keras
 
-from NeuralNetwork.core import make_gauss_kernel
-from NeuralNetwork.Layer import FullyConnectedLayer, Conv2dLayer, ReshapeLayer, MaxPool2dLayer
-from NeuralNetwork.Network import Network
-from NeuralNetwork.util import indices
-from NeuralNetwork.Reader import MnistDataReader, MnistDataDownloader, DataSetType
+import EggNet
+from EggNet.Reader import MnistDataDownloader, MnistDataReader, DataSetType
 
 
 class MnistConvTestCase(unittest.TestCase):
 
     def test_blur(self):
-        k = make_gauss_kernel()
-        cl = Conv2dLayer(in_channels=1, out_channels=1, kernel_size=5)
+        k = EggNet.make_gauss_kernel()
+        cl = EggNet.Conv2dLayer(in_channels=1, out_channels=1, kernel_size=5)
         loader = MnistDataDownloader("../../test/MNIST/")
         path_img, path_lbl = loader.get_path(DataSetType.TRAIN)
 
@@ -40,8 +37,8 @@ class MnistConvTestCase(unittest.TestCase):
             break
 
     def test_tensorflow_parameter_0(self):
-        r1 = ReshapeLayer(newshape=[-1, 28, 28, 1])
-        cn1 = Conv2dLayer(in_channels=1, out_channels=16, kernel_size=3, activation='relu')  # [? 28 28 16]
+        r1 = EggNet.ReshapeLayer(newshape=[-1, 28, 28, 1])
+        cn1 = EggNet.Conv2dLayer(in_channels=1, out_channels=16, kernel_size=3, activation='relu')  # [? 28 28 16]
 
         checkpoint_path = "test/training_1/cp.ckpt"
         checkpoint_dir = os.path.abspath(os.path.dirname(checkpoint_path))
@@ -72,7 +69,7 @@ class MnistConvTestCase(unittest.TestCase):
         cn1.b = Ws[1]
         layers = [r1, cn1, ]
         interesting_layers = [1]  # don't care about reshape layers
-        n = Network(layers)
+        n = EggNet.Network(layers)
 
         loader = MnistDataDownloader("../../test/MNIST/")
         path_img, path_lbl = loader.get_path(DataSetType.TRAIN)
@@ -130,14 +127,14 @@ class MnistConvTestCase(unittest.TestCase):
             # plt.show()
 
     def test_tensorflow_parameter(self):
-        r1 = ReshapeLayer(newshape=[-1, 28, 28, 1])
-        cn1 = Conv2dLayer(in_channels=1, out_channels=16, kernel_size=3, activation='relu')  # [? 28 28 16]
-        mp1 = MaxPool2dLayer(size=2)  # [? 14 14 16]
-        cn2 = Conv2dLayer(in_channels=16, out_channels=32, kernel_size=3, activation='relu')  # [? 14 14 32]
-        mp2 = MaxPool2dLayer(size=2)  # [?  7  7 32]
-        r2 = ReshapeLayer(newshape=[-1, 32 * 7 * 7])
-        fc1 = FullyConnectedLayer(input_size=32 * 7 * 7, output_size=64, activation='relu')
-        fc2 = FullyConnectedLayer(input_size=64, output_size=10, activation='softmax')
+        r1 = EggNet.ReshapeLayer(newshape=[-1, 28, 28, 1])
+        cn1 = EggNet.Conv2dLayer(in_channels=1, out_channels=16, kernel_size=3, activation='relu')  # [? 28 28 16]
+        mp1 = EggNet.MaxPool2dLayer(size=2)  # [? 14 14 16]
+        cn2 = EggNet.Conv2dLayer(in_channels=16, out_channels=32, kernel_size=3, activation='relu')  # [? 14 14 32]
+        mp2 = EggNet.MaxPool2dLayer(size=2)  # [?  7  7 32]
+        r2 = EggNet.ReshapeLayer(newshape=[-1, 32 * 7 * 7])
+        fc1 = EggNet.FullyConnectedLayer(input_size=32 * 7 * 7, output_size=64, activation='relu')
+        fc2 = EggNet.FullyConnectedLayer(input_size=64, output_size=10, activation='softmax')
 
         checkpoint_path = "test/training_1/cp.ckpt"
         checkpoint_dir = os.path.abspath(os.path.dirname(checkpoint_path))
@@ -186,7 +183,7 @@ class MnistConvTestCase(unittest.TestCase):
         layers = [r1, cn1, mp1, cn2, mp2, r2, fc1, fc2]
         interesting_layers = [1, 2, 3, 4, 6, 7]  # don't care about reshape layers
 
-        net = Network(layers)
+        net = EggNet.Network(layers)
 
         loader = MnistDataDownloader("../../test/MNIST/")
         path_img, path_lbl = loader.get_path(DataSetType.TRAIN)

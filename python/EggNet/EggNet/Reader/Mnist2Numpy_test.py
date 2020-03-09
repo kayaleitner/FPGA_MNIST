@@ -1,7 +1,7 @@
 import os
 import unittest
-from NeuralNetwork.Reader.Mnist2Numpy import MnistDataReader, MnistDataDownloader, DataSetType
-from NeuralNetwork.Reader.MNIST import Dataset
+from EggNet.NeuralNetwork.Reader import MnistDataReader, MnistDataDownloader, DataSetType
+from EggNet.NeuralNetwork.Reader import Dataset
 
 class Mnist2NumpyTestCase(unittest.TestCase):
 
@@ -30,7 +30,7 @@ class Mnist2NumpyTestCase(unittest.TestCase):
     def test_usingCache(self):
         from urllib.error import URLError
         # Is relative to working directory
-        rel_path = "../../data/MNIST/"
+        rel_path = "../../../data/MNIST/"
         data_path = os.path.abspath(rel_path)
 
         # Should download to this folder

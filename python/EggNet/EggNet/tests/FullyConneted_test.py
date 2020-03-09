@@ -2,7 +2,7 @@ import unittest
 
 from tensorflow_core.python.ops.gen_nn_ops import relu
 
-from NeuralNetwork.Layer import FullyConnectedLayer
+from EggNet.NeuralNetwork import FullyConnectedLayer
 import numpy as np
 import tensorflow as tf
 

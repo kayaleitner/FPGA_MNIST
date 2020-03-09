@@ -6,15 +6,15 @@ import torch.quantization
 import torch.nn as nn
 import torch.optim
 
-from util import read_np_torch, perform_fake_quant, init_network_from_weights, evaluate_network
-from train_torch import evaluate, prepare_datasets, train_network, LEARNING_RATE, evaluate_labels, load_torch, \
+from util import read_np_torch, evaluate_network
+from train_torch import evaluate, prepare_datasets, LEARNING_RATE, evaluate_labels, load_torch, \
     save_torch_model_weights
-from train_torch import LinearRelu, Flatten, LeNetV2, ConvBN, ConvBNReLU
-from debug import _imshow, LayerActivations
+from train_torch import LinearRelu, Flatten
+from debug import LayerActivations
 
 # Import the own made network
-import NeuralNetwork
-import NeuralNetwork.Ext.NeuralNetworkExtension as nnext
+from EggNet import NeuralNetwork
+import EggNet.NeuralNetwork.Ext.NeuralNetworkExtension as nnext
 
 
 class FixedConvLayer(torch.nn.Module):
