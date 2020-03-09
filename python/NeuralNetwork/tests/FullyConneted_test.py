@@ -1,13 +1,10 @@
 import unittest
 
-import tensorflow as tf
-from tensorflow_core import matmul
 from tensorflow_core.python.ops.gen_nn_ops import relu
 
-from NeuralNetwork.nn.Layer import FullyConnectedLayer
+from NeuralNetwork.Layer import FullyConnectedLayer
 import numpy as np
 import tensorflow as tf
-import tensorflow.keras.backend
 
 
 class FullyConnectedLayerTestCase(unittest.TestCase):

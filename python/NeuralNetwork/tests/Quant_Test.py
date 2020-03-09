@@ -1,6 +1,6 @@
 import unittest
 import numpy as np
-import NeuralNetwork.nn.quant as quant
+import NeuralNetwork.quant as quant
 from NeuralNetwork import nn
 
 
@@ -158,7 +158,7 @@ class GeneralQuantizationTests(unittest.TestCase):
         qk4, mk = quant.quantize_kernels(kernel=kernel, parameter_bits=4)
         qi8, mi = quant.quantize_conv_activations(input=image, parameter_bits=8)
 
-        qout = nn.core.conv2d(data_in=qi8, kernel=qk4)
+        qout = NeuralNetwork.core.conv2d(data_in=qi8, kernel=qk4)
         mout = mk + mi
 
         pass
@@ -168,7 +168,7 @@ class QuantTestCase(unittest.TestCase):
 
     def test_quant_vec(self):
         import numpy as np
-        from NeuralNetwork.nn.quant import quantize_vector
+        from NeuralNetwork.quant import quantize_vector
         test_vec = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7]
         exp_vec = np.array([0, 1, 2, 3, 4, 5, 6, 7], dtype=np.int)
         res = quantize_vector(x=test_vec, bits=3, signed=False)
@@ -177,7 +177,7 @@ class QuantTestCase(unittest.TestCase):
         self.assertTrue(np.allclose(exp_vec, res))
 
     def test_quant2(self):
-        from NeuralNetwork.nn.quant import quantize_vector
+        from NeuralNetwork.quant import quantize_vector
 
         test_vec = np.array([-1, -2, -3, 0, 1, 2, 10, 0.5], dtype=np.float32)
         res = quantize_vector(x=test_vec, bits=3, signed=False, min_value=-1, max_value=1)
@@ -187,7 +187,7 @@ class QuantTestCase(unittest.TestCase):
 class FPTestCase(unittest.TestCase):
 
     def test_default_fixed_point(self):
-        from NeuralNetwork.nn.quant import Fpi
+        from NeuralNetwork.quant import Fpi
         x = 3.1415
         fp_value = Fpi(value=x, fraction_bits=16, target_type=np.int32, zero_point=0)
 
@@ -197,7 +197,7 @@ class FPTestCase(unittest.TestCase):
         self.assertAlmostEqual(x, xfp, places=3)
 
     def test_numpy_quant(self):
-        from NeuralNetwork.nn.quant import Fpi
+        from NeuralNetwork.quant import Fpi
 
         a = np.array([Fpi(1.0)], dtype=Fpi)
         b = np.array([Fpi(2.0)], dtype=Fpi)
@@ -213,7 +213,7 @@ class FPTestCase(unittest.TestCase):
         print(c)
 
     def test_quant_1(self):
-        from NeuralNetwork.nn.quant import to_fpi, from_fpi, to_fpi_object
+        from NeuralNetwork.quant import to_fpi, from_fpi
         import random
 
         frac_dict = {
@@ -240,7 +240,7 @@ class FPTestCase(unittest.TestCase):
 
     def test_fix_point_overflow(self):
 
-        from NeuralNetwork.nn.quant import Fpi
+        from NeuralNetwork.quant import Fpi
 
         a = Fpi(120, fraction_bits=1, target_type=np.int8, zero_point=0)
         b = Fpi(120, fraction_bits=1, target_type=np.int8, zero_point=0)
@@ -249,7 +249,7 @@ class FPTestCase(unittest.TestCase):
 
     def test_fix_point_arithmetic_with_shift(self):
 
-        from NeuralNetwork.nn.quant import to_fpi, from_fpi, Fpi
+        from NeuralNetwork.quant import Fpi
         import random
 
         frac_dict = {
@@ -298,7 +298,7 @@ class FPTestCase(unittest.TestCase):
 
     def test_fix_point_arithmetic(self):
 
-        from NeuralNetwork.nn.quant import to_fpi, from_fpi, Fpi
+        from NeuralNetwork.quant import Fpi
         import random
 
         frac_dict = {
@@ -347,7 +347,7 @@ class FPTestCase(unittest.TestCase):
 
     def test_random_fpi(self):
         import random
-        from NeuralNetwork.nn.quant import Fpi
+        from NeuralNetwork.quant import Fpi
 
         for i in range(1000):
             # bitsize = random.choice([8, 16, 32, 64])
@@ -395,10 +395,9 @@ class FPTestCase(unittest.TestCase):
 class QuantLayerTests(unittest.TestCase):
 
     def test_rescale_layer(self):
-        import NeuralNetwork.nn.Layer as layer
         input = np.random.normal(loc=0, scale=0.6, size=(10, 14, 14, 6))
         x, m = quant.quantize_conv_activations(input, parameter_bits=16)
-        scale_layer = layer.RescaleLayer(target_bits=8, axis=(1, 2, 3))
+        scale_layer = Layer.RescaleLayer(target_bits=8, axis=(1, 2, 3))
         x_, m_ = scale_layer(x, m)
 
         v1 = x / 2.0 ** (m)
@@ -413,9 +412,9 @@ class QuantNetworkTests(unittest.TestCase):
         k2 = nn.make_random_kernel(size=(3, 3, 3, 9))
 
         # Quantize Data
-        qk1, m1 = nn.quant.quantize_kernels(kernel=k1, parameter_bits=8)
-        qk2, m2 = nn.quant.quantize_kernels(kernel=k2, parameter_bits=8)
-        xq, mx = nn.quant.quantize_conv_activations(input=x, parameter_bits=8)
+        qk1, m1 = NeuralNetwork.quant.quantize_kernels(kernel=k1, parameter_bits=8)
+        qk2, m2 = NeuralNetwork.quant.quantize_kernels(kernel=k2, parameter_bits=8)
+        xq, mx = NeuralNetwork.quant.quantize_conv_activations(input=x, parameter_bits=8)
 
         layers = [
             nn.Layer.QuantConv2dLayer(qkernel=qk1, kernel_m=m1),

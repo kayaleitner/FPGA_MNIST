@@ -3,11 +3,11 @@ from typing import List
 
 import numpy as np
 
-import NeuralNetwork.nn as nn
-from NeuralNetwork.nn.core import mean_squared_error
-from NeuralNetwork.nn.Layer import Layer, FullyConnectedLayer, MaxPool2dLayer, Conv2dLayer, ReshapeLayer, \
-    CustomReshapeLayer, RescaleLayer, ScaleLayer, ShiftLayer, SimpleShiftLayer, FlattenLayer
-from NeuralNetwork.nn.quant import QuantConvLayerType, QuantFullyConnectedType, quantize_vector
+import NeuralNetwork as nn
+from NeuralNetwork.core import mean_squared_error
+from NeuralNetwork.Layer import Layer, FullyConnectedLayer, MaxPool2dLayer, Conv2dLayer, ReshapeLayer, \
+    ScaleLayer, SimpleShiftLayer, FlattenLayer
+from NeuralNetwork.quant import QuantConvLayerType, QuantFullyConnectedType
 
 
 def check_layers(list_of_layers: List[Layer]):
@@ -201,7 +201,7 @@ class LeNet(Network):
         import keras
 
         if save_dir is not None:
-            return nn.util.open_keras_model(save_dir=save_dir)
+            return NeuralNetwork.util.open_keras_model(save_dir=save_dir)
 
         IMG_HEIGHT, IMG_WIDTH = 28, 28
         (x_train, y_train), (x_test, y_test) = keras.datasets.mnist.load_data()

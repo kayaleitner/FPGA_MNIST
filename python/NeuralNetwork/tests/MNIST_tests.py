@@ -6,10 +6,10 @@ import numpy as np
 import tensorflow.keras.backend as K
 from tensorflow import keras
 
-from NeuralNetwork.nn.core import make_gauss_kernel
-from NeuralNetwork.nn.Layer import FullyConnectedLayer, Conv2dLayer, ReshapeLayer, MaxPool2dLayer
-from NeuralNetwork.nn.Network import Network
-from NeuralNetwork.nn.util import indices
+from NeuralNetwork.core import make_gauss_kernel
+from NeuralNetwork.Layer import FullyConnectedLayer, Conv2dLayer, ReshapeLayer, MaxPool2dLayer
+from NeuralNetwork.Network import Network
+from NeuralNetwork.util import indices
 from NeuralNetwork.Reader import MnistDataReader, MnistDataDownloader, DataSetType
 
 

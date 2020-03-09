@@ -1,5 +1,12 @@
 """
 Neural Network Package
 """
-import NeuralNetwork.nn
-import NeuralNetwork.Reader
+
+from NeuralNetwork.core import *
+from NeuralNetwork.Layer import *
+from NeuralNetwork.Network import *
+from NeuralNetwork.util import *
+
+# Static Import
+import NeuralNetwork.quant
+import NeuralNetwork.Optimizers

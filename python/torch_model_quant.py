@@ -9,12 +9,11 @@ import torchvision
 import torchvision.transforms as transforms
 from torch import nn
 import torch.nn.functional as F
-from torch.quantization import convert
 
-import NeuralNetwork.nn.util
-import NeuralNetwork.nn.core
+import NeuralNetwork.util
+import NeuralNetwork.core
 from NeuralNetwork.Torch.models import LeNet
-from NeuralNetwork.nn.util import MNIST_CLASSES
+from NeuralNetwork.util import MNIST_CLASSES
 
 
 def train_model(model, criterion, optimizer, scheduler, num_epochs=25, device='cpu'):

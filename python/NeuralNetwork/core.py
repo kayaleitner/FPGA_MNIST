@@ -248,7 +248,7 @@ def fpi_conv2d(data_in: ndarray,
     fh2 = (fh - 1) // 2
     fw2 = (fw - 1) // 2
 
-    import NeuralNetwork.nn.quant as quant
+    import NeuralNetwork.quant as quant
 
     """ Output bytes """
     # the patch has shape e.g. (3,3,3)

@@ -1,9 +1,6 @@
 import os
 
 import numpy as np
-import torch
-from tensorflow_core.python.keras.api._v2 import keras as keras
-from torch.nn import functional as F
 
 
 def indices(a, func):
@@ -89,6 +86,8 @@ def images_to_probs(net, images):
     """
     output = net(images)
     # convert output probabilities to predicted class
+    import torch
+    from torch.nn import functional as F
     preds_tensor = torch.argmax(output, dim=1)
     preds = np.squeeze(preds_tensor.numpy())
     return preds, [F.softmax(el, dim=0)[i].item() for i, el in zip(preds, output)]
@@ -122,7 +121,7 @@ def select_n_random(data, labels, n=100):
     Selects n random datapoints and their corresponding labels from a dataset
     """
     assert len(data) == len(labels)
-
+    import torch
     perm = torch.randperm(len(data))
     return data[perm][:n], labels[perm][:n]
 
@@ -200,7 +199,7 @@ def plot_network_parameter_histogram(weights, names=None, cols=3, figsize=(10, 8
     return fig1, axs
 
 
-def open_keras_model(save_dir) -> keras.models.Model:
+def open_keras_model(save_dir):
     """
     Reads a keras model form a save directory
     Args:
@@ -209,6 +208,8 @@ def open_keras_model(save_dir) -> keras.models.Model:
     Returns:
 
     """
+    from tensorflow_core.python.keras.api._v2 import keras as keras
+
     if not os.path.exists(save_dir):
         raise RuntimeError("There is no trained model data!")
 
@@ -221,7 +222,7 @@ def open_keras_model(save_dir) -> keras.models.Model:
     return model
 
 
-def save_keras_model_weights(model: keras.models.Model, save_path='models'):
+def save_keras_model_weights(model, save_path='models'):
     """
     Saves the weights of keras models in text files.
     Args:

@@ -194,9 +194,8 @@ setup(name='NeuralNetwork',
           '': ['*.txt', '*.rst', '*.i', '*.c', '*.h'],
       },
       ext_modules=[NN_ext_module],
-      requires=['numpy', 'wget', 'flask', 'tensorflow', 'keras', 'torch', 'torchvision', 'scipy', 'matplotlib'
-                ],  # 'git+https://github.com/Xilinx/brevitas.git'],
-      install_requires=['numpy', 'wget'],
+      test_requires=['numpy', 'wget', 'idx2numpy', 'tensorflow', 'keras', 'torch'],
+      install_requires=['numpy', 'wget', 'idx2numpy'],
       )
 
 print("Finished")

@@ -1,9 +1,10 @@
 import unittest
 
-import tensorflow as tf
 import numpy as np
-from tensorflow.keras.backend import relu, conv2d, pool2d
-from NeuralNetwork.nn.Layer import MaxPool2dLayer, Conv2dLayer
+import tensorflow as tf
+import keras.backend.numpy_backend
+import NeuralNetwork
+from NeuralNetwork.Layer import MaxPool2dLayer, Conv2dLayer
 
 
 def indices(a, func):
@@ -49,7 +50,8 @@ class PoolLayerTest(unittest.TestCase):
     def test_tf_compare(self):
         b = 0
         test_img = np.random.rand(10, 128, 128, 3)  # create 4 test images
-        y_tf = pool2d(test_img, pool_size=2, strides=(2,2))
+
+        y_tf = keras.backend.numpy_backend.pool2d(test_img, pool_size=2, strides=(2,2))
         # y_tf = max_pool2d(test_img, ksize=2, strides=2, padding='same', data_format='NHWC')
         y_tf = y_tf.numpy()  # calculate numpy array
 
@@ -80,7 +82,7 @@ class ConvLayerTest(unittest.TestCase):
 
         x = np.random.rand(5, 28, 28, 8)  # create 4 test images
         
-        y_tf = conv2d(x, kernel, strides=1, padding='same')
+        y_tf = keras.backend.numpy_backend.conv2d(x, kernel, strides=1, padding='same')
         y_tf = y_tf.numpy()  # calculate numpy array
         cl = Conv2dLayer(in_channels=1, out_channels=3, kernel_size=5)
         cl.kernel = kernel
@@ -103,7 +105,7 @@ class ConvLayerTest(unittest.TestCase):
 
         x = np.random.rand(5, 28, 28, 1)  # create 4 test images
 
-        y_tf = conv2d(x, kernel, strides=1, padding='same')
+        y_tf = keras.backend.numpy_backend.conv2d(x, kernel, strides=1, padding='same')
         y_tf = y_tf.numpy()  # calculate numpy array
         cl = Conv2dLayer(in_channels=1, out_channels=3, kernel_size=5)
         cl.kernel = kernel
@@ -124,7 +126,7 @@ class ConvLayerTest(unittest.TestCase):
         b = np.zeros(16)
         x = np.random.rand(5, 28, 28, 8)  # create 4 test images
         
-        y_tf = conv2d(x, kernel, strides=1, padding='same')
+        y_tf = keras.backend.numpy_backend.conv2d(x, kernel, strides=1, padding='same')
         y_tf = y_tf.numpy()  # calculate numpy array
         cl = Conv2dLayer(in_channels=8, out_channels=16, kernel_size=5)
         cl.kernel = kernel
@@ -144,8 +146,8 @@ class ConvLayerTest(unittest.TestCase):
         b = np.zeros(16)
         x = np.random.rand(30, 28, 28, 8)  # create 4 test images
 
-        y_tf = conv2d(x, kernel, strides=1, padding='same')
-        y_tf = relu(y_tf)
+        y_tf = keras.backend.numpy_backend.conv2d(x, kernel, strides=1, padding='same')
+        y_tf = keras.backend.numpy_backend.relu(y_tf)
         y_tf = y_tf.numpy()  # calculate numpy array
         cl = Conv2dLayer(in_channels=8, out_channels=16, kernel_size=5, activation='relu')
         cl.kernel = kernel
@@ -161,42 +163,40 @@ class ConvLayerTest(unittest.TestCase):
     def test_keras_compare(self):
 
 
-        # mnist = tf.keras.datasets.mnist
-        #
-        # IMG_HEIGHT = 28
-        # IMG_WIDTH = 28
-        #
-        # (x_train, y_train), (x_test, y_test) = mnist.load_data()
-        # x_train, x_test = x_train / 255.0, x_test / 255.0
-        #
-        # x = x_train[0:10, :, :]
-        # xr = np.reshape(x, newshape=(-1, IMG_HEIGHT, IMG_WIDTH, 1))
-        #
-        # cl = ConvLayer(in_channels=1, out_channels=16, kernel_size=3, activation='relu')
-        # model = tf.keras.models.Sequential([
-        #     Reshape((IMG_HEIGHT, IMG_WIDTH, 1), input_shape=(IMG_HEIGHT, IMG_WIDTH)),
-        #     Conv2D(16, 3, padding='same', activation='relu'),
-        # ])
-        # keras_conv_layer = model.layers[1]
-        # model.compile(optimizer='adam',
-        #               loss='sparse_categorical_crossentropy',
-        #               metrics=['accuracy'])
-        #
-        # y_keras = model.predict(x)
-        # # y_keras = y_keras.numpy()
-        # cl.kernel = keras_conv_layer.kernel.numpy()
-        # cl.b = keras_conv_layer.bias.numpy()
-        # y = cl(xr)
-        #
-        # err = np.abs(y - y_keras)
-        # err_flat = err.flatten()
-        # ix = np.array(indices(err_flat, lambda x: x > 0.5))
-        # subs = ind2sub(ix, err.shape)
-        #
-        # eq = np.allclose(y, y_keras, atol=0.1)
-        # self.assertTrue(eq)
+        mnist = tf.keras.datasets.mnist
 
-        pass
+        IMG_HEIGHT = 28
+        IMG_WIDTH = 28
+
+        (x_train, y_train), (x_test, y_test) = mnist.load_data()
+        x_train, x_test = x_train / 255.0, x_test / 255.0
+
+        x = x_train[0:10, :, :]
+        xr = np.reshape(x, newshape=(-1, IMG_HEIGHT, IMG_WIDTH, 1))
+
+        cl = NeuralNetwork.Conv2dLayer(in_channels=1, out_channels=16, kernel_size=3, activation='relu')
+        model = tf.keras.models.Sequential([
+            keras.layers.Reshape((IMG_HEIGHT, IMG_WIDTH, 1), input_shape=(IMG_HEIGHT, IMG_WIDTH)),
+            keras.layers.Conv2D(16, 3, padding='same', activation='relu'),
+        ])
+        keras_conv_layer = model.layers[1]
+        model.compile(optimizer='adam',
+                      loss='sparse_categorical_crossentropy',
+                      metrics=['accuracy'])
+
+        y_keras = model.predict(x)
+        # y_keras = y_keras.numpy()
+        cl.kernel = keras_conv_layer.kernel.numpy()
+        cl.b = keras_conv_layer.bias.numpy()
+        y = cl(xr)
+
+        err = np.abs(y - y_keras)
+        err_flat = err.flatten()
+        ix = np.array(indices(err_flat, lambda x: x > 0.5))
+        subs = ind2sub(ix, err.shape)
+
+        eq = np.allclose(y, y_keras, atol=0.1)
+        self.assertTrue(eq)
 
 
 if __name__ == '__main__':

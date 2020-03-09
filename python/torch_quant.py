@@ -13,9 +13,8 @@ from matplotlib import pyplot as plt
 
 import NeuralNetwork.nn as nn
 import NeuralNetwork.Reader as Reader
-import NeuralNetwork.nn.util
-import NeuralNetwork.nn.quant as nnquant
-from NeuralNetwork.nn.util import plot_network_parameter_histogram
+import NeuralNetwork.util
+from NeuralNetwork.util import plot_network_parameter_histogram
 
 """
 Preparations: MNIST, loadweights, etc
@@ -42,7 +41,7 @@ path_img, path_lbl = data_loader.get_path(dataset_type=Reader.DataSetType.TRAIN)
 reader = Reader.MnistDataReader(image_filename=path_img, label_filename=path_lbl)
 
 # Load models
-keras_lenet = nn.util.open_keras_model(save_dir=keras_save_dir)
+keras_lenet = NeuralNetwork.util.open_keras_model(save_dir=keras_save_dir)
 nn_lenet_f64 = nn.Network.LeNet.load_from_files(save_dir=nn_save_dir)
 
 for ix_layer, layer in enumerate(nn_lenet_f64.layers):

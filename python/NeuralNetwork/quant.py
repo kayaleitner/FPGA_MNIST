@@ -1,15 +1,12 @@
 from __future__ import division, print_function, absolute_import
 
-from collections import namedtuple
+import numbers
 from enum import Enum
-import math
 from math import inf
-from typing import NamedTuple, Any
 
 import numpy as np
-import numbers
 
-import NeuralNetwork.nn as nn
+import NeuralNetwork as nn
 
 
 def np_limits(dtype):

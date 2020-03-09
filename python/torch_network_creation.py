@@ -9,7 +9,7 @@ from torch.utils.tensorboard import SummaryWriter
 
 from NeuralNetwork.Torch.models import LeNet
 # from NeuralNetwork.Torch.models import QuantLeNet
-from NeuralNetwork.nn.util import MNIST_CLASSES, matplotlib_imshow, plot_classes_preds, select_n_random
+from NeuralNetwork.util import MNIST_CLASSES, matplotlib_imshow, select_n_random
 
 if __name__ == '__main__':
     # See: https://pytorch.org/tutorials/intermediate/tensorboard_tutorial.html

@@ -6,8 +6,8 @@ import numpy as np
 from numpy import reshape
 from numpy.core.multiarray import ndarray
 
-import NeuralNetwork.nn.core as core
-import NeuralNetwork.nn.quant as quant
+from NeuralNetwork.core import softmax, pooling_max, conv2d_fast, fpi_conv2d, relu, conv2d, init_kernel, apply_pool
+from NeuralNetwork.quant import to_fpi, datatype_for_bits, np_bits, next_pow2, quantize_vector
 
 
 class Layer:
@@ -149,10 +149,10 @@ class FullyConnectedLayer(Layer):
             return z
         elif self.activation is "relu":
             # return np.apply_over_axis(relu, z, 1)
-            return core.relu(z)
+            return relu(z)
         elif self.activation is "softmax":
             # return np.apply_over_axis(softmax, z, 1)
-            return core.softmax(z)
+            return softmax(z)
         else:
             raise ValueError("Activation of {} is not valid".format(self.activation))
 
@@ -177,8 +177,8 @@ class FullyConnectedLayer(Layer):
 
     def quantize_layer(self, target_type, fraction_bits, zero_point):
         self.dtype = target_type
-        self.W = quant.quantize_vector(self.W, target_type=target_type, max_value=max_value, min_value=min_value)
-        self.b = quant.quantize_vector(self.b, target_type=target_type, max_value=max_value, min_value=min_value)
+        self.W = quantize_vector(self.W, target_type=target_type, max_value=max_value, min_value=min_value)
+        self.b = quantize_vector(self.b, target_type=target_type, max_value=max_value, min_value=min_value)
 
 
 class MaxPool2dLayer(Layer):
@@ -189,7 +189,7 @@ class MaxPool2dLayer(Layer):
 
     def __call__(self, *args, **kwargs):
         data_in = args[0]
-        return core.pooling_max(data_in, pool_size=self.PoolSize, stride=self.PoolSize)
+        return pooling_max(data_in, pool_size=self.PoolSize, stride=self.PoolSize)
 
     def get_input_shape(self):
         # Input is completely arbitrary
@@ -214,7 +214,7 @@ class AveragePool2dLayer(Layer):
 
     def __call__(self, *args, **kwargs):
         data_in = args[0]
-        return core.apply_pool(data_in, pool_size=self.PoolSize, f=np.mean)
+        return apply_pool(data_in, pool_size=self.PoolSize, f=np.mean)
 
     def get_input_shape(self):
         # Input is completely arbitrary
@@ -254,7 +254,7 @@ class Conv2dLayer(Layer):
         self.dtype = dtype
 
         if kernel_init_weights is None:
-            self.kernel = core.init_kernel(in_channels, out_channels, kernel_size, dtype=dtype)
+            self.kernel = init_kernel(in_channels, out_channels, kernel_size, dtype=dtype)
         else:
             self.kernel = kernel_init_weights
             self.dtype = kernel_init_weights.dtype
@@ -296,14 +296,14 @@ class Conv2dLayer(Layer):
         x = input
         if self.dtype in (np.float32, np.float64):
             try:
-                z = core.conv2d_fast(x, self.kernel, stride=1)
+                z = conv2d_fast(x, self.kernel, stride=1)
             except ImportError as imerror:
                 print("[ERROR]: The Fast C-Extension could not be loaded? Is it installed? Fallback to default python "
                       "implementation: ", imerror)
-                z = core.conv2d(x, self.kernel, stride=1)
+                z = conv2d(x, self.kernel, stride=1)
 
         else:
-            z = core.conv2d(x, self.kernel, stride=1)
+            z = conv2d(x, self.kernel, stride=1)
 
         if self.use_bias:
             z += self.b
@@ -311,7 +311,7 @@ class Conv2dLayer(Layer):
         if self.activation is None:
             return z
         elif self.activation is "relu":
-            return core.relu(z)
+            return relu(z)
         else:
             raise ValueError("Activation of {} is not valid".format(self.activation))
 
@@ -345,9 +345,9 @@ class Conv2dLayer(Layer):
 
     def quantize_layer(self, target_type, fraction_bits, zero_point):
         self.dtype = target_type
-        self.kernel = quant.quantize_vector(self.kernel, target_type=target_type, max_value=max_value,
-                                            min_value=min_value)
-        self.b = quant.quantize_vector(self.b, target_type=target_type, max_value=max_value, min_value=min_value)
+        self.kernel = quantize_vector(self.kernel, target_type=target_type, max_value=max_value,
+                                      min_value=min_value)
+        self.b = quantize_vector(self.b, target_type=target_type, max_value=max_value, min_value=min_value)
 
 
 class ActivationLayer(Layer):
@@ -372,13 +372,13 @@ class ActivationLayer(Layer):
 class ReluActivationLayer(ActivationLayer):
 
     def __init__(self):
-        ActivationLayer.__init__(self, func=core.relu)
+        ActivationLayer.__init__(self, func=relu)
 
 
 class SoftmaxLayer(ActivationLayer):
 
     def __init__(self):
-        ActivationLayer.__init__(self, func=core.softmax)
+        ActivationLayer.__init__(self, func=softmax)
 
 
 class ReshapeLayer(Layer):
@@ -519,8 +519,8 @@ class QuantFullyConnected(FullyConnectedLayer):
 
         # Check if weights are float
         if weights.dtype in [np.float, np.float64, np.float16, np.float32]:
-            self.weights = quant.to_fpi(weights, fraction_bits=weight_quant_frac_bits, target_type=weight_quant_dtype)
-            self.bias = quant.to_fpi(bias, fraction_bits=weight_quant_frac_bits, target_type=weight_quant_dtype)
+            self.weights = to_fpi(weights, fraction_bits=weight_quant_frac_bits, target_type=weight_quant_dtype)
+            self.bias = to_fpi(bias, fraction_bits=weight_quant_frac_bits, target_type=weight_quant_dtype)
 
 
 class QuantConv2dLayer(Layer):
@@ -534,7 +534,7 @@ class QuantConv2dLayer(Layer):
     def __call__(self, input, *args, **kwargs):
         assert len(input) == 2
         x, m = input
-        (x_, m_, bo_) = core.fpi_conv2d(data_in=x, data_in_m=m, kernel=self.kernel, kernel_m=self.kernel_m)
+        (x_, m_, bo_) = fpi_conv2d(data_in=x, data_in_m=m, kernel=self.kernel, kernel_m=self.kernel_m)
         return x_, m_, bo_
 
 
@@ -591,10 +591,10 @@ class RescaleLayer(Layer):
         # Find maximum values
         max_vals = np.max(np.abs(x), axis=self.axis)
         # Find the next higher power of 2 and convert it to bits
-        source_scale_bits = np.log2(quant.next_pow2(max_vals)).astype(np.int)
+        source_scale_bits = np.log2(next_pow2(max_vals)).astype(np.int)
 
-        target_dtype = quant.datatype_for_bits(self.target_bits)
-        source_bits = quant.np_bits(x.dtype)
+        target_dtype = datatype_for_bits(self.target_bits)
+        source_bits = np_bits(x.dtype)
         shift = self.target_bits - output_bits
         m_ = m + shift
 
