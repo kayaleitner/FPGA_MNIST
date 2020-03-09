@@ -97,7 +97,7 @@ Build
 
 ### Requirements
 
-- Vivado, at least 2017.4, for creating the FPGA implemenation
+- Vivado 2017.4, for creating the FPGA implemenation
 - Python, >3.6 + packages in `python/requirements.txt`
 - C11 compiler for the Python Swig Extension
 - GHDL: For VHDL testbench simulation checking
