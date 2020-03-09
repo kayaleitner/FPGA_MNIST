@@ -241,7 +241,7 @@ class ConvBN(nn.Sequential):
         super(ConvBN, self).__init__(
             nn.Conv2d(in_channels=in_planes, out_channels=out_planes, kernel_size=kernel_size, stride=stride,
                       padding=padding, groups=groups, bias=True),
-            nn.BatchNorm2d(out_planes, momentum=0.1),
+            nn.BatchNorm2d(out_planes),
         )
 
 
@@ -265,7 +265,7 @@ class LinearRelu(nn.Sequential):
     def __init__(self, in_features, out_features):
         super(LinearRelu, self).__init__(
             nn.Linear(in_features=in_features, out_features=out_features, bias=True),
-            nn.ReLU(inplace=False))
+            nn.ReLU6(inplace=False))
 
     @staticmethod
     def init_with_weights(w, b):
@@ -290,15 +290,19 @@ class LeNetV2(nn.Sequential):
 
     def __init__(self):
         super(LeNetV2, self).__init__(
+            # Ignore initial Bachnorm
+            # nn.BatchNorm2d(num_features=1),
             ConvBN(in_planes=1, out_planes=16, kernel_size=3, stride=1),
-            nn.Dropout(p=0.25),
+            nn.Dropout(p=0.5),
+            nn.ReLU6(),
             nn.MaxPool2d(kernel_size=2, stride=2),
             ConvBN(in_planes=16, out_planes=32, kernel_size=3, stride=1),
-            nn.Dropout(p=0.25),
+            nn.Dropout(p=0.5),
+            nn.ReLU6(),
             nn.MaxPool2d(kernel_size=2, stride=2),
             Flatten(),
             LinearRelu(in_features=32 * 7 * 7, out_features=32),
-            nn.Dropout(p=0.25),
+            nn.Dropout(p=0.5),
             nn.Linear(in_features=32, out_features=10),
             # No Softmax needed, combined in cross entropy loss function
             # nn.Softmax(dim=1)
@@ -456,6 +460,9 @@ def save_torch_model_weights(tmodel):
     tmodel.eval()  # Put in eval mode
     for key, weights in tmodel.state_dict().items():
         weights = weights.numpy()
+        # Save Binary
+        np.save(file=os.path.join(EXPORT_DIR, 't_{}'.format(key)), arr=weights)
+        # Save as TXT
         vals = weights.flatten(order='C')
         np.savetxt(os.path.join(EXPORT_DIR, 't_{}.txt'.format(key)), vals,
                    header=str(weights.shape))
@@ -473,6 +480,6 @@ def load_torch(filepath=TORCH_SAVE_FILE):
 
 
 if __name__ == '__main__':
-    torch.manual_seed(0)
-    np.random.seed(0)
+    torch.manual_seed(123456789)
+    np.random.seed(123456789)
     main()

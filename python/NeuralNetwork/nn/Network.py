@@ -1,13 +1,12 @@
 import os
 from typing import List
 
-
 import numpy as np
 
 import NeuralNetwork.nn as nn
 from NeuralNetwork.nn.core import mean_squared_error
 from NeuralNetwork.nn.Layer import Layer, FullyConnectedLayer, MaxPool2dLayer, Conv2dLayer, ReshapeLayer, \
-    CustomReshapeLayer
+    CustomReshapeLayer, RescaleLayer, ScaleLayer, ShiftLayer, SimpleShiftLayer, FlattenLayer
 from NeuralNetwork.nn.quant import QuantConvLayerType, QuantFullyConnectedType, quantize_vector
 
 
@@ -80,7 +79,7 @@ class Network:
     def forward_intermediate(self, inputs):
         z = inputs
         zs = []
-        for layer in self.layers:
+        for ix, layer in enumerate(self.layers):
             z = layer(z)
             zs.append(z)
         return z, zs
@@ -180,10 +179,7 @@ class LeNet(Network):
         mp1 = MaxPool2dLayer(size=2)  # [? 14 14 16]
         cn2 = Conv2dLayer(in_channels=16, out_channels=32, kernel_size=3, activation='relu')  # [? 14 14 32]
         mp2 = MaxPool2dLayer(size=2)  # [?  7  7 32]
-        if reshape_torch:
-            r2 = CustomReshapeLayer(custom_reshape_func=CustomReshapeLayer.reshape_for_torch)
-        else:
-            r2 = ReshapeLayer(newshape=[-1, 32 * 7 * 7])
+        r2 = FlattenLayer()
         fc1 = FullyConnectedLayer(input_size=32 * 7 * 7, output_size=32, activation='relu', dtype=np.float32)
         fc2 = FullyConnectedLayer(input_size=32, output_size=10, activation='softmax')
 
@@ -310,7 +306,6 @@ class LeNet(Network):
 
 
 def _lenet_to_dict(network: LeNet):
-
     d = {
         'conv1_k': network.cn1.kernel,
         'conv1_b': network.cn1.bias,
@@ -326,13 +321,12 @@ def _lenet_to_dict(network: LeNet):
 
 
 def _get_layers(weights_dict, target_bits, fraction_bits):
-
     assert target_bits > fraction_bits
 
-    value_bits = target_bits-fraction_bits
+    value_bits = target_bits - fraction_bits
 
-    a_max = 2 ** (value_bits-1) - 1
-    a_min = -2 ** (value_bits-1)
+    a_max = 2 ** (value_bits - 1) - 1
+    a_min = -2 ** (value_bits - 1)
     scale = 1 / 2 ** value_bits
 
     c1_k1 = weights_dict['conv1_k']
@@ -362,39 +356,97 @@ def _get_layers(weights_dict, target_bits, fraction_bits):
     qw4 = np.clip(fc2_w / scale, a_max=a_max, a_min=a_min).astype(np.int8)
     qb4 = np.clip(fc2_b / scale, a_max=a_max, a_min=a_min).astype(np.int8)
 
-    dfrac_bits = 2*fraction_bits
+    dfrac_bits = 2 * fraction_bits
 
     layers = [
         nn.Layer.ReshapeLayer(newshape=(-1, 28, 28, 1)),
-        nn.Layer.Conv2dLayer(in_channels=1, out_channels=3, kernel_size=3, kernel_init_weights=qk1, bias_init_weights=qb1, use_bias=True),
-        nn.Layer.ShiftLayer(target_bits=target_bits, target_frac_bits=fraction_bits, source_bits=16, source_frac_bits=dfrac_bits),
+        nn.Layer.Conv2dLayer(in_channels=1, out_channels=3, kernel_size=3, kernel_init_weights=qk1,
+                             bias_init_weights=qb1, use_bias=True),
+        nn.Layer.ShiftLayer(target_bits=target_bits, target_frac_bits=fraction_bits, source_bits=16,
+                            source_frac_bits=dfrac_bits),
         nn.Layer.ReluActivationLayer(),
         nn.Layer.MaxPool2dLayer(),
-        nn.Layer.Conv2dLayer(in_channels=3, out_channels=9, kernel_size=3, kernel_init_weights=qk2, bias_init_weights=qb2, use_bias=True),
-        nn.Layer.ShiftLayer(target_bits=target_bits, target_frac_bits=fraction_bits, source_bits=16, source_frac_bits=dfrac_bits),
+        nn.Layer.Conv2dLayer(in_channels=3, out_channels=9, kernel_size=3, kernel_init_weights=qk2,
+                             bias_init_weights=qb2, use_bias=True),
+        nn.Layer.ShiftLayer(target_bits=target_bits, target_frac_bits=fraction_bits, source_bits=16,
+                            source_frac_bits=dfrac_bits),
         nn.Layer.ReluActivationLayer(),
         nn.Layer.MaxPool2dLayer(),
         nn.Layer.FlattenLayer(),
         nn.Layer.BreakpointLayer(enabled=False),
         nn.Layer.FullyConnectedLayer(input_size=ni3, output_size=no3, dtype=np.int16, weights=qw3, bias=qb3),
-        nn.Layer.ShiftLayer(target_bits=target_bits, target_frac_bits=fraction_bits, source_bits=16, source_frac_bits=dfrac_bits),
+        nn.Layer.ShiftLayer(target_bits=target_bits, target_frac_bits=fraction_bits, source_bits=16,
+                            source_frac_bits=dfrac_bits),
         nn.Layer.ReluActivationLayer(),
         nn.Layer.FullyConnectedLayer(input_size=ni4, output_size=no4, dtype=np.int16, weights=qw4, bias=qb4),
-        nn.Layer.ShiftLayer(target_bits=target_bits, target_frac_bits=fraction_bits, source_bits=16, source_frac_bits=dfrac_bits),
+        nn.Layer.ShiftLayer(target_bits=target_bits, target_frac_bits=fraction_bits, source_bits=16,
+                            source_frac_bits=dfrac_bits),
         nn.Layer.SoftmaxLayer()
     ]
-    
+
     return layers
 
 
 class FpiLeNet(Network):
 
-    def __init__(self, network, target_bits, fraction_bits):
+    def __init__(self, weights, options, shifts, real_quant=False):
+        # Check input
 
-        layers = _get_layers(
-            weights_dict=_lenet_to_dict(network),
-            target_bits=target_bits,
-            fraction_bits=fraction_bits
-        )
+        r1 = ReshapeLayer(newshape=[-1, 28, 28, 1])
+        cn1 = Conv2dLayer(in_channels=1, out_channels=16, kernel_size=3, activation='relu',
+                          dtype=np.float32)  # [? 28 28 16]
+        mp1 = MaxPool2dLayer(size=2)  # [? 14 14 16]
+        cn2 = Conv2dLayer(in_channels=16, out_channels=32, kernel_size=3, activation='relu')  # [? 14 14 32]
+        mp2 = MaxPool2dLayer(size=2)  # [?  7  7 32]
+        r2 = FlattenLayer()
+        fc1 = FullyConnectedLayer(input_size=32 * 7 * 7, output_size=32, activation='relu', dtype=np.float32)
 
-        super(FpiLeNet, self).__init__(list_of_layers=layers)
+        if real_quant:
+            fc2 = FullyConnectedLayer(input_size=32, output_size=10, activation=None)
+        else:
+            fc2 = FullyConnectedLayer(input_size=32, output_size=10, activation='softmax')
+
+        if real_quant:
+            rs1 = SimpleShiftLayer(shift=shifts[0], a_min=options['out_min'][0], a_max=options['out_max'][0])
+            rs2 = SimpleShiftLayer(shift=shifts[1], a_min=options['out_min'][1], a_max=options['out_max'][1])
+            rs3 = SimpleShiftLayer(shift=shifts[2], a_min=options['out_min'][2], a_max=options['out_max'][2])
+            rs4 = SimpleShiftLayer(shift=shifts[3], a_min=options['out_min'][3], a_max=options['out_max'][3])
+        else:
+            # scales = 2.0 ** (-shifts)
+            scales = np.ones(shape=(4,))
+            rs1 = ScaleLayer(scale=scales[0], a_min=options['out_min_f'][0], a_max=options['out_max_f'][0])
+            rs2 = ScaleLayer(scale=scales[1], a_min=options['out_min_f'][1], a_max=options['out_max_f'][1])
+            rs3 = ScaleLayer(scale=scales[2], a_min=options['out_min_f'][2], a_max=options['out_max_f'][2])
+            rs4 = ScaleLayer(scale=scales[3], a_min=options['out_min_f'][3], a_max=options['out_max_f'][3])
+        self.rs1 = rs1
+        self.rs2 = rs2
+        self.rs3 = rs3
+        self.rs4 = rs4
+
+        # Store a reference to each layer
+        self.r1 = r1
+        self.cn1 = cn1
+        self.mp1 = mp1
+        self.cn2 = cn2
+        self.mp2 = mp2
+        self.r2 = r2
+        self.fc1 = fc1
+        self.fc2 = fc2
+
+        self.cn1.weights = weights['cn1.k']
+        self.cn1.bias = weights['cn1.b']
+        self.cn2.weights = weights['cn2.k']
+        self.cn2.bias = weights['cn2.b']
+        self.fc1.weights = weights['fc1.w']
+        self.fc1.bias = weights['fc1.b']
+        self.fc2.weights = weights['fc2.w']
+        self.fc2.bias = weights['fc2.b']
+
+        self.lenet_layers = [r1,
+                             cn1, mp1, rs1,
+                             cn2, mp2, rs2,
+                             r2,
+                             fc1, rs3,
+                             fc2, rs4]
+
+        super(FpiLeNet, self).__init__(self.lenet_layers)

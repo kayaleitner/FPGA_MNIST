@@ -94,6 +94,8 @@ begin
 		wait until rising_edge(s_n_Res_i);
 		for J in 0 to INPUT_COUNT - 1 loop
 			wait until rising_edge(s_Clk_i);
+			s_Valid_i <= '0';
+			wait until rising_edge(s_Clk_i);
 			s_Valid_i <= '1';
 			s_Data_i <= std_logic_vector(to_unsigned(layer_input(J), VECTOR_WIDTH));
 		end loop;

@@ -4,10 +4,12 @@ import os
 import shutil
 import numpy as np
 import re
+import json
 
 num_layers = 2
-file_names = ["../../../../../net/final_weights/fpi/cn1.k.txt",
-         "../../../../../net/final_weights/fpi/cn2.k.txt"]
+config_file_name = "../../../../../net/final_weights/int8_fpi/config.json"
+file_names = ["../../../../../net/final_weights/int8_fpi/cn1.k.txt",
+         "../../../../../net/final_weights/int8_fpi/cn2.k.txt"]
 
 if __name__ == '__main__':
     num_input_channels = [None]*num_layers
@@ -15,6 +17,7 @@ if __name__ == '__main__':
     kernel_arrays = [None]*num_layers
     kernel_strings = [None]*num_layers
     channel_strings = [None]*num_layers
+    msb = [None]*num_layers
     
 # %% create tmp folder, delete folder if not tmp exists and create new one
     if os.path.isdir('channels'):
@@ -23,7 +26,11 @@ if __name__ == '__main__':
     try : os.mkdir('channels')
     except : print("Error creating temp channel folder!")
     
+    fp_json = open(config_file_name, 'r')
+    config_data = json.load(fp_json)
+    
     for i in range(0, num_layers):
+        msb[i] = config_data["shifts"][i] + 7
         file = open(file_names[i], 'r')
         def_line = file.readline()
         regex = re.compile("# \(3, 3, (.*?)\)\n")
@@ -66,6 +73,7 @@ if __name__ == '__main__':
             tp_str_new = tp_str.replace("ConvChannelTemplate", "ConvChannel" + str(i_convchan))
             tp_str_new = re.sub("constant KERNELS : kernel_array_t :=[^\n]*\n", "constant KERNELS : kernel_array_t := " + channel_strings[i][j] + ";\n", tp_str_new)
             tp_str_new = re.sub("\tN : integer :=[^\n]*\n", "\tN : integer := " + str(num_input_channels[i]) + ";\n", tp_str_new)
+            tp_str_new = re.sub("\tOUTPUT_MSB : integer :=[^\n]*\n", "\tOUTPUT_MSB : integer := " + str(msb[i]) + ";\n", tp_str_new)
             tp_file_new = open("channels/convchannel" + str(i_convchan) + ".vhd", 'w')
             tp_file_new.write(tp_str_new)
             tp_file_new.close()

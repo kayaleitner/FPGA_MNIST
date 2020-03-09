@@ -3,13 +3,54 @@
 # Download base image dockcross/linux-armv7a
 FROM dockcross/linux-armv7a
 
-LABEL AUTHOR="Benjamin KULNIK"
+MAINTAINER Benjamin Kulnik <benjamin.kulnik@student.tuwien.ac.at>
 
-ENV key=value
+ARG DEBIAN_FRONTEND="noninteractive"
 
-RUN \
-    sudo apt-get update && \
-    sudo apt-get upgrade && \
-    sudo apt-get install -y python3.6
-RUN sudo python3.6 -m pip install
-RUN sudo pip3 install numpy
+
+# set the variables as per $(pyenv init -)
+ENV LANG="C.UTF-8" \
+    LC_ALL="C.UTF-8" \
+    PATH="/opt/pyenv/shims:/opt/pyenv/bin:$PATH" \
+    PYENV_ROOT="/opt/pyenv" \
+    PYENV_SHELL="bash"
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    ca-certificates \
+    curl \
+    git \
+    libbz2-dev \
+    libffi-dev \
+    libncurses5-dev \
+    libncursesw5-dev \
+    libreadline-dev \
+    libsqlite3-dev \
+    libssl1.0-dev \
+    liblzma-dev \
+    # libssl-dev \
+    llvm \
+    make \
+    netbase \
+    pkg-config \
+    tk-dev \
+    wget \
+    xz-utils \
+    zlib1g-dev \
+    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+COPY pysetup/python-versions.txt /
+
+RUN git clone https://github.com/pyenv/pyenv.git $PYENV_ROOT \
+    && for version in `cat /python-versions.txt`; do pyenv install $version; done \
+    && pyenv global `cat /python-versions.txt` \
+    && find $PYENV_ROOT/versions -type d '(' -name '__pycache__' -o -name 'test' -o -name 'tests' ')' -exec rm -rf '{}' + \
+    && find $PYENV_ROOT/versions -type f '(' -name '*.pyo' -o -name '*.exe' ')' -exec rm -f '{}' + \
+    && rm -rf /tmp/*
+
+COPY pysetup/requirements.txt /
+
+RUN pip install -r /requirements.txt \
+    && find $PYENV_ROOT/versions -type d '(' -name '__pycache__' -o -name 'test' -o -name 'tests' ')' -exec rm -rf '{}' + \
+    && find $PYENV_ROOT/versions -type f '(' -name '*.pyo' -o -name '*.exe' ')' -exec rm -f '{}' + \
+    && rm -rf /tmp/*

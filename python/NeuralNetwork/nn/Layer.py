@@ -1,4 +1,5 @@
 import math
+from abc import ABC
 from typing import Optional
 
 import numpy as np
@@ -398,6 +399,16 @@ class ReshapeLayer(Layer):
         return self.newshape
 
 
+class FlattenLayer(Layer):
+
+    def __init__(self):
+        super(FlattenLayer, self).__init__()
+
+    def __call__(self, *args, **kwargs):
+        x = args[0]
+        return np.reshape(x, newshape=(x.shape[0], -1))
+
+
 class CustomReshapeLayer(Layer):
 
     def __init__(self, custom_reshape_func):
@@ -417,7 +428,7 @@ class CustomReshapeLayer(Layer):
         # Step 1)
         # Move Axis
         x_ = np.moveaxis(x, 3, 1)
-        x_ = np.reshape(x_ , newshape=(x_.shape[0], -1))
+        x_ = np.reshape(x_, newshape=(x_.shape[0], -1))
 
         return x_
 
@@ -527,6 +538,21 @@ class QuantConv2dLayer(Layer):
         return x_, m_, bo_
 
 
+class ScaleLayer(Layer):
+
+    def __init__(self, scale, a_min, a_max):
+        super(ScaleLayer, self).__init__()
+        self.scale = scale
+        self.a_min = a_min
+        self.a_max = a_max
+
+    def __call__(self, *args, **kwargs):
+        x = args[0]
+        # x_ = np.clip(x * self.scale, a_min=self.a_min, a_max=self.a_max)
+        x_ = np.clip(x, a_min=self.a_min, a_max=self.a_max)
+        return x_
+
+
 class RescaleLayer(Layer):
     """
 
@@ -628,6 +654,23 @@ class ShiftLayer(Layer):
             xs = np.left_shift(x, -shift)
 
         return np.clip(xs, a_min=a_min, a_max=a_max)
+
+
+class SimpleShiftLayer(Layer, ABC):
+
+    def __init__(self, shift, a_min, a_max):
+        super(SimpleShiftLayer, self).__init__()
+        self.shift = shift
+        self.a_min = a_min
+        self.a_max = a_max
+
+    def __call__(self, *args, **kwargs):
+        x = args[0]
+        if self.shift >= 0:
+            x_ = np.clip(np.right_shift(x, self.shift), a_min=self.a_min, a_max=self.a_max).astype(x.dtype)
+        else:
+            x_ = np.clip(np.left_shift(x, self.shift), a_min=self.a_min, a_max=self.a_max).astype(x.dtype)
+        return x_
 
 
 class ConditionLayer(Layer):
