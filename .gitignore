@@ -124,3 +124,4 @@ venv.bak/
 vivado/Software/.metadata/.plugins/org.eclipse.core.runtime/.settings
 vivado/Software/.metadata/.plugins
 vivado/Software/zedboard_wrapper_hw_platform_0
+vivado/Software/.metadata
