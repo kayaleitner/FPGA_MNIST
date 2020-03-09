@@ -1,13 +1,4 @@
 # -*- coding: utf-8 -*-
-"""
-Created on Sun Jan  5 14:24:56 2020
-
-@author: lukas
-
-Generates random test data to test the memory controller and runs the
-simulation test the module using ghdl
-"""
-
 # %% public imports
 import os
 import shutil
@@ -15,6 +6,7 @@ import numpy as np
 import subprocess
 import platform
 import matplotlib.pyplot as plt
+from sys import exit
 
 # %% import custom modules
 import vhdl_testbench as tb
@@ -28,7 +20,12 @@ BLOCK_SIZE = IMG_WIDTH * IMG_HIGTH
 NUMBER_OF_TEST_BLOCKS = 3
 CI_L1 = 1
 CO_L1 = 16
-
+CI_L2 = 16
+CO_L2 = 24
+NI_DL1 = 1176
+NO_DL1 = 32
+NI_DL2 = 32
+NO_DL2 = 10 
 
 def main():
     # %% create tmp folder, delete folder if not tmp exists and create new one
@@ -65,11 +62,69 @@ def main():
     # %% run ghdl
     # Saving console ouput in log file is not working on windows
 
-    filenames = ["tb_memctrl.vhd", "../../src/bram_vhdl/bram.vhd", "../../src/MemCtrl/MemCtrl.vhd",
-                 "../../src/MemCtrl/Shiftregister_3x3.vhd", "../../src/Fifo_vhdl/fifo_dist_ram.vhd",
-                 "../../src/MemCtrl/MemCtrl_AXIS.vhd"]
+    filenames = ["tb_toplevel.vhd", 
+                 "../../src/bram_vhdl/bram.vhd", 
+                 "../../src/MemCtrl/MemCtrl.vhd",
+                 "../../src/MemCtrl/Shiftregister_3x3.vhd", 
+                 "../../src/Fifo_vhdl/fifo_dist_ram.vhd",
+                 "../../src/MemCtrl/MemCtrl_AXIS.vhd",
+                 "../../src/clogb2/clogb2_Pkg.vhd",
+                 "../../src/DenseLayer/serializer.vhd",
+                 "../../src/DenseLayer/denseLayerPkg.vhd",
+                 "../../src/DenseLayer/romModule.vhd",
+                 "../../src/DenseLayer/accumulator.vhd",
+                 "../../src/DenseLayer/multiplier.vhd",
+                 "../../src/DenseLayer/vectorMultiplier.vhd",
+                 "../../src/DenseLayer/dense_layer.vhd",
+                 "../../src/DenseLayer/NN.vhd",
+                 "../../src/Pooling/MaxPooling.vhd",
+                 "../../src/Conv_Channel/kernel_pkg.vhd",
+                 "../../src/Conv_Channel/3x3_kernel.vhd",
+                 "../../src/Conv_Channel/convchannel0.vhd",
+                 "../../src/Conv_Channel/convchannel1.vhd",
+                 "../../src/Conv_Channel/convchannel2.vhd",
+                 "../../src/Conv_Channel/convchannel3.vhd",
+                 "../../src/Conv_Channel/convchannel4.vhd",
+                 "../../src/Conv_Channel/convchannel5.vhd",
+                 "../../src/Conv_Channel/convchannel6.vhd",
+                 "../../src/Conv_Channel/convchannel7.vhd",
+                 "../../src/Conv_Channel/convchannel8.vhd",
+                 "../../src/Conv_Channel/convchannel9.vhd",
+                 "../../src/Conv_Channel/convchannel10.vhd",
+                 "../../src/Conv_Channel/convchannel11.vhd",
+                 "../../src/Conv_Channel/convchannel12.vhd",
+                 "../../src/Conv_Channel/convchannel13.vhd",
+                 "../../src/Conv_Channel/convchannel14.vhd",
+                 "../../src/Conv_Channel/convchannel15.vhd",
+                 "../../src/Conv_Channel/convchannel16.vhd",
+                 "../../src/Conv_Channel/convchannel17.vhd",
+                 "../../src/Conv_Channel/convchannel18.vhd",
+                 "../../src/Conv_Channel/convchannel19.vhd",
+                 "../../src/Conv_Channel/convchannel20.vhd",
+                 "../../src/Conv_Channel/convchannel21.vhd",
+                 "../../src/Conv_Channel/convchannel22.vhd",
+                 "../../src/Conv_Channel/convchannel23.vhd",
+                 "../../src/Conv_Channel/convchannel24.vhd",
+                 "../../src/Conv_Channel/convchannel25.vhd",
+                 "../../src/Conv_Channel/convchannel26.vhd",
+                 "../../src/Conv_Channel/convchannel27.vhd",
+                 "../../src/Conv_Channel/convchannel28.vhd",
+                 "../../src/Conv_Channel/convchannel29.vhd",
+                 "../../src/Conv_Channel/convchannel30.vhd",
+                 "../../src/Conv_Channel/convchannel31.vhd",
+                 "../../src/Conv_Channel/convchannel32.vhd",
+                 "../../src/Conv_Channel/convchannel33.vhd",
+                 "../../src/Conv_Channel/convchannel34.vhd",
+                 "../../src/Conv_Channel/convchannel35.vhd",
+                 "../../src/Conv_Channel/convchannel36.vhd",
+                 "../../src/Conv_Channel/convchannel37.vhd",
+                 "../../src/Conv_Channel/convchannel38.vhd",
+                 "../../src/Conv_Channel/convchannel39.vhd",
+                 "../../src/Conv_Channel/conv2d_0.vhd",
+                 "../../src/Conv_Channel/conv2d_1.vhd"]
 
-    tb_entity = "tb_memctrl"
+    tb_entity = "tb_toplevel"
+    exit()
 
     if has_ghdl():
         tb.run_ghdl(filenames, tb_entity)
