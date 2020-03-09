@@ -21,12 +21,13 @@ entity EggNet_v1_0 is
 		-- Users to add parameters here
     LAYER_HIGHT             : integer := 28;
     LAYER_WIDTH             : integer := 28;
-    DATA_WIDTH              : integer := 8;
+    DATA_WIDTH              : integer := 6;
     L1_IN_CHANNEL_NUMBER	  : integer := 1;    
     L2_IN_CHANNEL_NUMBER	  : integer := 16;      
     L3_IN_CHANNEL_NUMBER	  : integer := 32;    
     MEM_CTRL_NUMBER         : integer := 4;  
-    OUTPUT_COUNT         : integer := 10; 
+    OUTPUT_COUNT            : integer := 10; 
+    PATH                    : string := "C:/Users/lukas/Documents/SoC_Lab/FPGA_MNIST/vivado/NN_IP/EggNet_1.0";
     
 		-- User parameters ends
 		-- Do not modify the parameters beyond this line
@@ -96,62 +97,39 @@ entity EggNet_v1_0 is
     Res_itrp_o : out std_logic
     
     
-    ;ila_s00_axis_tready	: out std_logic;
-		ila_s00_axis_tdata	: out std_logic_vector(C_S00_AXIS_TDATA_WIDTH-1 downto 0);
-		ila_s00_axis_tkeep	: out std_logic_vector((C_S00_AXIS_TDATA_WIDTH/8)-1 downto 0);
-		ila_s00_axis_tlast	: out std_logic;
-		ila_s00_axis_tvalid	: out std_logic
+    -- ;ila_s00_axis_tready	: out std_logic;
+		-- ila_s00_axis_tdata	: out std_logic_vector(C_S00_AXIS_TDATA_WIDTH-1 downto 0);
+		-- ila_s00_axis_tkeep	: out std_logic_vector((C_S00_AXIS_TDATA_WIDTH/8)-1 downto 0);
+		-- ila_s00_axis_tlast	: out std_logic;
+		-- ila_s00_axis_tvalid	: out std_logic
 
-    ;ila_m00_axis_tvalid	: out std_logic;
-		ila_m00_axis_tdata	: out std_logic_vector(C_M00_AXIS_TDATA_WIDTH-1 downto 0);
-		ila_m00_axis_tkeep	: out std_logic_vector((C_M00_AXIS_TDATA_WIDTH/8)-1 downto 0);
-		ila_m00_axis_tlast	: out std_logic;
-		ila_m00_axis_tready	: out std_logic
+    -- ;ila_m00_axis_tvalid	: out std_logic;
+		-- ila_m00_axis_tdata	: out std_logic_vector(C_M00_AXIS_TDATA_WIDTH-1 downto 0);
+		-- ila_m00_axis_tkeep	: out std_logic_vector((C_M00_AXIS_TDATA_WIDTH/8)-1 downto 0);
+		-- ila_m00_axis_tlast	: out std_logic;
+		-- ila_m00_axis_tready	: out std_logic
     
 
-    ;ila_dbg_bram_addr_in     : out std_logic_vector(C_S00_AXI_DATA_WIDTH-1 downto 0);
-    ila_dbg_bram_addr_check  : out std_logic_vector(C_S00_AXI_DATA_WIDTH-1 downto 0);  
-    ila_dbg_bram_data_out    : out std_logic_vector(C_S00_AXI_DATA_WIDTH-1 downto 0); 
-    ila_dbg_32bit_select     : out std_logic_vector(3 downto 0);
-    ila_dbg_enable           : out std_logic; 
-    ila_layer_properties     : out std_logic_vector(C_S00_AXI_DATA_WIDTH-1 downto 0);  
-    ila_status               : out std_logic_vector(C_S00_AXI_DATA_WIDTH-1 downto 0)  
+    -- ;ila_dbg_bram_addr_in     : out std_logic_vector(C_S00_AXI_DATA_WIDTH-1 downto 0);
+    -- ila_dbg_bram_addr_check  : out std_logic_vector(C_S00_AXI_DATA_WIDTH-1 downto 0);  
+    -- ila_dbg_bram_data_out    : out std_logic_vector(C_S00_AXI_DATA_WIDTH-1 downto 0); 
+    -- ila_dbg_32bit_select     : out std_logic_vector(3 downto 0);
+    -- ila_dbg_enable           : out std_logic; 
+    -- ila_layer_properties     : out std_logic_vector(C_S00_AXI_DATA_WIDTH-1 downto 0);  
+    -- ila_status               : out std_logic_vector(C_S00_AXI_DATA_WIDTH-1 downto 0)  
 	);
 end EggNet_v1_0;
 
 architecture arch_imp of EggNet_v1_0 is
 
-  attribute X_INTERFACE_INFO of Res_itrp_o : signal is "xilinx.com:signal:interrupt:1.0 irq INTERRUPT";
-  attribute X_INTERFACE_PARAMETER of Res_itrp_o : signal is "SENSITIVITY EDGE_RISING";
+ --attribute X_INTERFACE_INFO of Res_itrp_o : signal is "xilinx.com:signal:interrupt:1.0 irq INTERRUPT";
+ --attribute X_INTERFACE_PARAMETER of Res_itrp_o : signal is "SENSITIVITY EDGE_RISING";
 
   constant L1_BRAM_ADDR_WIDTH		    : integer := 11; -- maximum = 24 
   constant L2_BRAM_ADDR_WIDTH		    : integer := 9; -- maximum = 24 
   constant MEM_CTRL_ADDR_WITDH      : integer := 8; -- don't change
+  constant BRAM_MIN_DATA_WIDTH      : integer := 8; --required since 8 is the minimum data width of a BRAM
 --constant M_LAYER_DIM_FEATURES : integer := 1; 
-
-  component blk_mem_gen_0 IS
-    PORT (
-      clka : IN STD_LOGIC;
-      wea : IN STD_LOGIC_VECTOR(0 DOWNTO 0);
-      addra : IN STD_LOGIC_VECTOR(10 DOWNTO 0);
-      dina : IN STD_LOGIC_VECTOR(7 DOWNTO 0);
-      clkb : IN STD_LOGIC;
-      addrb : IN STD_LOGIC_VECTOR(10 DOWNTO 0);
-      doutb : OUT STD_LOGIC_VECTOR(7 DOWNTO 0)
-    );
-  END component blk_mem_gen_0;
-  
-  component blk_mem_layer_2 IS
-    PORT (
-      clka : IN STD_LOGIC;
-      wea : IN STD_LOGIC_VECTOR(15 DOWNTO 0);
-      addra : IN STD_LOGIC_VECTOR(8 DOWNTO 0);
-      dina : IN STD_LOGIC_VECTOR(127 DOWNTO 0);
-      clkb : IN STD_LOGIC;
-      addrb : IN STD_LOGIC_VECTOR(8 DOWNTO 0);
-      doutb : OUT STD_LOGIC_VECTOR(127 DOWNTO 0)
-    );
-  END component blk_mem_layer_2;  
 
   signal l1_m_tvalid            : std_logic;
   signal l1_m_tdata_1           : std_logic_vector((DATA_WIDTH*L1_IN_CHANNEL_NUMBER)-1 downto 0);
@@ -172,6 +150,8 @@ architecture arch_imp of EggNet_v1_0 is
   signal l1_bram_pa_wea         : std_logic_vector(((DATA_WIDTH*L1_IN_CHANNEL_NUMBER)/8)-1  downto 0);
   signal l1_bram_pb_addr        : std_logic_vector(L1_BRAM_ADDR_WIDTH-1 downto 0);
   signal l1_bram_pb_data_rd     : std_logic_vector((DATA_WIDTH*L1_IN_CHANNEL_NUMBER)-1 downto 0);       
+  signal l1_bram_pa_data_wr_8   : std_logic_vector(BRAM_MIN_DATA_WIDTH-1 downto 0);
+  signal l1_bram_pb_data_rd_8   : std_logic_vector(BRAM_MIN_DATA_WIDTH-1 downto 0);
   
   signal l1_s_conv_data_1       : std_logic_vector(((DATA_WIDTH*L1_IN_CHANNEL_NUMBER) - 1) downto 0);
   signal l1_s_conv_data_2       : std_logic_vector(((DATA_WIDTH*L1_IN_CHANNEL_NUMBER) - 1) downto 0);
@@ -277,26 +257,26 @@ begin
 -- Debug Outputs for ILA 
 s00_axis_tready <= l1_s_tready ;
 
-ila_s00_axis_tready <= l1_s_tready;
-ila_s00_axis_tdata	<= s00_axis_tdata	 ;
-ila_s00_axis_tkeep	<= s00_axis_tkeep	 ;
-ila_s00_axis_tlast	<= s00_axis_tlast	 ;
-ila_s00_axis_tvalid <= s00_axis_tvalid ;
+-- ila_s00_axis_tready <= l1_s_tready;
+-- ila_s00_axis_tdata	<= s00_axis_tdata	 ;
+-- ila_s00_axis_tkeep	<= s00_axis_tkeep	 ;
+-- ila_s00_axis_tlast	<= s00_axis_tlast	 ;
+-- ila_s00_axis_tvalid <= s00_axis_tvalid ;
 
-ila_m00_axis_tvalid <= l1_s_conv_tvalid;
-ila_m00_axis_tdata	<= (l1_s_conv_data_1 & l1_s_conv_data_2 & l1_s_conv_data_3 & l1_s_conv_data_4);
-ila_m00_axis_tkeep	<= (others => '1');
-ila_m00_axis_tlast	<= l1_s_conv_tlast;
-ila_m00_axis_tready	<= m00_axis_tready;
+-- ila_m00_axis_tvalid <= l1_s_conv_tvalid;
+-- ila_m00_axis_tdata	<= (l1_s_conv_data_1 & l1_s_conv_data_2 & l1_s_conv_data_3 & l1_s_conv_data_4);
+-- ila_m00_axis_tkeep	<= (others => '1');
+-- ila_m00_axis_tlast	<= l1_s_conv_tlast;
+-- ila_m00_axis_tready	<= m00_axis_tready;
 
 
-ila_dbg_bram_addr_in    <= dbg_bram_addr_in     ;
-ila_dbg_bram_addr_check <= dbg_bram_addr_check  ;
-ila_dbg_bram_data_out   <= dbg_bram_data_out    ;
-ila_dbg_32bit_select    <= dbg_32bit_select     ;
-ila_dbg_enable          <= dbg_enable(1)        ;
-ila_layer_properties    <= layer_properties(1)  ;
-ila_status              <= status(1);
+-- ila_dbg_bram_addr_in    <= dbg_bram_addr_in     ;
+-- ila_dbg_bram_addr_check <= dbg_bram_addr_check  ;
+-- ila_dbg_bram_data_out   <= dbg_bram_data_out    ;
+-- ila_dbg_32bit_select    <= dbg_32bit_select     ;
+-- ila_dbg_enable          <= dbg_enable(1)        ;
+-- ila_layer_properties    <= layer_properties(1)  ;
+-- ila_status              <= status(1);
 
 -- *************** Status and Debugging  using AXI-lite ********************************************
 layer_properties(0)(7 downto 0) <= std_logic_vector(to_unsigned(MEM_CTRL_NUMBER,8));
@@ -421,15 +401,27 @@ EggNet_v1_0_S00_AXI_inst : entity work.EggNet_v1_0_S00_AXI
       Layer_properties_o      => layer_properties(1),
       Status_o                => status(1));
       
-  L1_bram : blk_mem_gen_0
+  L1_bram : entity work.blk_mem_gen_0
   port map (clka  => l1_bram_clk,
             wea   => l1_bram_pa_wea,
             addra => l1_bram_pa_addr,
-            dina  => l1_bram_pa_data_wr,
+            dina  => l1_bram_pa_data_wr_8,
             clkb  => l1_bram_clk,
             addrb => l1_bram_pb_addr,
-            doutb => l1_bram_pb_data_rd
+            doutb => l1_bram_pb_data_rd_8
   );
+
+-- required because minimum DATA_WIDTH of BRAM is 8
+MAP_2_8bit: if DATA_WIDTH < 8 generate
+  l1_bram_pa_data_wr_8(BRAM_MIN_DATA_WIDTH-1 downto DATA_WIDTH) <= (others => '0');
+  l1_bram_pa_data_wr_8(DATA_WIDTH-1 downto 0) <= l1_bram_pa_data_wr; 
+  l1_bram_pb_data_rd <= l1_bram_pb_data_rd_8(DATA_WIDTH-1 downto 0);
+end generate MAP_2_8bit;  
+
+NO_MAP_2_8bit: if DATA_WIDTH >= 8 generate
+  l1_bram_pa_data_wr_8 <= l1_bram_pa_data_wr; 
+  l1_bram_pb_data_rd <= l1_bram_pb_data_rd_8;
+end generate NO_MAP_2_8bit;
 
   linebuffer_layer1: entity work.STD_FIFO
     generic map (
@@ -571,7 +563,7 @@ EggNet_v1_0_S00_AXI_inst : entity work.EggNet_v1_0_S00_AXI
       Layer_properties_o      => layer_properties(2),
       Status_o                => status(2));
       
-  L2_bram : blk_mem_layer_2
+  L2_bram : entity work.blk_mem_layer_2
   port map (clka  => l2_bram_clk,
             wea   => l2_bram_pa_wea,
             addra => l2_bram_pa_addr,
@@ -647,7 +639,7 @@ EggNet_v1_0_S00_AXI_inst : entity work.EggNet_v1_0_S00_AXI
       X_i     => l2_s_conv_data_reshape,
       Y_o     => l2_m_conv_data_unsig
     );
-    l1_m_conv_data <= std_logic_vector(l1_m_conv_data_unsig);
+    l2_m_conv_data <= std_logic_vector(l2_m_conv_data_unsig);
 -- MaxPooling   
   L2_maxPooling: entity work.MaxPooling
   generic map(
@@ -672,14 +664,6 @@ EggNet_v1_0_S00_AXI_inst : entity work.EggNet_v1_0_S00_AXI
     M_layer_tlast_o   => l3_s_tlast,
     M_layer_tready_i  => l3_s_tready
   ); 
- 
-  m00_axis_tvalid <= l1_s_conv_tvalid;
-  m00_axis_tdata <= (l1_s_conv_data_1 & l1_s_conv_data_2 & l1_s_conv_data_3 & l1_s_conv_data_4);
-  m00_axis_tkeep <= (others => '1');
-  m00_axis_tlast <= l1_s_conv_tlast;
-  l1_s_conv_tready <= m00_axis_tready;
-  
-  Res_itrp_o <= l1_s_conv_tlast;
   
 -- *************** Layer3-4 Fully-Connected ********************************************************
   
@@ -704,7 +688,8 @@ EggNet_v1_0_S00_AXI_inst : entity work.EggNet_v1_0_S00_AXI
   generic map(
     VECTOR_WIDTH  => DATA_WIDTH,
     INPUT_COUNT   => ((LAYER_HIGHT*LAYER_WIDTH)/16)*L3_IN_CHANNEL_NUMBER,
-    OUTPUT_COUNT  => OUTPUT_COUNT
+    OUTPUT_COUNT  => OUTPUT_COUNT,
+    PATH          => PATH
   ) port map (
     Clk_i     => axis_aclk,
     Resetn_i  => axis_aresetn,	

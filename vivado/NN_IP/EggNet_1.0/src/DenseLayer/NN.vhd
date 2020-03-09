@@ -9,6 +9,7 @@ entity NeuralNetwork is
 	generic(
 		VECTOR_WIDTH : integer := 8;
 		INPUT_COUNT  : integer := 1568;
+    PATH         : string := "../NN_IP/EGGNet_1.0";
 		OUTPUT_COUNT : integer := 10
 	); 
 	port(
@@ -20,7 +21,7 @@ entity NeuralNetwork is
 		Last_o   : out std_logic;
 		Ready_o  : out std_logic;
 		Valid_o  : out std_logic;   
-		Data_o   : out std_logic_vector(VECTOR_WIDTH - 1 downto 0)
+		Data_o   : out std_logic_vector(VECTOR_WIDTH*OUTPUT_COUNT - 1 downto 0)
 	);
 end NeuralNetwork;
 
@@ -30,6 +31,12 @@ architecture Behavioral of NeuralNetwork is
 	constant OUTPUT_COUNT_L1 : integer := 32;
 	constant INPUT_COUNT_L2 : integer := OUTPUT_COUNT_L1;
 	constant OUTPUT_COUNT_L2 : integer := OUTPUT_COUNT;
+  
+  constant DENSE_PATH : string := "/src/DenseLayer/";
+  constant ROM_FILE_L1 : string := PATH & DENSE_PATH & "dense_layer_1.mif"; 
+  constant BIAS_FILE_L1 : string := PATH & DENSE_PATH & "bias_terms_L1.mif";  
+  constant ROM_FILE_L2 : string := PATH & DENSE_PATH & "dense_layer_2.mif"; 
+  constant BIAS_FILE_L2 : string := PATH & DENSE_PATH & "bias_terms_L2.mif";
 
 	signal s_L1_Reset_i, s_L2_Reset_i : std_logic := '0';
 	signal s_L1_Start_i, s_L2_Start_i : std_logic := '0';
@@ -59,7 +66,8 @@ architecture Behavioral of NeuralNetwork is
 	signal data_cnt_L1, data_cnt_L1_next   : integer range 0 to INPUT_COUNT_L1 := 0;
 	signal data_cnt_L2, data_cnt_L2_next   : integer range 0 to INPUT_COUNT_L2 := 0;
 	signal data_cnt_out, data_cnt_out_next : integer range 0 to OUTPUT_COUNT_L2 := 0;
-	signal data_o_cnt : integer range 0 to OUTPUT_COUNT := OUTPUT_COUNT;
+  signal do_output : std_logic;
+	--signal data_o_cnt : integer range 0 to OUTPUT_COUNT := OUTPUT_COUNT;
 	
 begin
     dense_layer_1 : entity work.dense_layer
@@ -67,9 +75,9 @@ begin
 		VECTOR_WIDTH  => VECTOR_WIDTH,
         INPUT_COUNT   => INPUT_COUNT_L1,
         OUTPUT_COUNT  => OUTPUT_COUNT_L1,
-		ROM_FILE      => "dense_layer_1.mif",
+		ROM_FILE      => ROM_FILE_L1,
 		BIAS_WIDTH    => VECTOR_WIDTH*2,
-        BIAS_FILE     => "bias_terms_L1.mif")
+        BIAS_FILE     => BIAS_FILE_L1)
     port map(
 		Resetn_i => Resetn_i,
 		Reset_calculation_i => s_L1_Reset_i,
@@ -88,9 +96,9 @@ begin
 		VECTOR_WIDTH  => VECTOR_WIDTH,
         INPUT_COUNT   => INPUT_COUNT_L2,
         OUTPUT_COUNT  => OUTPUT_COUNT_L2,
-		ROM_FILE      => "dense_layer_2.mif",
+		ROM_FILE      => ROM_FILE_L2,
 		BIAS_WIDTH    => VECTOR_WIDTH*2,
-        BIAS_FILE     => "bias_terms_L2.mif")
+        BIAS_FILE     => BIAS_FILE_L1)
     port map(
 		Resetn_i => Resetn_i,
 		Reset_calculation_i => s_L2_Reset_i,
@@ -130,7 +138,7 @@ begin
 				end if;
 			when ST_WAIT_L2 => 
 				state_temp <= 4;
-				if s_L2_Finished_o = '1' and data_o_cnt = OUTPUT_COUNT then
+				if s_L2_Finished_o = '1' and do_output = '0' then -- and data_o_cnt = OUTPUT_COUNT then
 					state_next <= ST_OUTPUT;
 				end if;
 			when ST_OUTPUT =>
@@ -221,46 +229,70 @@ begin
 		end case;
 	end process;
 	
-	set_output : process(Clk_i, Resetn_i)
+	-- set_output : process(Clk_i, Resetn_i)
+	-- begin
+		-- if Resetn_i = '0' then
+			-- Data_o <= (others => '0');
+			-- Last_o <= '0';
+			-- Valid_o <= '0';
+			-- data_o_cnt <= OUTPUT_COUNT;
+		-- elsif rising_edge(Clk_i) then
+			-- Data_o <= (others => '0');
+			-- Last_o <= '0';
+			-- Valid_o <= '0';
+			-- if state_next = ST_END then
+				-- data_o_cnt <= 0;
+			-- end if;
+			-- if Ready_i = '1' and data_o_cnt /= OUTPUT_COUNT then
+				-- Valid_o <= '1';
+				-- Data_o <= Data_o_reg((data_o_cnt+1)*VECTOR_WIDTH - 1 downto data_o_cnt*VECTOR_WIDTH);
+				-- data_o_cnt <= data_o_cnt + 1;
+				-- if data_o_cnt = OUTPUT_COUNT - 1 then
+					-- Last_o <= '1';
+				-- end if;
+			-- end if;
+		-- end if;
+	-- end process;
+  
+  -- Ouptus whole vector --> serializing is done by AXI-stream master 
+ 	set_output : process(Clk_i, Resetn_i)
 	begin
 		if Resetn_i = '0' then
 			Data_o <= (others => '0');
 			Last_o <= '0';
 			Valid_o <= '0';
-			data_o_cnt <= OUTPUT_COUNT;
+      do_output <= '0';
 		elsif rising_edge(Clk_i) then
 			Data_o <= (others => '0');
 			Last_o <= '0';
 			Valid_o <= '0';
 			if state_next = ST_END then
-				data_o_cnt <= 0;
+				do_output <= '1';
 			end if;
-			if Ready_i = '1' and data_o_cnt /= OUTPUT_COUNT then
+			if Ready_i = '1' then
 				Valid_o <= '1';
-				Data_o <= Data_o_reg((data_o_cnt+1)*VECTOR_WIDTH - 1 downto data_o_cnt*VECTOR_WIDTH);
-				data_o_cnt <= data_o_cnt + 1;
-				if data_o_cnt = OUTPUT_COUNT - 1 then
-					Last_o <= '1';
-				end if;
+				Data_o <= Data_o_reg;
+				Last_o <= '1';
+        do_output <= '0';
 			end if;
 		end if;
-	end process;
+	end process; 
 	
-    sync : process(Clk_i, Resetn_i)
-    begin
-		if Resetn_i = '0' then
-			data_cnt_L1 <= 0;
-			data_cnt_L2 <= 0;
-			data_cnt_out <= 0;
-			state <= ST_IDLE;
-			Data_o_reg <= (others => '0');
-        elsif rising_edge(Clk_i) then
-			state <= state_next;
-			data_cnt_L1 <= data_cnt_L1_next;
-			data_cnt_L2 <= data_cnt_L2_next;
-			data_cnt_out <= data_cnt_out_next;
-			Data_o_reg <= Data_o_reg_next;
-		end if; 
-    end process;
-	
+  sync : process(Clk_i, Resetn_i)
+  begin
+    if Resetn_i = '0' then
+      data_cnt_L1 <= 0;
+      data_cnt_L2 <= 0;
+      data_cnt_out <= 0;
+      state <= ST_IDLE;
+      Data_o_reg <= (others => '0');
+    elsif rising_edge(Clk_i) then
+      state <= state_next;
+      data_cnt_L1 <= data_cnt_L1_next;
+      data_cnt_L2 <= data_cnt_L2_next;
+      data_cnt_out <= data_cnt_out_next;
+      Data_o_reg <= Data_o_reg_next;
+    end if; 
+  end process;
+
 end architecture;

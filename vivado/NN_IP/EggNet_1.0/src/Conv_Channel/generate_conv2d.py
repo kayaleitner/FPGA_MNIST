@@ -75,12 +75,16 @@ if __name__ == '__main__':
     tp_file = open('conv2d_template.vhd', 'r')
     tp_str = tp_file.read()
     entity_str = \
-"\tconvchan{I}" + " : entity " + "ConvChannel{J} " + "port map(\n\
-\t\tClk_i, n_Res_i,\n\
-\t\tValid_i, valid_out({K}), Last_i, last_out({K}), Ready_i, ready_out({K}),\n"+  \
-"\t\tX_i,\n\
-\t\tY_o({I+1}*BIT_WIDTH_OUT - 1 downto {I}*BIT_WIDTH_OUT)\n\
-\t); \n\n"
+"  convchan{I}" + " : entity " + "ConvChannel{J} \n" + \
+"  generic map( \n\
+    BIT_WIDTH_IN => BIT_WIDTH_IN, \n\
+    BIT_WIDTH_OUT => BIT_WIDTH_OUT) \n" + \
+"  port map(\n\
+    Clk_i, n_Res_i,\n\
+    Valid_i, valid_out({K}), Last_i, last_out({K}), Ready_i, ready_out({K}),\n"+  \
+"    X_i,\n\
+    Y_o({I+1}*BIT_WIDTH_OUT - 1 downto {I}*BIT_WIDTH_OUT)\n\
+  ); \n\n"
     i_convchan = 0
     for i in range(0, num_layers):
         use_str = ""

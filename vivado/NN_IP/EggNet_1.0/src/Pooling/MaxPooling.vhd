@@ -58,6 +58,9 @@ begin
 
   linebuffer: for i in 0 to CHANNEL_NUMBER-1 generate
     channelbuffer: entity work.STD_FIFO 
+      generic map (
+      DATA_WIDTH => DATA_WIDTH,
+      FIFO_DEPTH => LAYER_WIDTH+2)
       port map (
         Clk_i   => Layer_clk_i,
         Rst_i  => fifo_srst,
