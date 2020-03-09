@@ -125,11 +125,45 @@ architecture arch_imp of EggNet_v1_0 is
  --attribute X_INTERFACE_INFO of Res_itrp_o : signal is "xilinx.com:signal:interrupt:1.0 irq INTERRUPT";
  --attribute X_INTERFACE_PARAMETER of Res_itrp_o : signal is "SENSITIVITY EDGE_RISING";
 
+	function get_bram_width (data_width : integer) return integer is                                                     
+	begin                                                                   
+		if data_width < 8 then 
+      return 8;
+    else 
+      return data_width;
+    end if;      	                                              
+	end; 
+
   constant L1_BRAM_ADDR_WIDTH		    : integer := 11; -- maximum = 24 
   constant L2_BRAM_ADDR_WIDTH		    : integer := 9; -- maximum = 24 
   constant MEM_CTRL_ADDR_WITDH      : integer := 8; -- don't change
-  constant BRAM_MIN_DATA_WIDTH      : integer := 8; --required since 8 is the minimum data width of a BRAM
+  constant L1_BRAM_DATA_WIDTH      : integer := get_bram_width(DATA_WIDTH*L1_IN_CHANNEL_NUMBER); --required since 8 is the minimum data width of a BRAM
+  constant L2_BRAM_DATA_WIDTH      : integer := get_bram_width(DATA_WIDTH*L2_IN_CHANNEL_NUMBER); --required since 8 is the minimum data width of a BRAM
 --constant M_LAYER_DIM_FEATURES : integer := 1; 
+
+  component blk_mem_layer_2 IS
+    PORT (
+      clka : IN STD_LOGIC;
+      wea : IN STD_LOGIC_VECTOR((L2_BRAM_DATA_WIDTH)/8-1 DOWNTO 0);
+      addra : IN STD_LOGIC_VECTOR(L2_BRAM_ADDR_WIDTH-1 DOWNTO 0);
+      dina : IN STD_LOGIC_VECTOR(L2_BRAM_DATA_WIDTH-1 DOWNTO 0);
+      clkb : IN STD_LOGIC;
+      addrb : IN STD_LOGIC_VECTOR(L2_BRAM_ADDR_WIDTH-1 DOWNTO 0);
+      doutb : OUT STD_LOGIC_VECTOR(L2_BRAM_DATA_WIDTH-1 DOWNTO 0)
+    );
+  END component blk_mem_layer_2;
+  
+  component blk_mem_gen_0 IS
+  PORT (
+    clka : IN STD_LOGIC;
+    wea : IN STD_LOGIC_VECTOR(L1_BRAM_DATA_WIDTH/8-1 DOWNTO 0);
+    addra : IN STD_LOGIC_VECTOR(L1_BRAM_ADDR_WIDTH-1 DOWNTO 0);
+    dina : IN STD_LOGIC_VECTOR(L1_BRAM_DATA_WIDTH-1 DOWNTO 0);
+    clkb : IN STD_LOGIC;
+    addrb : IN STD_LOGIC_VECTOR(L1_BRAM_ADDR_WIDTH-1 DOWNTO 0);
+    doutb : OUT STD_LOGIC_VECTOR(L1_BRAM_DATA_WIDTH-1 DOWNTO 0)
+  );
+  END component blk_mem_gen_0;
 
   signal l1_m_tvalid            : std_logic;
   signal l1_m_tdata_1           : std_logic_vector((DATA_WIDTH*L1_IN_CHANNEL_NUMBER)-1 downto 0);
@@ -150,8 +184,8 @@ architecture arch_imp of EggNet_v1_0 is
   signal l1_bram_pa_wea         : std_logic_vector(((DATA_WIDTH*L1_IN_CHANNEL_NUMBER)/8)-1  downto 0);
   signal l1_bram_pb_addr        : std_logic_vector(L1_BRAM_ADDR_WIDTH-1 downto 0);
   signal l1_bram_pb_data_rd     : std_logic_vector((DATA_WIDTH*L1_IN_CHANNEL_NUMBER)-1 downto 0);       
-  signal l1_bram_pa_data_wr_8   : std_logic_vector(BRAM_MIN_DATA_WIDTH-1 downto 0);
-  signal l1_bram_pb_data_rd_8   : std_logic_vector(BRAM_MIN_DATA_WIDTH-1 downto 0);
+  signal l1_bram_pa_data_wr_8   : std_logic_vector(L1_BRAM_DATA_WIDTH-1 downto 0);
+  signal l1_bram_pb_data_rd_8   : std_logic_vector(L1_BRAM_DATA_WIDTH-1 downto 0);
   
   signal l1_s_conv_data_1       : std_logic_vector(((DATA_WIDTH*L1_IN_CHANNEL_NUMBER) - 1) downto 0);
   signal l1_s_conv_data_2       : std_logic_vector(((DATA_WIDTH*L1_IN_CHANNEL_NUMBER) - 1) downto 0);
@@ -401,7 +435,7 @@ EggNet_v1_0_S00_AXI_inst : entity work.EggNet_v1_0_S00_AXI
       Layer_properties_o      => layer_properties(1),
       Status_o                => status(1));
       
-  L1_bram : entity work.blk_mem_gen_0
+  L1_bram : blk_mem_gen_0
   port map (clka  => l1_bram_clk,
             wea   => l1_bram_pa_wea,
             addra => l1_bram_pa_addr,
@@ -413,7 +447,7 @@ EggNet_v1_0_S00_AXI_inst : entity work.EggNet_v1_0_S00_AXI
 
 -- required because minimum DATA_WIDTH of BRAM is 8
 MAP_2_8bit: if DATA_WIDTH < 8 generate
-  l1_bram_pa_data_wr_8(BRAM_MIN_DATA_WIDTH-1 downto DATA_WIDTH) <= (others => '0');
+  l1_bram_pa_data_wr_8(L1_BRAM_DATA_WIDTH-1 downto DATA_WIDTH) <= (others => '0');
   l1_bram_pa_data_wr_8(DATA_WIDTH-1 downto 0) <= l1_bram_pa_data_wr; 
   l1_bram_pb_data_rd <= l1_bram_pb_data_rd_8(DATA_WIDTH-1 downto 0);
 end generate MAP_2_8bit;  
@@ -563,7 +597,7 @@ end generate NO_MAP_2_8bit;
       Layer_properties_o      => layer_properties(2),
       Status_o                => status(2));
       
-  L2_bram : entity work.blk_mem_layer_2
+  L2_bram : blk_mem_layer_2
   port map (clka  => l2_bram_clk,
             wea   => l2_bram_pa_wea,
             addra => l2_bram_pa_addr,

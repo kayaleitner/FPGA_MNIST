@@ -2,7 +2,7 @@
 proc init_gui { IPINST } {
   ipgui::add_param $IPINST -name "Component_Name"
   #Adding Page
-  set Page_0 [ipgui::add_page $IPINST -name "Page 0"]
+  set Page_0 [ipgui::add_page $IPINST -name "Page 0" -display_name {AXI}]
   set C_S00_AXIS_TDATA_WIDTH [ipgui::add_param $IPINST -name "C_S00_AXIS_TDATA_WIDTH" -parent ${Page_0} -widget comboBox]
   set_property tooltip {AXI4Stream sink: Data Width} ${C_S00_AXIS_TDATA_WIDTH}
   set C_S00_AXI_DATA_WIDTH [ipgui::add_param $IPINST -name "C_S00_AXI_DATA_WIDTH" -parent ${Page_0} -widget comboBox]
@@ -15,6 +15,18 @@ proc init_gui { IPINST } {
   set_property tooltip {Width of S_AXIS address bus. The slave accepts the read and write addresses of width C_M_AXIS_TDATA_WIDTH.} ${C_M00_AXIS_TDATA_WIDTH}
   set C_M00_AXIS_START_COUNT [ipgui::add_param $IPINST -name "C_M00_AXIS_START_COUNT" -parent ${Page_0}]
   set_property tooltip {Start count is the number of clock cycles the master will wait before initiating/issuing any transaction.} ${C_M00_AXIS_START_COUNT}
+
+  #Adding Page
+  set Neural_Network [ipgui::add_page $IPINST -name "Neural Network"]
+  ipgui::add_param $IPINST -name "LAYER_HIGHT" -parent ${Neural_Network}
+  ipgui::add_param $IPINST -name "LAYER_WIDTH" -parent ${Neural_Network}
+  ipgui::add_param $IPINST -name "DATA_WIDTH" -parent ${Neural_Network}
+  ipgui::add_param $IPINST -name "L1_IN_CHANNEL_NUMBER" -parent ${Neural_Network}
+  ipgui::add_param $IPINST -name "L2_IN_CHANNEL_NUMBER" -parent ${Neural_Network}
+  ipgui::add_param $IPINST -name "L3_IN_CHANNEL_NUMBER" -parent ${Neural_Network}
+  ipgui::add_param $IPINST -name "MEM_CTRL_NUMBER" -parent ${Neural_Network}
+  ipgui::add_param $IPINST -name "OUTPUT_COUNT" -parent ${Neural_Network}
+  ipgui::add_param $IPINST -name "PATH" -parent ${Neural_Network}
 
 
 }
@@ -79,6 +91,24 @@ proc update_PARAM_VALUE.MEM_CTRL_NUMBER { PARAM_VALUE.MEM_CTRL_NUMBER } {
 
 proc validate_PARAM_VALUE.MEM_CTRL_NUMBER { PARAM_VALUE.MEM_CTRL_NUMBER } {
 	# Procedure called to validate MEM_CTRL_NUMBER
+	return true
+}
+
+proc update_PARAM_VALUE.OUTPUT_COUNT { PARAM_VALUE.OUTPUT_COUNT } {
+	# Procedure called to update OUTPUT_COUNT when any of the dependent parameters in the arguments change
+}
+
+proc validate_PARAM_VALUE.OUTPUT_COUNT { PARAM_VALUE.OUTPUT_COUNT } {
+	# Procedure called to validate OUTPUT_COUNT
+	return true
+}
+
+proc update_PARAM_VALUE.PATH { PARAM_VALUE.PATH } {
+	# Procedure called to update PATH when any of the dependent parameters in the arguments change
+}
+
+proc validate_PARAM_VALUE.PATH { PARAM_VALUE.PATH } {
+	# Procedure called to validate PATH
 	return true
 }
 
@@ -204,5 +234,15 @@ proc update_MODELPARAM_VALUE.L3_IN_CHANNEL_NUMBER { MODELPARAM_VALUE.L3_IN_CHANN
 proc update_MODELPARAM_VALUE.MEM_CTRL_NUMBER { MODELPARAM_VALUE.MEM_CTRL_NUMBER PARAM_VALUE.MEM_CTRL_NUMBER } {
 	# Procedure called to set VHDL generic/Verilog parameter value(s) based on TCL parameter value
 	set_property value [get_property value ${PARAM_VALUE.MEM_CTRL_NUMBER}] ${MODELPARAM_VALUE.MEM_CTRL_NUMBER}
+}
+
+proc update_MODELPARAM_VALUE.OUTPUT_COUNT { MODELPARAM_VALUE.OUTPUT_COUNT PARAM_VALUE.OUTPUT_COUNT } {
+	# Procedure called to set VHDL generic/Verilog parameter value(s) based on TCL parameter value
+	set_property value [get_property value ${PARAM_VALUE.OUTPUT_COUNT}] ${MODELPARAM_VALUE.OUTPUT_COUNT}
+}
+
+proc update_MODELPARAM_VALUE.PATH { MODELPARAM_VALUE.PATH PARAM_VALUE.PATH } {
+	# Procedure called to set VHDL generic/Verilog parameter value(s) based on TCL parameter value
+	set_property value [get_property value ${PARAM_VALUE.PATH}] ${MODELPARAM_VALUE.PATH}
 }
 
