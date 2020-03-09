@@ -73,15 +73,13 @@ The network was reduced to fixed point integers defined by the equation
 	v = Q \cdot 2 ^{-m}
 \end{equation}
 where both $Q$ and $m$ are integers and $v$ is the real value representation of the fixed point number. 
-For our network implementation we chose $m=$ and a total bitlength for $Q$ of $8$. This showed acceptable
-results in our tests. This quantization can further be adjusted for each layer or even, for convolutional layer, for each channel
-separately but optimization in this way were beyond the scope of this project.
+For our network implementation we chose a vairable fraction length for each layer and a total bitlength for $Q$ of $8$. 
+This quantization can further be adjusted for each convolutional channel separately but optimization in this way were beyond the scope of this project.
 The multiplication of two fixed point integers is trivial, because the product for two real values $v_1$ and $v_2$ is 
 \begin{equation}
-	v_1 v_2 = \text{right-shift}\left( Q_1 Q_2 \cdot 2^{-(m+m)} \right)
+	v_1 v_2 = \text{right-shift}\left( Q_1 Q_2 \cdot 2^{-(m+m)} ; m\right)
 \end{equation}
-where 
-
+In our tests a quantization with $8$ bit fixedpoint integers and even $4$ bit integers showed only a small drop in accuracy of around $1 \%$.
 \todo{Add Histogram}
 
 
