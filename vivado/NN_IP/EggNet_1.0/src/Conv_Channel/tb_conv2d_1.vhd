@@ -26,12 +26,14 @@ architecture beh of tb_conv2d_1 is
 	constant INPUT_ARRAY_SIZE : integer := IMG_WIDTH * IMG_HEIGHT * BATCH_SIZE;
 	constant POOLING_OUTPUT_ARRAY_SIZE : integer := (IMG_WIDTH * IMG_HEIGHT * BATCH_SIZE)/4;
 	constant SERIALIZER_OUTPUT_ARRAY_SIZE : integer := POOLING_OUTPUT_ARRAY_SIZE * OUTPUT_CHANNELS;
+	constant OUTPUT_ARRAY_SIZE : integer := BATCH_SIZE * OUTPUT_COUNT;
 	
 	type t_pixel_array is array (0 to INPUT_ARRAY_SIZE - 1) of integer;
 	type t_pixel_array_pool is array (0 to POOLING_OUTPUT_ARRAY_SIZE - 1) of integer;
 	type t_kernel_array is array (0 to KERNEL_SIZE - 1) of t_pixel_array;
 	type t_channel_array is array(0 to INPUT_CHANNELS - 1) of t_kernel_array;
 	type t_serializer_array is array(0 to SERIALIZER_OUTPUT_ARRAY_SIZE - 1) of integer;
+	type t_output_array is array(0 to OUTPUT_ARRAY_SIZE - 1) of integer;
 	
 	signal s_Clk_i, s_n_Res_i, s_C1_Valid_i, s_C1_Valid_o : std_logic;
 	signal s_C1_Last_o, s_C1_Last_i, s_C1_Ready_o : std_logic;
@@ -168,8 +170,8 @@ begin
 	
 	get_output_conv2d : process(s_Clk_i, conv2d_done)
 		variable K : integer := 0;
-		type t_output_array is array(0 to OUTPUT_CHANNELS - 1) of t_pixel_array;
-		variable output : t_output_array;
+		type t_conv2d_output_array is array(0 to OUTPUT_CHANNELS - 1) of t_pixel_array;
+		variable output : t_conv2d_output_array;
 		variable output_line : line;
         variable file_name_out : string(1 to 25) := "tmp/conv2d_1_output00.txt";
 	begin
@@ -232,6 +234,27 @@ begin
 			file_open(kernel_file, file_name_out, write_mode);
 			for I in 0 to SERIALIZER_OUTPUT_ARRAY_SIZE - 1 loop
 				write(output_line, output(I));
+				writeline(kernel_file, output_line);
+			end loop;
+			file_close(kernel_file);
+		end if;	
+	end process;
+	
+	get_final_output : process(s_Clk_i, sim_ended)
+		variable K : integer := 0;
+        variable file_name_out : string(1 to 14) := "tmp/output.txt";
+		variable output_line : line;
+		variable output : t_output_array;
+	begin
+		if s_NN_Valid_o = '1' and rising_edge(s_Clk_i) then
+			for I in 0 to OUTPUT_COUNT - 1 loop
+				output(K*OUTPUT_COUNT + I) := to_integer(unsigned(s_NN_Data_o((I+1)*BIT_WIDTH_IN - 1 downto I*BIT_WIDTH_IN)));
+			end loop;
+			K := K + 1;
+		elsif sim_ended = '1' then
+			file_open(kernel_file, file_name_out, write_mode);
+			for J in 0 to OUTPUT_ARRAY_SIZE - 1 loop
+				write(output_line, output(J));
 				writeline(kernel_file, output_line);
 			end loop;
 			file_close(kernel_file);
