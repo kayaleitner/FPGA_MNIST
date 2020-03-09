@@ -9,59 +9,84 @@ end tb_AXIstreamMaster;
 
 architecture tb of tb_AXIstreamMaster is
   constant ARRAY_SIZE : integer := 100;
-  constant OUTPUT_SIZE : integer := 10;
+  constant OUTPUT_NUMBER : integer := 10;
   constant DATA_WIDTH : integer := 8;
   constant AXIS_SIZE : integer := 32;
   constant DATA_PER_STIM : integer := AXIS_SIZE/DATA_WIDTH;
   
-  type DATA_ARR : IS ARRAY(ARRAY_SIZE downto 0) OF std_logic_vector((DATA_WIDTH)-1 downto 0); 
-  type STIM_ARR : IS ARRAY(ARRAY_SIZE downto 0) OF std_logic_vector((DATA_WIDTH*OUTPUT_SIZE)-1 downto 0); 
-
   constant TbPeriod       : time := 10 ns;
-  
+ 
   signal TbClock          : std_logic := '0';
   signal TbSimEnded       : std_logic := '0';
+ 
+ 
+  type DATA_ARR IS ARRAY(ARRAY_SIZE-1 downto 0) OF std_logic_vector(DATA_WIDTH-1 downto 0); 
+  type STIM_ARR IS ARRAY(ARRAY_SIZE/OUTPUT_NUMBER-1 downto 0) OF std_logic_vector(DATA_WIDTH*OUTPUT_NUMBER-1 downto 0); 
   
   signal data             : DATA_ARR; 
   signal stim_data        : STIM_ARR; 
-  signal new_data         : std_logic_vector; 
+  signal new_data         : std_logic; 
   signal test_datacounter : integer;
   
   signal layer_clk        : std_logic;
   signal layer_aresetn    : std_logic;
   signal layer_tvalid     : std_logic;
-  signal layer_tdata      : std_logic_vector((DATA_WIDTH*OUTPUT_SIZE)-1 downto 0); 
+  signal layer_tdata      : std_logic_vector((DATA_WIDTH*OUTPUT_NUMBER)-1 downto 0); 
+  signal layer_tkeep      : std_logic_vector((DATA_WIDTH*OUTPUT_NUMBER)/8-1 downto 0); 
   signal layer_tlast      : std_logic;
   signal layer_tready     : std_logic;
   signal interrupt        : std_logic;
   signal m_axis_tvalid    : std_logic;
-  signal m_axis_tdata	    : std_logic_vector(AXI_SIZE-1 downto 0);
+  signal m_axis_tdata	    : std_logic_vector(AXIS_SIZE-1 downto 0);
   signal m_axis_tkeep	    : std_logic_vector(AXIS_SIZE/8-1 downto 0);
   signal m_axis_tlast	    : std_logic;
   signal m_axis_tready    : std_logic;
+  signal data_ready       :std_logic;
 
 begin
 
+  CreateData: process
+  begin 
+    for i in 0 to ARRAY_SIZE-1 loop
+      data(i) <= std_logic_vector(to_unsigned(i,DATA_WIDTH));
+    end loop;
+    data_ready <= '1';
+    wait;
+  end process;   
+
   CreateStimuliData: process
   begin 
-    for i in 0 to ARRAY_SIZE loop
-      data(i) <= std_logic_vector(to_unsigned(i,OUTPUT_SIZE*DATA_WIDTH));
-    end loop;
-    for i in 0 to ARRAY_SIZE/DATA_PER_STIM loop
-      for j in DATA_PER_STIM loop 
-        stim_data(i)((j+1)*DATA_WIDTH-1 downto j*DATA_WIDTH) <= data(DATA_PER_STIM*i+j);
+    wait for 10 ps; 
+    for i in 0 to ARRAY_SIZE/OUTPUT_NUMBER-1 loop
+      for j in 0 to OUTPUT_NUMBER-1 loop 
+        stim_data(i)((j+1)*DATA_WIDTH-1 downto j*DATA_WIDTH) <= data(OUTPUT_NUMBER*i+j);
+        report "index " & integer'image(OUTPUT_NUMBER*i+j);
+        report "data " & integer'image(to_integer(unsigned(data(OUTPUT_NUMBER*i+j))));
       end loop;
+      report "Stim data " & integer'image(to_integer(unsigned(stim_data(i))));
     end loop;
-  end process;   
+    wait;
+  end process; 
   
   Stimuli: process
   begin 
     layer_aresetn <= '0';
     new_data <= '0';
+    m_axis_tready <= '1';
     wait for 20 ns; 
-    layer_aresetn <= '1'; 
-    wait for 20 ns; 
+    layer_aresetn <= '1';
+    wait for 50 ns; 
     new_data <= '1'; 
+    wait for 10 ns; 
+    new_data <= '0'; 
+    wait for 100 ns;
+    m_axis_tready <= '0';
+    wait for 20 ns;
+    m_axis_tready <= '1';
+    wait for 20 ns;
+    m_axis_tready <= '0';   
+    wait for 20 ns;
+    m_axis_tready <= '1';    
     wait;
   end process;
   
@@ -74,8 +99,7 @@ begin
 
   AXI_master: process(layer_clk,layer_aresetn)
     variable data_counter : integer;
-    variable block_counter : integer;
-    variable new_data : std_logic;
+    variable package_active : std_logic;
   begin
     if layer_aresetn = '0' then
       layer_tdata <= (others => '0');
@@ -83,15 +107,17 @@ begin
       layer_tvalid <= '0';
       layer_tlast <= '0';
 
-      new_data := '0';
       data_counter := 0;
-      block_counter := 0;
+      package_active := '0';
     elsif rising_edge(layer_clk) then
-      if new_data = '1' then
+      if package_active = '1' then
         layer_tvalid <= '1';
         layer_tkeep <= (others => '1');
         if layer_tready = '1'  and layer_tvalid = '1' then
           data_counter := data_counter + 1;
+          layer_tlast <= '0';
+        else 
+          layer_tlast <= '1';
         end if;
         layer_tdata <= stim_data(data_counter);
 
@@ -101,17 +127,13 @@ begin
           layer_tkeep <= (others => '0');
         end if;
       end if;
-      if start_package_l1 = '1' then
-        new_data := '1';
-        data_counter := BLOCK_LENGTH_L1*block_counter;
-        layer_tlast <= '0';
-      elsif data_counter >= BLOCK_LENGTH_L1*(block_counter+1)-4 then 
-        new_data := '0';
-        block_counter := block_counter +1;
+      if new_data = '1' then
+        package_active := '1';
         data_counter := 0;
-        layer_tlast <= '1';
+      elsif data_counter = ARRAY_SIZE/OUTPUT_NUMBER-1 then 
+        package_active := '0';
+        data_counter := 0;
       elsif layer_tready = '1' then 
-        layer_tlast <= '0';
       end if;
     end if;
     test_datacounter <= data_counter;
