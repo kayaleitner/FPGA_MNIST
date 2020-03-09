@@ -23,11 +23,13 @@ architecture beh of tb_conv2d_1 is
 	constant BATCH_SIZE : integer := 3;
 	constant INPUT_ARRAY_SIZE : integer := IMG_WIDTH * IMG_HEIGHT * BATCH_SIZE;
 	constant POOLING_OUTPUT_ARRAY_SIZE : integer := (IMG_WIDTH * IMG_HEIGHT * BATCH_SIZE)/4;
+	constant SERIALIZER_OUTPUT_ARRAY_SIZE : integer := POOLING_OUTPUT_ARRAY_SIZE * OUTPUT_CHANNELS;
 	
 	type t_pixel_array is array (0 to INPUT_ARRAY_SIZE - 1) of integer;
 	type t_pixel_array_pool is array (0 to POOLING_OUTPUT_ARRAY_SIZE - 1) of integer;
 	type t_kernel_array is array (0 to KERNEL_SIZE - 1) of t_pixel_array;
 	type t_channel_array is array(0 to INPUT_CHANNELS - 1) of t_kernel_array;
+	type t_serializer_array is array(0 to SERIALIZER_OUTPUT_ARRAY_SIZE - 1) of integer;
 	
 	signal s_Clk_i, s_n_Res_i, s_C1_Valid_i, s_C1_Valid_o : std_logic;
 	signal s_C1_Last_o, s_C1_Last_i, s_C1_Ready_o : std_logic;
@@ -45,6 +47,7 @@ architecture beh of tb_conv2d_1 is
 	signal sim_ended : std_logic := '0';
 	signal conv2d_done : std_logic := '0';
 	signal pool_done : std_logic := '0';
+	signal serialize_done : std_logic := '0';
 	
 begin
   
@@ -179,7 +182,6 @@ begin
         variable file_name_out : string(1 to 26) := "tmp/pooling_1_output00.txt";
 	begin
 		if s_Pool_Valid_o = '1' and rising_edge(s_Clk_i) then
-			--report integer'image(K);
 			for I in 0 to OUTPUT_CHANNELS - 1 loop
 				output(I)(K) := to_integer(unsigned(s_Pool_Data_o((I+1)*BIT_WIDTH_OUT - 1 downto I*BIT_WIDTH_OUT)));
 			end loop;
@@ -195,6 +197,25 @@ begin
 				end loop;
 				file_close(kernel_file);
 			end loop;
+		end if;	
+	end process;
+	
+	get_output_serializer : process(s_Clk_i, serialize_done)
+		variable K : integer := 0;
+		variable output : t_serializer_array;
+		variable output_line : line;
+        variable file_name_out : string(1 to 25) := "tmp/serializer_output.txt";
+	begin
+		if s_Serializer_Valid_o = '1' and rising_edge(s_Clk_i) then
+			output(K) := to_integer(unsigned(s_Serializer_Data_o));
+			K := K + 1;
+		elsif serialize_done = '1' then
+			file_open(kernel_file, file_name_out, write_mode);
+			for I in 0 to SERIALIZER_OUTPUT_ARRAY_SIZE - 1 loop
+				write(output_line, output(I));
+				writeline(kernel_file, output_line);
+			end loop;
+			file_close(kernel_file);
 		end if;	
 	end process;
 
@@ -251,15 +272,19 @@ begin
 		s_C1_Last_i <= '0';
 		s_C1_Valid_i <= '0';
 		s_C1_X_i <= (others => '0');
-		for L in 0 to 100 loop
+		for L in 0 to 20 loop
 			wait until rising_edge(s_Clk_i);
 		end loop;
 		conv2d_done <= '1';
-		for L in 0 to 200 loop
+		for L in 0 to 20 loop
 			wait until rising_edge(s_Clk_i);
 		end loop;
 		pool_done <= '1';
-		for L in 0 to 100 loop
+		for L in 0 to 20 loop
+			wait until rising_edge(s_Clk_i);
+		end loop;
+		serialize_done <= '1';
+		for L in 0 to 20 loop
 			wait until rising_edge(s_Clk_i);
 		end loop;
 		sim_ended <= '1';
