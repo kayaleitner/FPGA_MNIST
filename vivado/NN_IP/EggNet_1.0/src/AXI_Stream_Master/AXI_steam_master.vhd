@@ -58,10 +58,10 @@ architecture implementation of AXI_steam_master is
 
   constant REMAINDER_SIZE : integer := get_remainder(DATA_WIDTH,OUTPUT_NUMBER,C_M_axis_tdata_o_WIDTH); 
   constant CYC_PER_OUTPUT : integer := (DATA_WIDTH*OUTPUT_NUMBER-1)/C_M_axis_tdata_o_WIDTH+1; -- DATA_WIDTH*OUTPUT_NUMBER-1 because in case of DATA_WIDTH*OUTPUT_NUMBER = C_M_axis_tdata_o_WIDTH counter size shall be 0
-  constant REMAINDER_BYTES_KEEP : std_logic_vector(DATA_WIDTH*OUTPUT_NUMBER/8-1 downto 0) := std_logic_vector(to_unsigned(2**((REMAINDER_SIZE-1)/8+1)-1,DATA_WIDTH*OUTPUT_NUMBER/8));
+  constant REMAINDER_BYTES_KEEP : std_logic_vector(C_M_axis_tdata_o_WIDTH/8-1 downto 0) := std_logic_vector(to_unsigned(2**((REMAINDER_SIZE-1)/8+1)-1,C_M_axis_tdata_o_WIDTH/8));
 
 
-  type STATES is (START,SEND_DATA, WAIT_FOR_READY);   
+  type STATES is (INIT,START,SEND_DATA, WAIT_FOR_READY);   
   
   signal state : STATES;
   signal next_state : STATES;
@@ -69,6 +69,7 @@ architecture implementation of AXI_steam_master is
   signal data_buf : std_logic_vector(DATA_WIDTH*OUTPUT_NUMBER-1 downto 0); 
   signal last_buf : std_logic;
   signal m_last   : std_logic;
+  signal test_data_cnt  :integer;
 
 begin
 -- I/O Connections assignments
@@ -84,23 +85,32 @@ begin
     M_axis_tvalid_o	<= '0';
     M_axis_tdata_o <= (others => '0');
     M_axis_tkeep_o <= (others => '0');
+    data_buf <= (others => '0');
     m_last <= '0';    
     Layer_tready_o <= '0';
     next_state <= START;
-    state <= START;
+    state <= INIT;
     last_buf <= '0';
-
-  elsif (rising_edge (Clk_i)) then     
+    test_data_cnt <= 0;
+    data_cnt := 0;
+  elsif (rising_edge (Clk_i)) then 
+    
     case state is 
+      when INIT => 
+        Layer_tready_o <= '1';
+        M_axis_tvalid_o	<= '0';
+        M_axis_tdata_o <= (others => '0');
+        M_axis_tkeep_o <= (others => '0');        
+        state <= START;
+        data_cnt := 0;
       when START => 
         if Layer_tvalid_i = '1' then 
           data_buf <= Layer_tdata_i;
-          data_cnt := data_cnt+1;
           M_axis_tvalid_o <= '1';
           last_buf <= Layer_tlast_i;
-          if data_cnt = CYC_PER_OUTPUT then 
+          if data_cnt = CYC_PER_OUTPUT-1 then 
             M_axis_tdata_o <= (others => '0'); -- set rest of the vector to 0 --> have to be before M_axis_tdata_o(REMAINDER_SIZE-1 downto 0) <= Layer_tdata_i... 
-            M_axis_tdata_o(REMAINDER_SIZE-1 downto 0) <= Layer_tdata_i(Layer_tdata_i'left downto Layer_tdata_i'left-REMAINDER_SIZE);
+            M_axis_tdata_o(REMAINDER_SIZE-1 downto 0) <= Layer_tdata_i(Layer_tdata_i'left downto Layer_tdata_i'length-REMAINDER_SIZE);
             M_axis_tkeep_o <= REMAINDER_BYTES_KEEP;
             m_last <= Layer_tlast_i;
             if M_axis_tready_i = '1' then 
@@ -113,6 +123,7 @@ begin
             end if; 
             data_cnt := 0;            
           else 
+            data_cnt := data_cnt+1;
             M_axis_tdata_o <= Layer_tdata_i(C_M_axis_tdata_o_WIDTH-1 downto 0);
             Layer_tready_o <= '0';
             m_last <= '0';
@@ -127,27 +138,31 @@ begin
           m_last <= '0';
           M_axis_tvalid_o <= '0';
           Layer_tready_o <= '1';
-          data_cnt := 0;
         end if; 
       when SEND_DATA =>
         M_axis_tvalid_o <= '1';
         if data_cnt = CYC_PER_OUTPUT-1 then 
           M_axis_tdata_o <= (others => '0'); -- set rest of the vector to 0 --> have to be before M_axis_tdata_o(REMAINDER_SIZE-1 downto 0) <= Layer_tdata_i... 
-          M_axis_tdata_o(REMAINDER_SIZE-1 downto 0) <= Layer_tdata_i(Layer_tdata_i'left downto Layer_tdata_i'left-REMAINDER_SIZE);
+          M_axis_tdata_o(REMAINDER_SIZE-1 downto 0) <= data_buf(data_buf'left downto data_buf'length-REMAINDER_SIZE);
           M_axis_tkeep_o <= REMAINDER_BYTES_KEEP;
-          Layer_tready_o <= '1';
           m_last <= last_buf;
-          state <= START; 
-          data_cnt := 0;
+          if M_axis_tready_i = '1' then 
+            state <= START; 
+            data_cnt := 0;
+            Layer_tready_o <= '1';
+          end if;  
         else             
-          M_axis_tdata_o <= data_buf((data_cnt+1)*C_M_axis_tdata_o_WIDTH downto data_cnt*C_M_axis_tdata_o_WIDTH);
-        end if;
-        if M_axis_tready_i = '1' then 
-          data_cnt := data_cnt+1;
+          M_axis_tdata_o <= data_buf((data_cnt+1)*C_M_axis_tdata_o_WIDTH-1 downto data_cnt*C_M_axis_tdata_o_WIDTH);
+          if M_axis_tready_i = '1' then 
+            data_cnt := data_cnt+1;
+          end if;        
         end if;
       when WAIT_FOR_READY => 
         if M_axis_tready_i = '1' then
           state <= next_state;
+          if next_state = START then 
+            Layer_tready_o <= '1';
+          end if;
         end if;
       when others => 
         M_axis_tvalid_o	<= '0';
@@ -156,6 +171,7 @@ begin
         m_last <= '0';     
         state <= START; 
     end case;   
+    test_data_cnt <= data_cnt;
   end if;      
 end process;
 
