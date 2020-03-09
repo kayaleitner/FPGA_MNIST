@@ -47,9 +47,8 @@ dl1_bias_file.close()
 
 permutation = [None]*DL1_INPUT_NEURONS
 
-for j in range(0, INPUT_IMAGE_SIZE):
-    for i in range(0, CL2_OUTPUT_CHANNELS):
-        permutation[j*CL2_OUTPUT_CHANNELS + i] = i*INPUT_IMAGE_SIZE + j
+for i in range(0, DL1_INPUT_NEURONS):
+    permutation[i] = int(i/INPUT_IMAGE_SIZE) + (i % INPUT_IMAGE_SIZE)*CL2_OUTPUT_CHANNELS
 idx = np.empty_like(permutation)
 idx[permutation] = np.arange(len(permutation))
 dl1_weights_permutated = dl1_weights[idx,:]
@@ -68,7 +67,10 @@ dl1_mif_file = open(dl1_mif_file_name, 'w')
 for i in range(0, DL1_INPUT_NEURONS):
     line = ""
     for j in reversed(range(0, DL1_OUTPUT_NEURONS)):
-        binstr = get_binstr(dl1_weights[i][j])
+        #Use this if using the normal NN testbench
+        #binstr = get_binstr(dl1_weights[i][j])
+        #Use this if using the combined conv2d1 testbench started from tb_convhcannel_run_sim.py
+        binstr = get_binstr(dl1_weights_permutated[i][j])
         line += binstr
     dl1_mif_file.write(line + "\n")
         

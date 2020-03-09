@@ -8,6 +8,7 @@ use work.kernel_pkg.all;
 use work.Conv2D_1;
 use work.MaxPooling;
 use work.Serializer;
+use work.NeuralNetwork;
 
 entity tb_conv2d_1 is
 end tb_conv2d_1;
@@ -17,6 +18,7 @@ architecture beh of tb_conv2d_1 is
 	constant BIT_WIDTH_OUT : integer := 8;
 	constant INPUT_CHANNELS : integer := 16;
 	constant OUTPUT_CHANNELS : integer := 24;
+	constant OUTPUT_COUNT : integer := 10;
 	constant CLK_PERIOD : time := 10 ns; -- 100MHz
 	constant IMG_WIDTH : integer := 14;
 	constant IMG_HEIGHT : integer := 14;
@@ -40,6 +42,8 @@ architecture beh of tb_conv2d_1 is
 	signal s_Serializer_Data_o : std_logic_vector(BIT_WIDTH_OUT-1 downto 0);
 	signal s_Serializer_Ready_o, s_Serializer_Valid_o, s_Serializer_Last_o : std_logic;
 	signal s_Serializer_Ready_i : std_logic;
+	signal s_NN_Data_o : std_logic_vector((BIT_WIDTH_OUT*OUTPUT_COUNT)-1 downto 0);
+	signal s_NN_Valid_o, s_NN_Ready_o, s_NN_Last_o : std_logic;
 	
 	file kernel_file : text;
 	constant char_num : string(1 to 10) := "0123456789";
@@ -101,29 +105,44 @@ begin
 		Clk_i => s_Clk_i,
 		n_Res_i => s_n_Res_i,
 		Valid_i => s_Pool_Valid_o,
-		Ready_i => s_Serializer_Ready_i,
+		Ready_i => s_NN_Ready_o,
 		Valid_o => s_Serializer_Valid_o,
 		Ready_o => s_Serializer_Ready_o,
 		Data_i => s_Pool_Data_o,
 		Data_o => s_Serializer_Data_o
 	);
+	
+	uit_3 : entity work.NeuralNetwork
+	generic map(
+		PATH => "../../"
+	) port map(
+		Clk_i => s_Clk_i,
+		Resetn_i => s_n_Res_i,
+		Valid_i => s_Serializer_Valid_o,
+		Data_i => s_Serializer_Data_o,
+		Valid_o => s_NN_Valid_o,
+		Data_o => s_NN_Data_o,
+		Ready_i => '1',
+		Ready_o => s_NN_Ready_o,
+		Last_o => s_NN_Last_o
+	);
   
-	set_ready : process(s_Clk_i)
-		variable seed1 : positive := 1;
-		variable seed2 : positive := 1;
-		variable x : real;
-		variable y : integer;
-	begin
-		if rising_edge(s_Clk_i) then
-			uniform(seed1, seed2, x);
-			y := integer(floor(x * 2.0));
-			if y = 0 then
-				s_Serializer_Ready_i <= '1';
-			else
-				s_Serializer_Ready_i <= '0';
-			end if;
-		end if;
-	end process;
+	-- set_ready : process(s_Clk_i)
+		-- variable seed1 : positive := 1;
+		-- variable seed2 : positive := 1;
+		-- variable x : real;
+		-- variable y : integer;
+	-- begin
+		-- if rising_edge(s_Clk_i) then
+			-- uniform(seed1, seed2, x);
+			-- y := integer(floor(x * 2.0));
+			-- if y = 0 then
+				-- s_Serializer_Ready_i <= '1';
+			-- else
+				-- s_Serializer_Ready_i <= '0';
+			-- end if;
+		-- end if;
+	-- end process;
   
 	-- Generates the clock signal
 	clkgen : process

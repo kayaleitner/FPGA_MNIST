@@ -172,7 +172,7 @@ for i in range(0, CO_L1):
         print("Simulation and emulation output not the same for pool0, channel " + str(i))
         exit()
 
-print("Simulation and emulation output the same for pool1")
+print("Simulation and emulation output the same for pool0")
 
 # %% Get input for layer 2 from output of layer 1
 file_name_in = "tmp/pool_output{I}.txt"
@@ -322,6 +322,13 @@ dl1_weights_file = open(denselayer_1_file_name, 'r')
 dl1_weights = np.array(list(np.loadtxt(dl1_weights_file, dtype=np.int8))).reshape((DL1_INPUT_NEURONS, DL1_OUTPUT_NEURONS))
 dl1_weights_file.close()
 
+permutation = [None]*DL1_INPUT_NEURONS
+for i in range(0, DL1_INPUT_NEURONS):
+    permutation[i] = int(i/BLOCK_SIZE) + (i % BLOCK_SIZE)*CO_L2
+idx = np.empty_like(permutation)
+idx[permutation] = np.arange(len(permutation))
+dl1_weights_permutated = dl1_weights[idx,:]
+
 dl2_weights_file = open(denselayer_2_file_name, 'r')
 dl2_weights = np.array(list(np.loadtxt(dl2_weights_file, dtype=np.int8))).reshape((DL2_INPUT_NEURONS, DL2_OUTPUT_NEURONS))
 dl2_weights_file.close()
@@ -330,12 +337,24 @@ file_nn = open("tmp/nn_input.txt", "r")
 denselayer_input = np.loadtxt(file_nn, dtype=np.int32)
 file_nn.close()
 
+file_serializer = open("tmp/serializer_output.txt", "r")
+serializer_output = np.loadtxt(file_serializer, dtype=np.int32)
+file_serializer.close()
+serializer_output_chunked = chunk_array(serializer_output, 3)
+
 dl1_output = np.matmul(denselayer_input, dl1_weights) + dl1_bias;
 dl1_output >>= 8
 dl1_output = np.clip(dl1_output, a_min = 0, a_max = 255)
 dl2_output = np.matmul(dl1_output, dl2_weights) + dl2_bias;
 dl2_output >>= 8
 dl2_output = np.clip(dl2_output, a_min = 0, a_max = 255)
+
+dl1_output_s = np.matmul(serializer_output_chunked[0], dl1_weights_permutated) + dl1_bias;
+dl1_output_s >>= 8
+dl1_output_s = np.clip(dl1_output_s, a_min = 0, a_max = 255)
+dl2_output_s = np.matmul(dl1_output_s, dl2_weights) + dl2_bias;
+dl2_output_s >>= 8
+dl2_output_s = np.clip(dl2_output_s, a_min = 0, a_max = 255)
 
 print("End result: " + str(dl2_output))
 
