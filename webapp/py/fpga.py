@@ -5,7 +5,8 @@ Connect to the FPGA inside of this file
 
 # TODO: IMPORT KERNEL LIB HERE
 # Import FPGA Lib
-# import EggPGA
+import EggNet
+
 
 def get_size(size_in_bytes, suffix="B"):
     """
@@ -223,3 +224,7 @@ def get_uptime():
         uptime_string = str(timedelta(seconds=uptime_seconds))
 
     return uptime_string, upt
+
+def run_benchmark(options):
+    print(options)
+    pass

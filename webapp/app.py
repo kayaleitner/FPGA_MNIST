@@ -77,6 +77,12 @@ def get_image_json():
     else:
         return {'error': 'index not in range 0 to 9999'}
 
+@app.route('/api/v1/run_benchmark', methods=['POST'])
+def api_run_benchmark():
+    data = request.get_json()
+    id = fpga.run_benchmark(options=data)
+    return jsonify(id)
+
 
 @app.errorhandler(404)
 def page_not_found(e):

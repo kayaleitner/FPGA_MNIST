@@ -5,24 +5,25 @@
     </b-row>
     <b-row class="benchmark">
     <b-card header="Run Benchmark" style="width: 100%">
-        <b-form inline>
+        <b-form inline @submit="onRunBenchmark">
             <label class="mr-sm-2" for="inline-form-custom-select-pref">Dataset</label>
             <b-form-select
-                    id="inline-form-custom-select-pref"
+                    id="dataset"
                     class="mb-2 mr-sm-2 mb-sm-0"
+                    v-model="form.dataset"
                     :options="[{ text: 'Choose...', value: null }, 'TrainSet', 'TestSet']"
                     :value="null"
             ></b-form-select>
 
             <label class="mr-sm-2" for="inline-form-input-username">Network</label>
             <b-form-select
-                    id="inline-form-custom-select-pref"
+                    id="execution"
+                    v-model="form.execution"
                     class="mb-2 mr-sm-2 mb-sm-0"
                     :options="[{ text: 'Choose...', value: null }, 'Floating Point (CPU)', 'Fix-Point (CPU)', 'Fix-Point (FPGA)']"
                     :value="null"
             ></b-form-select>
-
-            <b-button variant="primary">Run Benchmark</b-button>
+            <b-button variant="primary" type="submit">Run Benchmark</b-button>
         </b-form>
     </b-card>
     </b-row>

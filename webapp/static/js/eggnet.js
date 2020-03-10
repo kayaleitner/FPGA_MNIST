@@ -1,3 +1,5 @@
+// import axios from 'axios';
+
 var eggnet = new Vue({
 
     el: '#app',
@@ -13,8 +15,15 @@ var eggnet = new Vue({
           { age: 38, first_name: 'Jami', last_name: 'Carney' }
         ],
         systemStats: String,
+
         image: Object,
-        hasImage: false
+        hasImage: false,
+
+        form: {
+          dataset: '',
+          execution: '',
+        }
+
     },
 
 
@@ -26,8 +35,20 @@ var eggnet = new Vue({
             let path ='/api/v1/system/stats';
             axios.get(path)
                 .then((data => {
-                    console.log(data)
-                    this.systemStats = data.data
+                    console.log(data);
+                    this.systemStats = data.data;
+                }));
+        },
+
+
+        onRunBenchmark: function (evt) {
+            console.log(JSON.stringify(this.data.form));
+            const path ='/api/v1/run_benchmark';
+
+            axios.post(path, JSON.stringify(this.data.form))
+                .then((data => {
+                    console.log(data);
+                    this.systemStats = data.data;
                 }));
         },
 
@@ -47,8 +68,10 @@ var eggnet = new Vue({
     },
 
     mounted() {
-        this.getSystemStats()
-        setInterval(this.getSystemStats, 5000)
+        this.getSystemStats();
+        add_random_mnist_images();
+        setup_chats();
+        setInterval(this.getSystemStats, 5000);
     }
 });
 
@@ -185,14 +208,14 @@ function add_random_mnist_images() {
     const n_images_per_class = 10;
     for (let i = 0; i < n_images_per_class; i++) {
         for (let j = 0; j < 10; j++) {
-            shuffled_keys = shuffle(keys);
-            container = document.getElementById("mnist-image-container");
+            const shuffled_keys = shuffle(keys);
+            const container = document.getElementById("mnist-image-container");
 
-            new_div = document.createElement('div');
+            let new_div = document.createElement('div');
             new_div.setAttribute('class', 'card');
 
-            new_img = document.createElement('img');
-            new_img.src = '/static/img/mnist/' + shuffled_keys[i] +  '/' + shuffled_keys[j] + '.png';
+            const new_img = document.createElement('img');
+            new_img.src = '/static/img/mnist/' + shuffled_keys[i] + '/' + shuffled_keys[j] + '.png';
             new_img.setAttribute('class', 'mnist-image');
 
 
@@ -218,8 +241,3 @@ function shuffle(a) {
     }
     return a;
 }
-
-window.onload = function () {
-    setup_chats();
-    add_random_mnist_images();
-};
