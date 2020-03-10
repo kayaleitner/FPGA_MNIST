@@ -1,10 +1,10 @@
   <b-row>
-    <b-column class="pad-1em-vert">
+    <b-column class="text-area" style="padding-left: 3em; padding-right: 3em;">
       <h2> Upload Image and Resize </h2>
     </b-column>
   </b-row>
 
-  <b-row class="pad-h-10em">
+  <b-row class="pad-h-10em" style="padding: 0 4em;">
     <b-col class="box">
     <image-uploader
       :preview="false"
@@ -38,13 +38,14 @@
 
 
   <b-row class="pad-top-1">
-      <b-column class="pad-1em-vert">
-        <h3> Preview </h3>
+      <b-column style="padding-left: 3em; padding-right: 3em; padding-top: 1.5rem;">
+        <h3> Downscaled / Numpy Array / Network Solution </h3>
       </b-column>
   </b-row>
-  <b-row>
+  <b-row align-h="center">
       <b-column class="pad-1em-vert">
         <img :src="image" v-if="hasImage" width="280">
       </b-column>
       <b-column id="bok-prev">  </b-column>
+      <b-column> <span style="font-size: 14rem;">[[ calcnumber ]]</span></b-column>
   </b-row>

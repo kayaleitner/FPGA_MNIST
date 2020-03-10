@@ -34,7 +34,7 @@
 }
 
 .t-align-cent .text-area {
-    width: 100%
+    width: 100%;
     padding-left: 2em;
     padding-right: 2em;
     text-align: justify;
@@ -45,6 +45,11 @@
     margin-left: 0;
     margin-right: 0;
     display: block;
+}
+
+.class {
+    padding-left: 2em;
+    padding-right: 2em;
 }
 
 .scrolling-wrapper {

@@ -5,7 +5,7 @@ Connect to the FPGA inside of this file
 
 # TODO: IMPORT KERNEL LIB HERE
 # Import FPGA Lib
-import EggNet
+#import EggNet
 
 
 def get_size(size_in_bytes, suffix="B"):

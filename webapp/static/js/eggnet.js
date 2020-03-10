@@ -24,7 +24,9 @@ var eggnet = new Vue({
         form: {
           dataset: '',
           execution: '',
-        }
+        },
+
+      calcnumber: '',
 
     },
 
@@ -57,13 +59,16 @@ var eggnet = new Vue({
         },
 
         setImage(file) {
+          document.getElementById('bok-prev').innerHTML = ''
+
           this.image = file;
           this.hasImage = true;
           data = {file}
           let path = document.location.origin + '/api/uploadimage';
           axios.post(path,data)
               .then((res) => {return res.data; })
-              .then((item) => {Bokeh.embed.embed_item(item, "bok-prev")})
+              .then((item) => {Bokeh.embed.embed_item(item, "bok-prev");
+                               this.calcnumber = '6'})
               .catch((error) => {
                 // eslint-disable-next-line
                 console.error(error);
