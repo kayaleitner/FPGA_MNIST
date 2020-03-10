@@ -21,10 +21,10 @@ entity EggNet_v1_0 is
 		-- Users to add parameters here
     LAYER_HIGHT             : integer := 28;
     LAYER_WIDTH             : integer := 28;
-    DATA_WIDTH              : integer := 6;
+    DATA_WIDTH              : integer := 8;
     L1_IN_CHANNEL_NUMBER	  : integer := 1;    
     L2_IN_CHANNEL_NUMBER	  : integer := 16;      
-    L3_IN_CHANNEL_NUMBER	  : integer := 32;    
+    L3_IN_CHANNEL_NUMBER	  : integer := 24;    
     MEM_CTRL_NUMBER         : integer := 4;  
     OUTPUT_COUNT            : integer := 10; 
     PATH                    : string := "C:/Users/lukas/Documents/SoC_Lab/FPGA_MNIST/vivado/NN_IP/EggNet_1.0";
@@ -121,9 +121,6 @@ entity EggNet_v1_0 is
 end EggNet_v1_0;
 
 architecture arch_imp of EggNet_v1_0 is
-
- --attribute X_INTERFACE_INFO of Res_itrp_o : signal is "xilinx.com:signal:interrupt:1.0 irq INTERRUPT";
- --attribute X_INTERFACE_PARAMETER of Res_itrp_o : signal is "SENSITIVITY EDGE_RISING";
 
 	function get_bram_width (data_width : integer) return integer is                                                     
 	begin                                                                   
@@ -285,7 +282,13 @@ architecture arch_imp of EggNet_v1_0 is
   
   signal l1_s_tready            : std_logic;
   
-  
+  attribute X_INTERFACE_INFO : STRING;
+  attribute X_INTERFACE_PARAMETER : STRING;
+  attribute X_INTERFACE_INFO of Res_itrp_o : signal is "xilinx.com:signal:interrupt:1.0 Res_itrp_o INTERRUPT";
+  attribute X_INTERFACE_PARAMETER of Res_itrp_o : signal is "SENSITIVITY EDGE_RISING";
+ 
+
+ 
 begin
 
 -- Debug Outputs for ILA 
@@ -435,27 +438,31 @@ EggNet_v1_0_S00_AXI_inst : entity work.EggNet_v1_0_S00_AXI
       Layer_properties_o      => layer_properties(1),
       Status_o                => status(1));
       
-  L1_bram : blk_mem_gen_0
-  port map (clka  => l1_bram_clk,
-            wea   => l1_bram_pa_wea,
-            addra => l1_bram_pa_addr,
-            dina  => l1_bram_pa_data_wr_8,
-            clkb  => l1_bram_clk,
-            addrb => l1_bram_pb_addr,
-            doutb => l1_bram_pb_data_rd_8
-  );
+    Bram_layer1 : entity work.bram
+    generic map (
+      BRAM_DATA_WIDTH => DATA_WIDTH * L1_IN_CHANNEL_NUMBER,
+      BRAM_ADDR_WIDTH => L1_BRAM_ADDR_WIDTH,
+      BRAM_SIZE       => LAYER_HIGHT*LAYER_WIDTH*2
+    )
+    port map (clk_i     => l1_bram_clk,
+              wea_i     => l1_bram_pa_wea,
+              pa_addr_i => l1_bram_pa_addr,
+              pa_data_i => l1_bram_pa_data_wr,
+              pb_addr_i => l1_bram_pb_addr,
+              pb_data_o => l1_bram_pb_data_rd
+    );  
 
 -- required because minimum DATA_WIDTH of BRAM is 8
-MAP_2_8bit: if DATA_WIDTH < 8 generate
-  l1_bram_pa_data_wr_8(L1_BRAM_DATA_WIDTH-1 downto DATA_WIDTH) <= (others => '0');
-  l1_bram_pa_data_wr_8(DATA_WIDTH-1 downto 0) <= l1_bram_pa_data_wr; 
-  l1_bram_pb_data_rd <= l1_bram_pb_data_rd_8(DATA_WIDTH-1 downto 0);
-end generate MAP_2_8bit;  
+-- MAP_2_8bit: if DATA_WIDTH < 8 generate
+  -- l1_bram_pa_data_wr_8(L1_BRAM_DATA_WIDTH-1 downto DATA_WIDTH) <= (others => '0');
+  -- l1_bram_pa_data_wr_8(DATA_WIDTH-1 downto 0) <= l1_bram_pa_data_wr; 
+  -- l1_bram_pb_data_rd <= l1_bram_pb_data_rd_8(DATA_WIDTH-1 downto 0);
+-- end generate MAP_2_8bit;  
 
-NO_MAP_2_8bit: if DATA_WIDTH >= 8 generate
-  l1_bram_pa_data_wr_8 <= l1_bram_pa_data_wr; 
-  l1_bram_pb_data_rd <= l1_bram_pb_data_rd_8;
-end generate NO_MAP_2_8bit;
+-- NO_MAP_2_8bit: if DATA_WIDTH >= 8 generate
+  -- l1_bram_pa_data_wr_8 <= l1_bram_pa_data_wr; 
+  -- l1_bram_pb_data_rd <= l1_bram_pb_data_rd_8;
+-- end generate NO_MAP_2_8bit;
 
   linebuffer_layer1: entity work.STD_FIFO
     generic map (
@@ -523,6 +530,7 @@ end generate NO_MAP_2_8bit;
       Y_o     => l1_m_conv_data_unsig
     );
     l1_m_conv_data <= std_logic_vector(l1_m_conv_data_unsig);
+    
 -- MaxPooling   
   L1_maxPooling: entity work.MaxPooling
   generic map(
@@ -597,15 +605,19 @@ end generate NO_MAP_2_8bit;
       Layer_properties_o      => layer_properties(2),
       Status_o                => status(2));
       
-  L2_bram : blk_mem_layer_2
-  port map (clka  => l2_bram_clk,
-            wea   => l2_bram_pa_wea,
-            addra => l2_bram_pa_addr,
-            dina  => l2_bram_pa_data_wr,
-            clkb  => l2_bram_clk,
-            addrb => l2_bram_pb_addr,
-            doutb => l2_bram_pb_data_rd
-  );
+  Bram_layer2 : entity work.bram
+  generic map (
+    BRAM_DATA_WIDTH => DATA_WIDTH * L2_IN_CHANNEL_NUMBER,
+    BRAM_ADDR_WIDTH => L2_BRAM_ADDR_WIDTH,
+    BRAM_SIZE       => LAYER_HIGHT*LAYER_WIDTH/4*2
+  )
+  port map (clk_i     => l2_bram_clk,
+            wea_i     => l2_bram_pa_wea,
+            pa_addr_i => l2_bram_pa_addr,
+            pa_data_i => l2_bram_pa_data_wr,
+            pb_addr_i => l2_bram_pb_addr,
+            pb_data_o => l2_bram_pb_data_rd
+  ); 
 
   linebuffer_layer2: entity work.STD_FIFO
     generic map (
