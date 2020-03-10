@@ -582,7 +582,7 @@ def check_vectors(test_vectors, layernumber):
                 read_data = f.readline().rstrip()
                 result_vectors[i, j, 2, :] = [int(g) for g in read_data.split(' ')]
                 if any(result_vectors[i, j, 2, :] != test_vectors[i, j, 2, :]):
-                    print("Error in tmp/l{}".format(layernumber) + "_inVector_1_b{}.txt" + " in line {} ,".format(j) \
+                    print("Error in tmp/l{}".format(layernumber) + "_inVector_1_b{}.txt".format(i) + " in line {} ,".format(j) \
                           + "{}".format(result_vectors[i, j, 2, :]) + " != {}".format(test_vectors[i, j, 2, :]))
                     error_count_vectors += 1
     if error_count_vectors == 0:
@@ -636,6 +636,42 @@ def check_kernels(test_kernels, layernumber):
         print("{} errors occured receiving image".format(error_count_kernels))
 
     return error_count_kernels
+
+def check_dense_in(test_vectors, layernumber):
+    """
+    
+
+    Parameters
+    ----------
+    test_vectors : numpy array [B,W*H,Ci]
+        Data to check. Output data of MemCtrl
+    layernumber : integer
+        Number of layer.
+
+    Returns
+    -------
+    error_count_vectors : integer
+        Number of errors.
+
+    """
+    error_count_vectors = 0
+    result_vectors = np.zeros(
+        (test_vectors.shape[0], test_vectors.shape[1], test_vectors.shape[2]), dtype=np.uint8)
+    for i in range(test_vectors.shape[0]):
+        with open("tmp/l{}".format(layernumber) + "_inData_b{}.txt".format(i), "r") as f:
+            for j in range(test_vectors.shape[1]):
+                read_data = f.readline().rstrip()
+                result_vectors[i, j, :] = [int(g) for g in read_data.split(' ')]   
+                if any(result_vectors[i, j, :] != test_vectors[i, j, :]):
+                    print("Error in tmp/l{}".format(layernumber) + "_inData_b{}.txt".format(i) + " in line {} ,".format(j) \
+                          + "{}".format(result_vectors[i, j, :]) + " != {}".format(test_vectors[i, j, :]))
+                    error_count_vectors += 1
+    if error_count_vectors == 0:
+        print("Received Kernel vectors successfully!")
+    else:
+        print("{} errors occured receiving image".format(error_count_vectors))
+
+    return error_count_vectors
 
 
 # %% Mov average attemption 
