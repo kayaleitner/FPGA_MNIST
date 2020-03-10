@@ -5,14 +5,41 @@ import subprocess
 import filecmp
 import numpy as np
 import matplotlib.pyplot as plt 
+import gzip
+import idx2numpy
+import numpy.random as rand
 from sys import exit
 import json
 
 # %% import custom modules
 import vhdl_testbench as tb 
-config_file_name = "../../../../../net/final_weights/int8_fpi/config.json"
-file_names = ["../../../../../net/final_weights/int8_fpi/cn1.k.txt",
-              "../../../../../net/final_weights/int8_fpi/cn2.k.txt"]
+
+'''
+WHEN SWITCHING BETWEEN INT4 AND INT8:
+    1. Set BITS in generate_mif.py and run it
+    2. Set BITS in generate_conv2d.py and run it
+    3. Change the input and output bit width in tb_conv2d0 and tb_conv2d1
+    3. Set BITS in this script and run it
+'''
+BITS = 8
+
+if BITS == 4:
+    config_file_name = "../../../../../net/final_weights/int4_fpi/config.json"
+    file_names = ["../../../../../net/final_weights/int4_fpi/cn1.k.txt",
+                  "../../../../../net/final_weights/int4_fpi/cn2.k.txt"]
+    denselayer_1_file_name = "../../../../../net/final_weights/int4_fpi/fc1.w.txt"
+    denselayer_2_file_name = "../../../../../net/final_weights/int4_fpi/fc2.w.txt"
+    denselayer_1_bias_file_name = "../../../../../net/final_weights/int4_fpi/fc1.b.txt"
+    denselayer_2_bias_file_name = "../../../../../net/final_weights/int4_fpi/fc2.b.txt"
+    
+elif BITS == 8:
+    config_file_name = "../../../../../net/final_weights/int8_fpi/config.json"
+    file_names = ["../../../../../net/final_weights/int8_fpi/cn1.k.txt",
+                  "../../../../../net/final_weights/int8_fpi/cn2.k.txt"]
+    denselayer_1_file_name = "../../../../../net/final_weights/int8_fpi/fc1.w.txt"
+    denselayer_2_file_name = "../../../../../net/final_weights/int8_fpi/fc2.w.txt"
+    denselayer_1_bias_file_name = "../../../../../net/final_weights/int8_fpi/fc1.b.txt"
+    denselayer_2_bias_file_name = "../../../../../net/final_weights/int8_fpi/fc2.b.txt"
 
 # %% Helper function to split array into n roughly equal parts
 def chunk_array(seq, num):
@@ -71,7 +98,7 @@ CI_L1 = 1
 CO_L1 = 16
 CI_L2 = 16
 CO_L2 = 24
-DATA_WIDTH = 8
+INPUT_DATA_WIDTH = 8
 
 IMG_WIDTH = 28
 IMG_HIGTH = 28
@@ -87,14 +114,31 @@ if os.path.isdir('tmp'):
 try : os.mkdir('tmp')
 except : print("Error creating tmp folder!")
 
+# unzip training images, convert to numpy array
+idx_file = gzip.open('../../../../../data/MNIST/train-images-idx3-ubyte.gz', 'rb')
+ndarr = idx2numpy.convert_from_file(idx_file)
+idx_file.close()
+
+# choose random indices
+random_i = rand.randint(0, ndarr.shape[0], NUMBER_OF_TEST_BLOCKS)
+
+# fill testdata vector and plot random test images
+image_data = np.ndarray((NUMBER_OF_TEST_BLOCKS, BLOCK_SIZE, CI_L1))
+fig, axs = plt.subplots(ncols=3)
+for j in range(0, NUMBER_OF_TEST_BLOCKS):
+    axs[j].imshow(ndarr[random_i[j]], cmap='gray')
+    image_data[j] = np.expand_dims(ndarr[random_i[j]].flatten(), axis=1)
+plt.show()
+
 # %% create test data file
-image_data = tb.gen_testdata(BLOCK_SIZE,NUMBER_OF_TEST_BLOCKS, CI_L1)
+#image_data = tb.gen_testdata(BLOCK_SIZE,NUMBER_OF_TEST_BLOCKS, CI_L1)
 
 # %% generate test vectors 
 l1_test_vectors = tb.get_vectors_from_data(image_data,IMG_WIDTH,IMG_HIGTH,NUMBER_OF_TEST_BLOCKS)
 
 # %% generate test kernels 
 l1_test_kernels = tb.get_Kernels(l1_test_vectors,IMG_WIDTH)
+l1_test_kernels >>= (INPUT_DATA_WIDTH - config_data["input_bits"][0])
 
 # %% calculate Layer 1 output as new memory controller input 
 l1_weights_file = open(l1_weights_file_name, 'r')
@@ -108,8 +152,8 @@ for i in range(0, CI_L1):
             for y in range(0,KERNEL_SIZE):
                 l1_weights_reshaped[j][i][y][x] = l1_weights[x][y][i][j]
                 
-l1_msb = np.ones(CO_L1,dtype=np.int32)*(config_data["shifts"][0] + DATA_WIDTH - 1)
-l1_features = tb.conv_2d(l1_test_kernels,l1_weights_reshaped,l1_msb)
+l1_msb = np.ones(CO_L1,dtype=np.int32)*(config_data["shifts"][0] + config_data["output_bits"][0] - 1)
+l1_features = tb.conv_2d(l1_test_kernels,l1_weights_reshaped,l1_msb,config_data["output_bits"][0])
 tb.write_features_to_file(l1_features,layernumber=1)
 
 conv2d0_input_files = [None]*KERNEL_SIZE*KERNEL_SIZE
@@ -128,7 +172,7 @@ for i in range(0, KERNEL_SIZE*KERNEL_SIZE):
     conv2d0_input_files[i].close()
 
 
-# %% Run test and compare output form conv2d0
+# %% Run test and compare output from conv2d0
 
 print("Compiling and running conv2d0 testbench...")
 
@@ -148,7 +192,6 @@ for i in range(0, CO_L1):
         exit()
 
 print("Simulation and emulation output the same for conv2d0")
-
 # %% Pooling after layer 1
 
 pool(CO_L1, file_name_sim, "tmp/pool_output{I}.txt", IMG_WIDTH)
@@ -210,8 +253,8 @@ for i in range(0, CI_L2):
             for y in range(0,KERNEL_SIZE):
                 l2_weights_reshaped[j][i][y][x] = l2_weights[x][y][i][j]
 
-l2_msb = np.ones(CO_L2,dtype=np.int32)*(config_data["shifts"][1] + DATA_WIDTH - 1)
-l2_features = tb.conv_2d(l2_test_kernels,l2_weights_reshaped,l2_msb)
+l2_msb = np.ones(CO_L2,dtype=np.int32)*(config_data["shifts"][1] + config_data["output_bits"][1] - 1)
+l2_features = tb.conv_2d(l2_test_kernels,l2_weights_reshaped,l2_msb,config_data["output_bits"][1])
 tb.write_features_to_file(l2_features,layernumber=2)
 
 # %% Write input files for conv2d1 testbench
@@ -300,11 +343,6 @@ file_nn.close()
 
 # %% Get output for dense layer
 
-denselayer_1_file_name = "../../../../../net/final_weights/int8_fpi/fc1.w.txt"
-denselayer_2_file_name = "../../../../../net/final_weights/int8_fpi/fc2.w.txt"
-denselayer_1_bias_file_name = "../../../../../net/final_weights/int8_fpi/fc1.b.txt"
-denselayer_2_bias_file_name = "../../../../../net/final_weights/int8_fpi/fc2.b.txt"
-
 dl1_bias_file = open(denselayer_1_bias_file_name, 'r')
 dl1_bias = np.loadtxt(dl1_bias_file, dtype=np.int16);
 dl1_bias_file.close()
@@ -348,11 +386,11 @@ output_chunked = chunk_array(output, NUMBER_OF_TEST_BLOCKS)
 
 for i in range(0, NUMBER_OF_TEST_BLOCKS):
     dl1_output = np.matmul(serializer_output_chunked[i], dl1_weights_permutated) + dl1_bias;
-    dl1_output >>= 8
-    dl1_output = np.clip(dl1_output, a_min = 0, a_max = 255)
+    dl1_output >>= config_data['shifts'][2]
+    dl1_output = np.clip(dl1_output, a_min = 0, a_max = np.uint8(config_data['out_max'][2]))
     dl2_output = np.matmul(dl1_output, dl2_weights) + dl2_bias;
-    dl2_output >>= 8
-    dl2_output = np.clip(dl2_output, a_min = 0, a_max = 255)
+    dl2_output >>= config_data['shifts'][3]
+    dl2_output = np.clip(dl2_output, a_min = 0, a_max= np.uint8(config_data['out_max'][3]))
     for j in range(0, DL2_OUTPUT_NEURONS):
         if dl2_output[j] != output_chunked[i][j]:
             print("Output of dense layer not the same as simulation")

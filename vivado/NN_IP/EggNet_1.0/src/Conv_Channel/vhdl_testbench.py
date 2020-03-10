@@ -341,7 +341,7 @@ def get_Kernels(test_vectors,img_width):
 
 # %% convolutional layer
 
-def conv_2d(kernels,weights,msb):
+def conv_2d(kernels,weights,msb,data_width=8):
     """
     Emulates the operation carried out by the conv2d module in the FPGA
 
@@ -377,12 +377,12 @@ def conv_2d(kernels,weights,msb):
     for i in range(kernels.shape[0]):
         for j in range(kernels.shape[1]):
             for k in range (weights.shape[0]):
-                features[i,j,k] = conv_channel(kernels[i,j,:,:,:],weights[k,:,:,:],msb[k])
+                features[i,j,k] = conv_channel(kernels[i,j,:,:,:],weights[k,:,:,:],msb[k],data_width)
     return features
 
 
 
-def conv_channel(kernels,weights,msb):
+def conv_channel(kernels,weights,msb,data_width=8):
     """
     Emulates the operation carried out by the conv_channel module in the FPGA
 
@@ -419,7 +419,7 @@ def conv_channel(kernels,weights,msb):
     if weighted_sum < 0: 
         weighted_sum = 0 
     else: # Quantization 
-        weighted_sum >>= msb+1-8                   
+        weighted_sum >>= msb+1-data_width                   
         if weighted_sum > 255: 
             weighted_sum = 255 
              
