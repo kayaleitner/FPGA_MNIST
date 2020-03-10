@@ -341,7 +341,7 @@ def get_Kernels(test_vectors,img_width):
 
 # %% convolutional layer
 
-def conv_2d(kernels,weights,msb,data_width=8):
+def conv_2d(kernels,weights,msb,bias,data_width=8):
     """
     Emulates the operation carried out by the conv2d module in the FPGA
 
@@ -377,12 +377,12 @@ def conv_2d(kernels,weights,msb,data_width=8):
     for i in range(kernels.shape[0]):
         for j in range(kernels.shape[1]):
             for k in range (weights.shape[0]):
-                features[i,j,k] = conv_channel(kernels[i,j,:,:,:],weights[k,:,:,:],msb[k],data_width)
+                features[i,j,k] = conv_channel(kernels[i,j,:,:,:],weights[k,:,:,:],msb[k],data_width, bias[k])
     return features
 
 
 
-def conv_channel(kernels,weights,msb,data_width=8):
+def conv_channel(kernels,weights,msb,data_width=8, bias = 0):
     """
     Emulates the operation carried out by the conv_channel module in the FPGA
 
@@ -414,14 +414,15 @@ def conv_channel(kernels,weights,msb,data_width=8):
     weighted_sum = np.int32(0)
     for k in range (weights.shape[0]):
         weighted_sum+= kernel_3x3(kernels[:,:,k],weights[k,:,:])
+    weighted_sum += bias
 
     # Relu (Additional benefit np.int16(int("0x00FF",16)) & feature would not work for negative numbers because of 2's complement)
     if weighted_sum < 0: 
         weighted_sum = 0 
     else: # Quantization 
         weighted_sum >>= msb+1-data_width                   
-        if weighted_sum > 255: 
-            weighted_sum = 255 
+        if weighted_sum > int(2**data_width - 1): 
+            weighted_sum = int(2**data_width - 1) 
              
     return np.uint8(weighted_sum) 
 

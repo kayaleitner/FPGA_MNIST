@@ -27,6 +27,8 @@ if BITS == 4:
     config_file_name = "../../../../../net/final_weights/int4_fpi/config.json"
     file_names = ["../../../../../net/final_weights/int4_fpi/cn1.k.txt",
                   "../../../../../net/final_weights/int4_fpi/cn2.k.txt"]
+    file_names_bias = ["../../../../../net/final_weights/int4_fpi/cn1.b.txt",
+                       "../../../../../net/final_weights/int4_fpi/cn2.b.txt"]
     denselayer_1_file_name = "../../../../../net/final_weights/int4_fpi/fc1.w.txt"
     denselayer_2_file_name = "../../../../../net/final_weights/int4_fpi/fc2.w.txt"
     denselayer_1_bias_file_name = "../../../../../net/final_weights/int4_fpi/fc1.b.txt"
@@ -36,6 +38,8 @@ elif BITS == 8:
     config_file_name = "../../../../../net/final_weights/int8_fpi/config.json"
     file_names = ["../../../../../net/final_weights/int8_fpi/cn1.k.txt",
                   "../../../../../net/final_weights/int8_fpi/cn2.k.txt"]
+    file_names_bias = ["../../../../../net/final_weights/int8_fpi/cn1.b.txt",
+                       "../../../../../net/final_weights/int8_fpi/cn2.b.txt"]
     denselayer_1_file_name = "../../../../../net/final_weights/int8_fpi/fc1.w.txt"
     denselayer_2_file_name = "../../../../../net/final_weights/int8_fpi/fc2.w.txt"
     denselayer_1_bias_file_name = "../../../../../net/final_weights/int8_fpi/fc1.b.txt"
@@ -106,6 +110,8 @@ BLOCK_SIZE = IMG_WIDTH*IMG_HIGTH
 
 l1_weights_file_name = file_names[0]
 l2_weights_file_name = file_names[1]
+l1_bias_file_name = file_names_bias[0]
+l2_bias_file_name = file_names_bias[1]
 
 # %% create tmp folder, delete folder if not tmp exists and create new one
 if os.path.isdir('tmp'):
@@ -145,6 +151,10 @@ l1_weights_file = open(l1_weights_file_name, 'r')
 l1_weights = np.array(list(np.loadtxt(l1_weights_file, dtype=np.int8))).reshape((3,3,CI_L1,CO_L1))
 l1_weights_file.close()
 
+l1_bias_file = open(l1_bias_file_name, 'r')
+l1_bias = np.array(list(np.loadtxt(l1_bias_file, dtype=np.int16)))
+l1_bias_file.close()
+
 l1_weights_reshaped = np.ndarray((CO_L1,CI_L1,3,3))
 for i in range(0, CI_L1):
     for j in range(0, CO_L1):
@@ -153,7 +163,7 @@ for i in range(0, CI_L1):
                 l1_weights_reshaped[j][i][y][x] = l1_weights[x][y][i][j]
                 
 l1_msb = np.ones(CO_L1,dtype=np.int32)*(config_data["shifts"][0] + config_data["output_bits"][0] - 1)
-l1_features = tb.conv_2d(l1_test_kernels,l1_weights_reshaped,l1_msb,config_data["output_bits"][0])
+l1_features = tb.conv_2d(l1_test_kernels,l1_weights_reshaped,l1_msb, l1_bias, config_data["output_bits"][0])
 tb.write_features_to_file(l1_features,layernumber=1)
 
 conv2d0_input_files = [None]*KERNEL_SIZE*KERNEL_SIZE
@@ -246,6 +256,10 @@ l2_weights_file = open(l2_weights_file_name, 'r')
 l2_weights = np.array(list(np.loadtxt(l2_weights_file, dtype=np.int8))).reshape((3,3,CI_L2,CO_L2))
 l2_weights_file.close()
 
+l2_bias_file = open(l2_bias_file_name, 'r')
+l2_bias = np.array(list(np.loadtxt(l2_bias_file, dtype=np.int16)))
+l2_bias_file.close()
+
 l2_weights_reshaped = np.ndarray((CO_L2,CI_L2,3,3))
 for i in range(0, CI_L2):
     for j in range(0, CO_L2):
@@ -254,7 +268,7 @@ for i in range(0, CI_L2):
                 l2_weights_reshaped[j][i][y][x] = l2_weights[x][y][i][j]
 
 l2_msb = np.ones(CO_L2,dtype=np.int32)*(config_data["shifts"][1] + config_data["output_bits"][1] - 1)
-l2_features = tb.conv_2d(l2_test_kernels,l2_weights_reshaped,l2_msb,config_data["output_bits"][1])
+l2_features = tb.conv_2d(l2_test_kernels,l2_weights_reshaped,l2_msb,l2_bias, config_data["output_bits"][1])
 tb.write_features_to_file(l2_features,layernumber=2)
 
 # %% Write input files for conv2d1 testbench

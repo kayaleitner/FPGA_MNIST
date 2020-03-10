@@ -13,11 +13,15 @@ num_layers = 2
 if BITS == 4:
     config_file_name = "../../../../../net/final_weights/int4_fpi/config.json"
     file_names = ["../../../../../net/final_weights/int4_fpi/cn1.k.txt",
-             "../../../../../net/final_weights/int4_fpi/cn2.k.txt"]
+                  "../../../../../net/final_weights/int4_fpi/cn2.k.txt"]
+    file_names_bias = ["../../../../../net/final_weights/int4_fpi/cn1.b.txt",
+                       "../../../../../net/final_weights/int4_fpi/cn2.b.txt"]
 elif BITS == 8:
     config_file_name = "../../../../../net/final_weights/int8_fpi/config.json"
     file_names = ["../../../../../net/final_weights/int8_fpi/cn1.k.txt",
-                 "../../../../../net/final_weights/int8_fpi/cn2.k.txt"]
+                  "../../../../../net/final_weights/int8_fpi/cn2.k.txt"]
+    file_names_bias = ["../../../../../net/final_weights/int8_fpi/cn1.b.txt",
+                       "../../../../../net/final_weights/int8_fpi/cn2.b.txt"]
     
 if __name__ == '__main__':
     num_input_channels = [None]*num_layers
@@ -26,6 +30,7 @@ if __name__ == '__main__':
     kernel_strings = [None]*num_layers
     channel_strings = [None]*num_layers
     msb = [None]*num_layers
+    biases = [None]*num_layers
     
 # %% create tmp folder, delete folder if not tmp exists and create new one
     if os.path.isdir('channels'):
@@ -40,6 +45,7 @@ if __name__ == '__main__':
     for i in range(0, num_layers):
         msb[i] = config_data["shifts"][i] + config_data["output_bits"][i] - 1
         file = open(file_names[i], 'r')
+        file_bias = open(file_names_bias[i], 'r')
         def_line = file.readline()
         regex = re.compile("# \(3, 3, (.*?)\)\n")
         channel_def = list(map(int, regex.match(def_line).group(1).split(',')))
@@ -48,6 +54,7 @@ if __name__ == '__main__':
         kernel_arrays[i] = list(np.loadtxt(file, dtype=np.int8))
         kernel_arrays[i] = np.array(kernel_arrays[i]).reshape((3,3,num_input_channels[i], num_output_channels[i]))
         kernel_strings[i] = np.ndarray((num_input_channels[i], num_output_channels[i]), dtype=object)
+        biases[i] = list(np.loadtxt(file_bias, dtype=np.int16))
 
         for x in range(0, num_input_channels[i]):
             for y in range(0, num_output_channels[i]):
@@ -72,6 +79,7 @@ if __name__ == '__main__':
                     channel_strings[i][y] += ', '
             channel_strings[i][y] += ')'
         file.close()
+        file_bias.close()
         
     tp_file = open('conv_channel_template.vhd', 'r')
     tp_str = tp_file.read()
@@ -82,6 +90,7 @@ if __name__ == '__main__':
             tp_str_new = re.sub("constant KERNELS : kernel_array_t :=[^\n]*\n", "constant KERNELS : kernel_array_t := " + channel_strings[i][j] + ";\n", tp_str_new)
             tp_str_new = re.sub("\tN : integer :=[^\n]*\n", "\tN : integer := " + str(num_input_channels[i]) + ";\n", tp_str_new)
             tp_str_new = re.sub("\tOUTPUT_MSB : integer :=[^\n]*\n", "\tOUTPUT_MSB : integer := " + str(msb[i]) + ";\n", tp_str_new)
+            tp_str_new = re.sub("\tBIAS : integer :=[^\n]*\n", "\tBIAS : integer := " + str(biases[i][j]) + "\n", tp_str_new)
             tp_str_new = re.sub("\tBIT_WIDTH_IN : integer :=[^\n]*\n", "\tBIT_WIDTH_IN : integer := " + str(config_data["input_bits"][i]) + ";\n", tp_str_new)
             tp_str_new = re.sub("\tBIT_WIDTH_OUT : integer :=[^\n]*\n", "\tBIT_WIDTH_OUT : integer := " + str(config_data["output_bits"][i]) + ";\n", tp_str_new)
             tp_str_new = re.sub("\tKERNEL_WIDTH_OUT : integer :=[^\n]*\n", "\tKERNEL_WIDTH_OUT : integer := " + str(config_data["output_bits"][i] + config_data["input_bits"][i] + int(np.ceil(np.log2(9)))) + ";\n", tp_str_new)
