@@ -11,4 +11,3 @@ torch
 torchvision
 keras
 idx2numpy
-# brevitas # install from github
