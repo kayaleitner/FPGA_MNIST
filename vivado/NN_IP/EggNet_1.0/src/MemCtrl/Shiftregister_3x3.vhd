@@ -37,6 +37,14 @@ end ShiftRegister_3x3;
 
 architecture Behavioral of ShiftRegister_3x3 is
 
+attribute srl_style : string;
+--attribute srl_style of sr : signal is "register";
+--attribute srl_style of sr : signal is "srl";
+--attribute srl_style of sr : signal is "srl_reg";
+--attribute srl_style of sr : signal is "reg_srl_reg";
+
+
+
   type STATES is (INIT,NEW_LINE,RUN);
   signal state     :STATES;
   
@@ -53,6 +61,22 @@ architecture Behavioral of ShiftRegister_3x3 is
   signal data_7    : STD_LOGIC_VECTOR((DATA_WIDTH - 1) downto 0);
   signal data_8    : STD_LOGIC_VECTOR((DATA_WIDTH - 1) downto 0);
   signal data_9    : STD_LOGIC_VECTOR((DATA_WIDTH - 1) downto 0);
+  
+  attribute ram_style : string;
+  attribute ram_style of data_1 : signal is "distributed";
+  attribute ram_style of data_2 : signal is "distributed";
+  attribute ram_style of data_3 : signal is "distributed";
+  attribute ram_style of data_4 : signal is "distributed";
+  attribute ram_style of data_5 : signal is "distributed";
+  attribute ram_style of data_6 : signal is "distributed";
+  attribute ram_style of data_7 : signal is "distributed";
+  attribute ram_style of data_8 : signal is "distributed";
+  attribute ram_style of data_9 : signal is "distributed";  
+  attribute ram_style of data_buffer_1 : signal is "distributed";
+  attribute ram_style of data_buffer_2 : signal is "distributed";
+  attribute ram_style of data_buffer_3 : signal is "distributed";  
+    
+  
 
 begin
 
@@ -68,19 +92,7 @@ begin
 
   shifting: process(Clk_i, nRst_i)
   begin
-    if nRst_i = '0' then
-      data_1 <= (others => '0');
-      data_2 <= (others => '0');
-      data_3 <= (others => '0');
-      data_4 <= (others => '0');
-      data_5 <= (others => '0');
-      data_6 <= (others => '0');
-      data_7 <= (others => '0');
-      data_8 <= (others => '0');
-      data_9 <= (others => '0');
-      data_buffer_1 <= (others => '0');      
-      data_buffer_2 <= (others => '0');     
-      data_buffer_3 <= (others => '0');     
+    if nRst_i = '0' then    
       state <= INIT;
       M_tlast_o <= '0';
       M_tvalid_o <= '0';
