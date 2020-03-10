@@ -434,7 +434,7 @@ def relu(x: np.ndarray) -> np.ndarray:
     :param x: values
     :return:
     """
-    return np.clip(x, a_min=0, a_max=np.inf)
+    return x.clip(min=0)
 
 
 def drelu(x: np.ndarray) -> np.ndarray:

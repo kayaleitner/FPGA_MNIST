@@ -182,7 +182,7 @@ def perform_real_quant(weight_dict,
     w_scale = 1 / 2 ** w_f
 
     out_max = 2.0 ** (oa_b - 1) - 1
-    out_min = -2.0 ** (oa_b -1)
+    out_min = -2.0 ** (oa_b - 1)
     out_scale = 1 / 2 ** oa_b
 
     options = {
@@ -277,7 +277,7 @@ def perform_fake_quant(weight_dict, target_bits, frac_bits, target_dtype=np.floa
 
 
 def init_network_from_weights(qweights, from_torch):
-    our_net = NeuralNetwork.nn.Network.LeNet(reshape_torch=from_torch)
+    our_net = EggNet.LeNet(reshape_torch=from_torch)
     our_net.cn1.weights = qweights['cn1.k']
     our_net.cn1.bias = qweights['cn1.b']
     our_net.cn2.weights = qweights['cn2.k']
@@ -290,20 +290,23 @@ def init_network_from_weights(qweights, from_torch):
 
 
 def init_fake_network_from_weights(qweights, shift, options):
-    our_net = NeuralNetwork.nn.Network.FpiLeNet(qweights, shifts=shift, options=options, real_quant=False)
+    our_net = EggNet.FpiLeNet(qweights, shifts=shift, options=options, real_quant=False)
     return our_net
 
 
 def init_quant_network_from_weights(qweights, shift, options):
-    our_net = NeuralNetwork.nn.Network.FpiLeNet(qweights, shifts=shift, options=options, real_quant=True)
+    our_net = EggNet.FpiLeNet(qweights, shifts=shift, options=options, real_quant=True)
     return our_net
 
 
-def evaluate_network_full(batch_size, network, train_images, train_labels, images_as_int=False):
+def evaluate_network_full(batch_size, network, train_images, train_labels,
+                          images_as_int=False, n_batches=None, intermediates=False):
     i = 0
     total_correct = 0
 
     confusion_matrix = np.zeros(shape=(10, 10))
+    INTERESTING_LAYER_INDICES = (1, 3, 6, 7)
+    y_layers_out = None
 
     while i < train_images.shape[0]:
 
@@ -313,7 +316,14 @@ def evaluate_network_full(batch_size, network, train_images, train_labels, image
             x = train_images[i:i + batch_size] / 255.0
 
         y_ = train_labels[i:i + batch_size]
-        y = network.forward(x)
+        y, y_layers = network.forward_intermediate(x)
+
+        if intermediates:
+            if y_layers_out is None:
+                y_layers_out = y_layers
+            else:
+                for ix in INTERESTING_LAYER_INDICES:
+                    y_layers_out[ix] = np.concatenate((y_layers_out[ix], y_layers[ix]), axis=0)
         y = y.argmax(-1)
 
         # ToDo: Might be a faster way
@@ -323,12 +333,21 @@ def evaluate_network_full(batch_size, network, train_images, train_labels, image
         total_correct += np.sum(y == y_)
         i += batch_size
 
+        if n_batches is not None and i / batch_size > n_batches:
+            break
+
     accuracy = total_correct / train_images.shape[0]
-    return accuracy, confusion_matrix
+
+    if intermediates:
+        # Remove other layers
+        y_layers_out = [y_layers_out[i] for i in INTERESTING_LAYER_INDICES]
+        return accuracy, confusion_matrix, y_layers_out
+    else:
+        return accuracy, confusion_matrix
 
 
 def evaluate_network(batch_size, network, train_images, train_labels):
-    a, _ = evaluate_network_full(batch_size, network, train_images, train_labels)
+    a, _, _ = evaluate_network_full(batch_size, network, train_images, train_labels)
     return a
 
 

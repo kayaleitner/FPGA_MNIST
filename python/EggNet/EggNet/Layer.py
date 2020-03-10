@@ -300,15 +300,11 @@ class Conv2dLayer(Layer):
 
     def __call__(self, input, *args, **kwargs):
         x = input
-        if self.dtype in (np.float32, np.float64):
-            try:
-                z = conv2d_fast(x, self.kernel, stride=1)
-            except ImportError as imerror:
-                print("[ERROR]: The Fast C-Extension could not be loaded? Is it installed? Fallback to default python "
-                      "implementation: ", imerror)
-                z = conv2d(x, self.kernel, stride=1)
-
-        else:
+        try:
+            z = conv2d_fast(x, self.kernel, stride=1)
+        except ImportError as imerror:
+            print("[ERROR]: The Fast C-Extension could not be loaded? Is it installed? Fallback to default python "
+                  "implementation: ", imerror)
             z = conv2d(x, self.kernel, stride=1)
 
         if self.use_bias:

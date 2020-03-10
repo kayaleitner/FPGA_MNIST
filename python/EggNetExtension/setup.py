@@ -185,8 +185,6 @@ setup(name='EggNetExtension',
       license="MIT",
       description="""NN calculation library for python""",
       url='https://github.com/marbleton/FPGA_MNIST',
-      long_description=readme(),
-      long_description_content_type="text/markdown",
       packages=find_packages(),
       package_data={
           # If any package contains *.txt or *.rst files, include them:
