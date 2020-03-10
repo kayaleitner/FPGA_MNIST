@@ -7,6 +7,7 @@ var eggnet = new Vue({
     data: {
         fields: ['Images Sent', 'Correct Guesses', 'Percent', 'Time Passed'],
         items: {},
+
         mnist_results: [
             // ToDo: Load this dynamically?
           { age: 40, first_name: 'Dickerson', last_name: 'Macdonald' },
@@ -14,6 +15,7 @@ var eggnet = new Vue({
           { age: 89, first_name: 'Geneva', last_name: 'Wilson' },
           { age: 38, first_name: 'Jami', last_name: 'Carney' }
         ],
+
         systemStats: String,
 
         image: Object,
@@ -42,10 +44,12 @@ var eggnet = new Vue({
 
 
         onRunBenchmark: function (evt) {
-            console.log(JSON.stringify(this.data.form));
+
+            // console.log(JSON.stringify(this.form));
+
             const path ='/api/v1/run_benchmark';
 
-            axios.post(path, JSON.stringify(this.data.form))
+            axios.post(path, JSON.stringify(this.form))
                 .then((data => {
                     console.log(data);
                     this.systemStats = data.data;
@@ -75,7 +79,9 @@ var eggnet = new Vue({
     }
 });
 
-
+/**
+ * Sets up the charts
+ */
 function setup_chats() {
     //10000 milliseconds = 10 seconds
 
@@ -199,17 +205,21 @@ function setup_chats() {
     }, chart_refresh_interval);
 }
 
+/**
+ * Adds random mnist images
+ */
 function add_random_mnist_images() {
     let keys = [];
     for (let i = 0; i < 10; i++) {
         keys[i] = i;
     }
 
+    const container = document.getElementById("mnist-image-container");
     const n_images_per_class = 10;
     for (let i = 0; i < n_images_per_class; i++) {
         for (let j = 0; j < 10; j++) {
+
             const shuffled_keys = shuffle(keys);
-            const container = document.getElementById("mnist-image-container");
 
             let new_div = document.createElement('div');
             new_div.setAttribute('class', 'card');
@@ -224,7 +234,15 @@ function add_random_mnist_images() {
         }
     }
 
+    setInterval(function () {
+        container.scrollBy(1,0);
+    }, 40);
+}
 
+function pageScroll() {
+    container.scrollBy(1,0);
+    scrollDelay = setTimeout(pageScroll, 10);
+    scrolldelay = setTimeout(pageScroll,10);
 }
 
 /**

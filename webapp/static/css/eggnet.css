@@ -48,7 +48,7 @@
 }
 
 .scrolling-wrapper {
-  overflow-x: scroll;
+  overflow-x: hidden;
   overflow-y: hidden;
   white-space: nowrap;
 }
@@ -58,6 +58,7 @@
     /* margin: 10px;*/
     margin-left: 20px;
     margin-right: 20px;
+
 }
 
 .scrolling-wrapper {
