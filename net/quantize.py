@@ -33,7 +33,7 @@ def _plot_histogram_fc(x, layout=None, title='FC Weight Distributions', filename
         nc = int(np.ceil(n / nr))
     assert nr * nc >= n
 
-    fig, axes = plt.subplots(nrows=nr, ncols=nc, sharex='all', sharey='all', figsize=(8, 6))
+    fig, axes = plt.subplots(nrows=nr, ncols=nc, sharex='all', sharey='all', figsize=(10, 6), constrained_layout=True)
 
     for ix in range(n):
         i = ix // nc
