@@ -11,7 +11,7 @@
     {%- endblock metas %}
 
     {%- block styles %}
-    
+
     <!-- Font Awesome Icons -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/fontawesome/all.min.css') }}">
     <link href="{{ url_for('static', filename='css/eggnet.css') }}" rel="stylesheet">
@@ -58,6 +58,7 @@
         {%- endblock body %}
     </div>
 
+    <script src="{{ url_for('static', filename='js/vue-image-upload-resize.umd.min.js') }}" type="text/javascript"></script>
     <script src="{{ url_for('static', filename='js/eggnet.js') }}" type="text/javascript"></script>
     {{ im_sc|safe }}
     {{ hist_sc|safe }}

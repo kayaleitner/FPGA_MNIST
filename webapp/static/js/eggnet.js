@@ -12,7 +12,9 @@ var eggnet = new Vue({
           { age: 89, first_name: 'Geneva', last_name: 'Wilson' },
           { age: 38, first_name: 'Jami', last_name: 'Carney' }
         ],
-        systemStats: String
+        systemStats: String,
+        image: Object,
+        hasImage: false
     },
 
 
@@ -27,6 +29,20 @@ var eggnet = new Vue({
                     console.log(data)
                     this.systemStats = data.data
                 }));
+        },
+
+        setImage(file) {
+          this.image = file;
+          this.hasImage = true;
+          data = {file}
+          let path = document.location.origin + '/api/uploadimage';
+          axios.post(path,data)
+              .then((res) => {return res.data; })
+              .then((item) => {Bokeh.embed.embed_item(item, "bok-prev")})
+              .catch((error) => {
+                // eslint-disable-next-line
+                console.error(error);
+              });
         }
     },
 
@@ -207,5 +223,3 @@ window.onload = function () {
     setup_chats();
     add_random_mnist_images();
 };
-
-

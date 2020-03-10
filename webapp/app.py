@@ -1,10 +1,13 @@
 from flask import Flask, render_template, jsonify, redirect, request
 from bokeh.plotting import figure
-from bokeh.embed import components
+from bokeh.embed import components, json_item
+from bokeh.palettes import gray
 from py import fpga
 from py.DataHandler import DataHandler
 from py.forms import DataToFPGA
 import numpy as np
+import base64
+import cv2
 
 app = Flask(__name__)
 # Bootstrap(app)
@@ -103,6 +106,39 @@ def add_header(r):
     r.headers["Expires"] = "0"
     r.headers['Cache-Control'] = 'public, max-age=0'
     return r
+
+@app.route('/api/uploadimage', methods=['GET','POST'])
+def resimg():
+    if request.method == 'POST':
+        data = request.get_json()
+        data = data['file']
+        image_b64 = data.split(",")[1]
+        binary = base64.b64decode(image_b64)
+        image = np.asarray(bytearray(binary), dtype="uint8")
+        image = cv2.imdecode(image, cv2.IMREAD_COLOR)
+        image_gray = rgb2gray(image)
+        image_gray = np.uint8(image_gray)
+
+        plot = figure(
+            plot_height=280,
+            plot_width=280,
+        )
+
+        image_gray = np.flipud(image_gray)
+        y = np.where(image_gray)[0]
+        x = np.where(image_gray)[1]
+        palette = gray(256)
+        cols = np.take(palette, image_gray.reshape(image_gray.size))
+        plot.square(x, y, color=cols, size=10)
+
+    return json_item(plot)
+
+
+def rgb2gray(rgb):
+    r, g, b = rgb[:,:,0], rgb[:,:,1], rgb[:,:,2]
+    gray = 0.2989 * r + 0.5870 * g + 0.1140 * b
+    return gray
+
 
 
 if __name__ == '__main__':
