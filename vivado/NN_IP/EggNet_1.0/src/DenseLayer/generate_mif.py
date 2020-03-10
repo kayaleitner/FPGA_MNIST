@@ -2,7 +2,20 @@
 import numpy as np
 import json
 
-config_file_name = "../../../../../net/final_weights/int8_fpi/config.json"
+BITS = 8
+
+if BITS == 4:
+    config_file_name = "../../../../../net/final_weights/int4_fpi/config.json"
+    denselayer_1_file_name = "../../../../../net/final_weights/int4_fpi/fc1.w.txt"
+    denselayer_2_file_name = "../../../../../net/final_weights/int4_fpi/fc2.w.txt"
+    denselayer_1_bias_file_name = "../../../../../net/final_weights/int4_fpi/fc1.b.txt"
+    denselayer_2_bias_file_name = "../../../../../net/final_weights/int4_fpi/fc2.b.txt"
+elif BITS == 8:
+    config_file_name = "../../../../../net/final_weights/int8_fpi/config.json"
+    denselayer_1_file_name = "../../../../../net/final_weights/int8_fpi/fc1.w.txt"
+    denselayer_2_file_name = "../../../../../net/final_weights/int8_fpi/fc2.w.txt"
+    denselayer_1_bias_file_name = "../../../../../net/final_weights/int8_fpi/fc1.b.txt"
+    denselayer_2_bias_file_name = "../../../../../net/final_weights/int8_fpi/fc2.b.txt"
 
 def get_binstr(a, n=8):
     binstr = list(format(abs(a), '0' + str(n) +'b'))
@@ -19,11 +32,6 @@ def get_binstr(a, n=8):
             else:
                 binstr[k] = '0'
     return "".join(binstr)
-
-denselayer_1_file_name = "../../../../../net/final_weights/int8_fpi/fc1.w.txt"
-denselayer_2_file_name = "../../../../../net/final_weights/int8_fpi/fc2.w.txt"
-denselayer_1_bias_file_name = "../../../../../net/final_weights/int8_fpi/fc1.b.txt"
-denselayer_2_bias_file_name = "../../../../../net/final_weights/int8_fpi/fc2.b.txt"
 
 INPUT_IMAGE_WIDTH = 7
 INPUT_IMAGE_HIGHT = 7
@@ -68,9 +76,9 @@ for i in range(0, DL1_INPUT_NEURONS):
     line = ""
     for j in reversed(range(0, DL1_OUTPUT_NEURONS)):
         #Use this if using the normal NN testbench
-        #binstr = get_binstr(dl1_weights[i][j])
+        #binstr = get_binstr(dl1_weights[i][j], config_data["input_bits"][2])
         #Use this if using the combined conv2d1 testbench started from tb_convhcannel_run_sim.py
-        binstr = get_binstr(dl1_weights_permutated[i][j])
+        binstr = get_binstr(dl1_weights_permutated[i][j], config_data["input_bits"][2])
         line += binstr
     dl1_mif_file.write(line + "\n")
         
@@ -82,7 +90,7 @@ dl2_mif_file = open(dl2_mif_file_name, 'w')
 for i in range(0, DL2_INPUT_NEURONS):
     line = ""
     for j in reversed(range(0, DL2_OUTPUT_NEURONS)):
-        binstr = get_binstr(dl2_weights[i][j])
+        binstr = get_binstr(dl2_weights[i][j], config_data["input_bits"][3])
         line += binstr
     dl2_mif_file.write(line + "\n")
     
@@ -92,7 +100,7 @@ dl1_bias_mif_file_name = "bias_terms_L1.mif"
 dl1_bias_mif_file = open(dl1_bias_mif_file_name, 'w')
 
 for i in range(0, DL1_OUTPUT_NEURONS):
-    line = get_binstr(dl1_bias[i], 16)
+    line = get_binstr(dl1_bias[i], config_data["input_bits"][2]*2)
     dl1_bias_mif_file.write(line + "\n")
 
 dl1_bias_mif_file.close()
@@ -101,7 +109,7 @@ dl2_bias_mif_file_name = "bias_terms_L2.mif"
 dl2_bias_mif_file = open(dl2_bias_mif_file_name, 'w')
 
 for i in range(0, DL2_OUTPUT_NEURONS):
-    line = get_binstr(dl2_bias[i], 16)
+    line = get_binstr(dl2_bias[i], config_data["input_bits"][3]*2)
     dl2_bias_mif_file.write(line + "\n")
 
 dl2_bias_mif_file.close()

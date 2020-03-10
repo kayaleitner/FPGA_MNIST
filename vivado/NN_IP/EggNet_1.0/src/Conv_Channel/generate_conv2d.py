@@ -6,13 +6,19 @@ import numpy as np
 import re
 import json
 
+BITS = 8
+
 num_layers = 2
-config_file_name = "../../../../../net/final_weights/int8_fpi/config.json"
-file_names = ["../../../../../net/final_weights/int8_fpi/cn1.k.txt",
-         "../../../../../net/final_weights/int8_fpi/cn2.k.txt"]
 
-DATA_WIDTH = 8
-
+if BITS == 4:
+    config_file_name = "../../../../../net/final_weights/int4_fpi/config.json"
+    file_names = ["../../../../../net/final_weights/int4_fpi/cn1.k.txt",
+             "../../../../../net/final_weights/int4_fpi/cn2.k.txt"]
+elif BITS == 8:
+    config_file_name = "../../../../../net/final_weights/int8_fpi/config.json"
+    file_names = ["../../../../../net/final_weights/int8_fpi/cn1.k.txt",
+                 "../../../../../net/final_weights/int8_fpi/cn2.k.txt"]
+    
 if __name__ == '__main__':
     num_input_channels = [None]*num_layers
     num_output_channels = [None]*num_layers
@@ -32,7 +38,7 @@ if __name__ == '__main__':
     config_data = json.load(fp_json)
     
     for i in range(0, num_layers):
-        msb[i] = config_data["shifts"][i] + DATA_WIDTH - 1
+        msb[i] = config_data["shifts"][i] + config_data["output_bits"][i] - 1
         file = open(file_names[i], 'r')
         def_line = file.readline()
         regex = re.compile("# \(3, 3, (.*?)\)\n")
@@ -76,6 +82,9 @@ if __name__ == '__main__':
             tp_str_new = re.sub("constant KERNELS : kernel_array_t :=[^\n]*\n", "constant KERNELS : kernel_array_t := " + channel_strings[i][j] + ";\n", tp_str_new)
             tp_str_new = re.sub("\tN : integer :=[^\n]*\n", "\tN : integer := " + str(num_input_channels[i]) + ";\n", tp_str_new)
             tp_str_new = re.sub("\tOUTPUT_MSB : integer :=[^\n]*\n", "\tOUTPUT_MSB : integer := " + str(msb[i]) + ";\n", tp_str_new)
+            tp_str_new = re.sub("\tBIT_WIDTH_IN : integer :=[^\n]*\n", "\tBIT_WIDTH_IN : integer := " + str(config_data["input_bits"][i]) + ";\n", tp_str_new)
+            tp_str_new = re.sub("\tBIT_WIDTH_OUT : integer :=[^\n]*\n", "\tBIT_WIDTH_OUT : integer := " + str(config_data["output_bits"][i]) + ";\n", tp_str_new)
+            tp_str_new = re.sub("\tKERNEL_WIDTH_OUT : integer :=[^\n]*\n", "\tKERNEL_WIDTH_OUT : integer := " + str(config_data["output_bits"][i] + config_data["input_bits"][i] + int(np.ceil(np.log2(9)))) + ";\n", tp_str_new)
             tp_file_new = open("channels/convchannel" + str(i_convchan) + ".vhd", 'w')
             tp_file_new.write(tp_str_new)
             tp_file_new.close()
