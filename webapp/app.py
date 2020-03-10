@@ -1,11 +1,9 @@
 from flask import Flask, render_template, jsonify, redirect, request
-# from flask_bootstrap import Bootstrap
 from bokeh.plotting import figure
-import bokeh.palettes
-from bokeh.embed import file_html, components
-import fpga
-from DataHandler import DataHandler
-from forms import DataToFPGA
+from bokeh.embed import components
+from py import fpga
+from py.DataHandler import DataHandler
+from py.forms import DataToFPGA
 import numpy as np
 
 app = Flask(__name__)
@@ -77,17 +75,6 @@ def get_image_json():
         return {'error': 'index not in range 0 to 9999'}
 
 
-@app.route('/admin')
-def admin():
-    os_stats = fpga.get_system_stats()
-    return render_template('admin.html', sys_stats=os_stats)
-
-
-@app.route('/contact')
-def contact():
-    return render_template('contact.html')
-
-
 @app.errorhandler(404)
 def page_not_found(e):
     return render_template('404.html'), 404
@@ -101,7 +88,7 @@ def api_all():
 
 @app.route('/api/v1/system/stats', methods=['GET'])
 def api_get_system_stats():
-    data = fpga.get_system_stats_dict()
+    data = fpga.get_system_stats(verbose=False)
     return jsonify(data)
 
 
@@ -119,5 +106,4 @@ def add_header(r):
 
 
 if __name__ == '__main__':
-    app.debug()
-    # app.run()
+    app.run(host='0.0.0.0', port=5001, debug=True)

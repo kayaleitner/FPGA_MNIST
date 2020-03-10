@@ -2,6 +2,10 @@
     padding: 15px;
 }
 
+.bk-root {
+    display: inline-flex;
+    padding: 1em 5em;
+}
 .width-100 {
     width: 100%;
 }
@@ -40,4 +44,40 @@
     margin-left: 0;
     margin-right: 0;
     display: block;
+}
+
+.scrolling-wrapper {
+  overflow-x: scroll;
+  overflow-y: hidden;
+  white-space: nowrap;
+}
+
+.scrolling-wrapper .card {
+    display: inline-block;
+    /* margin: 10px;*/
+    margin-left: 20px;
+    margin-right: 20px;
+}
+
+.scrolling-wrapper {
+  -webkit-overflow-scrolling: touch;
+}
+
+.mnist-image {
+    width: 200%;
+    height: auto;
+}
+
+.card {
+    margin: 20px;
+}
+
+.figure {
+    text-align: center;
+}
+
+.figure * {
+    width: 60%;
+    margin-left: auto;
+    margin-right: auto;
 }
