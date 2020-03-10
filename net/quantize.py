@@ -140,8 +140,8 @@ def main():
     # weights = read_np_torch(ordering="BHWC", target_dtype=np.float32)
 
     # Input activation bits and fractions
-    ia_b = np.array([5, 5, 5, 5])
-    ia_f = np.array([4, 0, 0, 0])
+    ia_b = np.array([9, 4, 4, 4])
+    ia_f = np.array([8, 2, 0, 0])
 
     # Weights bits and fractions
     # w_b = np.array([4, 4, 4, 4])
@@ -150,12 +150,16 @@ def main():
     w_f = np.array([2, 5, 5, 5])
 
     # Output activation bits and fractions
-    oa_b = np.array([5, 5, 5, 5])
-    oa_f = np.array([0, 0, 0, 0])
+    oa_b = np.array([4, 4, 4, 4])
+    oa_f = np.array([2, 0, 0, 2])
+
+    # Last Output is signed, becuase we dont have a ReLU Layer there
+    oa_signed = np.array([False, False, False, True])
+
     qweights, shift, options = perform_real_quant(weights,
                                                   in_bits=ia_b, in_frac=ia_f,
                                                   w_bits=w_b, w_frac=w_f,
-                                                  out_bits=oa_b, out_frac=oa_f)
+                                                  out_bits=oa_b, out_frac=oa_f, activations_signed=oa_signed)
     fweights = quant2float(qweights, options)
     save_weights(fweights, qweights, weights, config=options, qprefix='int4')
 
@@ -259,5 +263,5 @@ def save_weights(fweights, qweights, weights, config, qprefix):
 
 
 if __name__ == '__main__':
-    make_plots()
+    # make_plots()
     main()

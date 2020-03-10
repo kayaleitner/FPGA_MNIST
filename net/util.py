@@ -136,6 +136,7 @@ def perform_real_quant(weight_dict,
                        in_bits: np.ndarray, in_frac: np.ndarray,
                        w_bits: np.ndarray, w_frac: np.ndarray,
                        out_bits: np.ndarray, out_frac: np.ndarray,
+                       activations_signed: np.ndarray,
                        additions=np.ndarray([16, 32, 1568, 32]),
                        traget_dtype=np.int32):
     """
@@ -178,12 +179,23 @@ def perform_real_quant(weight_dict,
     bias_scale = 1 / 2 ** t_f
 
     w_max = 2.0 ** (w_bits - 1) - 1
-    w_min = -2.0 ** w_bits - 1
+    w_min = -2.0 ** (w_bits - 1)
     w_scale = 1 / 2 ** w_f
 
-    out_max = 2.0 ** (oa_b - 1) - 1
-    out_min = -2.0 ** (oa_b - 1)
-    out_scale = 1 / 2 ** oa_b
+    out_max = np.zeros_like(out_bits)
+    out_min = np.zeros_like(out_bits)
+    out_scale = np.zeros_like(out_bits)
+
+    for i in range(len(out_bits)):
+        if activations_signed[i]:
+            out_max[i] = 2.0 ** (oa_b[i] - 1) - 1
+            out_min[i] = -2.0 ** (oa_b[i] - 1)
+            out_scale[i] = 1 / 2 ** oa_f[i]
+        else:
+            out_max[i] = 2.0 ** (oa_b[i]) - 1
+            out_min[i] = 0
+            out_scale[i] = 1 / 2 ** oa_f[i]
+
 
     options = {
         'input_bits': ia_b,
