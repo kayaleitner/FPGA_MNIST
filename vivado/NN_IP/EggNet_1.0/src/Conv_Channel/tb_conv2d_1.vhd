@@ -8,6 +8,7 @@ use work.kernel_pkg.all;
 use work.Conv2D_1;
 use work.MaxPooling;
 use work.Serializer;
+use work.NeuralNetwork;
 
 entity tb_conv2d_1 is
 end tb_conv2d_1;
@@ -16,18 +17,23 @@ architecture beh of tb_conv2d_1 is
 	constant BIT_WIDTH_IN : integer := 8;
 	constant BIT_WIDTH_OUT : integer := 8;
 	constant INPUT_CHANNELS : integer := 16;
-	constant OUTPUT_CHANNELS : integer := 32;
+	constant OUTPUT_CHANNELS : integer := 24;
+	constant OUTPUT_COUNT : integer := 10;
 	constant CLK_PERIOD : time := 10 ns; -- 100MHz
 	constant IMG_WIDTH : integer := 14;
 	constant IMG_HEIGHT : integer := 14;
 	constant BATCH_SIZE : integer := 3;
 	constant INPUT_ARRAY_SIZE : integer := IMG_WIDTH * IMG_HEIGHT * BATCH_SIZE;
 	constant POOLING_OUTPUT_ARRAY_SIZE : integer := (IMG_WIDTH * IMG_HEIGHT * BATCH_SIZE)/4;
+	constant SERIALIZER_OUTPUT_ARRAY_SIZE : integer := POOLING_OUTPUT_ARRAY_SIZE * OUTPUT_CHANNELS;
+	constant OUTPUT_ARRAY_SIZE : integer := BATCH_SIZE * OUTPUT_COUNT;
 	
 	type t_pixel_array is array (0 to INPUT_ARRAY_SIZE - 1) of integer;
 	type t_pixel_array_pool is array (0 to POOLING_OUTPUT_ARRAY_SIZE - 1) of integer;
 	type t_kernel_array is array (0 to KERNEL_SIZE - 1) of t_pixel_array;
 	type t_channel_array is array(0 to INPUT_CHANNELS - 1) of t_kernel_array;
+	type t_serializer_array is array(0 to SERIALIZER_OUTPUT_ARRAY_SIZE - 1) of integer;
+	type t_output_array is array(0 to OUTPUT_ARRAY_SIZE - 1) of integer;
 	
 	signal s_Clk_i, s_n_Res_i, s_C1_Valid_i, s_C1_Valid_o : std_logic;
 	signal s_C1_Last_o, s_C1_Last_i, s_C1_Ready_o : std_logic;
@@ -38,6 +44,8 @@ architecture beh of tb_conv2d_1 is
 	signal s_Serializer_Data_o : std_logic_vector(BIT_WIDTH_OUT-1 downto 0);
 	signal s_Serializer_Ready_o, s_Serializer_Valid_o, s_Serializer_Last_o : std_logic;
 	signal s_Serializer_Ready_i : std_logic;
+	signal s_NN_Data_o : std_logic_vector((BIT_WIDTH_OUT*OUTPUT_COUNT)-1 downto 0);
+	signal s_NN_Valid_o, s_NN_Ready_o, s_NN_Last_o : std_logic;
 	
 	file kernel_file : text;
 	constant char_num : string(1 to 10) := "0123456789";
@@ -45,6 +53,7 @@ architecture beh of tb_conv2d_1 is
 	signal sim_ended : std_logic := '0';
 	signal conv2d_done : std_logic := '0';
 	signal pool_done : std_logic := '0';
+	signal serialize_done : std_logic := '0';
 	
 begin
   
@@ -98,29 +107,44 @@ begin
 		Clk_i => s_Clk_i,
 		n_Res_i => s_n_Res_i,
 		Valid_i => s_Pool_Valid_o,
-		Ready_i => s_Serializer_Ready_i,
+		Ready_i => s_NN_Ready_o,
 		Valid_o => s_Serializer_Valid_o,
 		Ready_o => s_Serializer_Ready_o,
 		Data_i => s_Pool_Data_o,
 		Data_o => s_Serializer_Data_o
 	);
+	
+	uit_3 : entity work.NeuralNetwork
+	generic map(
+		PATH => "../../"
+	) port map(
+		Clk_i => s_Clk_i,
+		Resetn_i => s_n_Res_i,
+		Valid_i => s_Serializer_Valid_o,
+		Data_i => s_Serializer_Data_o,
+		Valid_o => s_NN_Valid_o,
+		Data_o => s_NN_Data_o,
+		Ready_i => '1',
+		Ready_o => s_NN_Ready_o,
+		Last_o => s_NN_Last_o
+	);
   
-	set_ready : process(s_Clk_i)
-		variable seed1 : positive := 1;
-		variable seed2 : positive := 1;
-		variable x : real;
-		variable y : integer;
-	begin
-		if rising_edge(s_Clk_i) then
-			uniform(seed1, seed2, x);
-			y := integer(floor(x * 2.0));
-			if y = 0 then
-				s_Serializer_Ready_i <= '1';
-			else
-				s_Serializer_Ready_i <= '0';
-			end if;
-		end if;
-	end process;
+	-- set_ready : process(s_Clk_i)
+		-- variable seed1 : positive := 1;
+		-- variable seed2 : positive := 1;
+		-- variable x : real;
+		-- variable y : integer;
+	-- begin
+		-- if rising_edge(s_Clk_i) then
+			-- uniform(seed1, seed2, x);
+			-- y := integer(floor(x * 2.0));
+			-- if y = 0 then
+				-- s_Serializer_Ready_i <= '1';
+			-- else
+				-- s_Serializer_Ready_i <= '0';
+			-- end if;
+		-- end if;
+	-- end process;
   
 	-- Generates the clock signal
 	clkgen : process
@@ -146,8 +170,8 @@ begin
 	
 	get_output_conv2d : process(s_Clk_i, conv2d_done)
 		variable K : integer := 0;
-		type t_output_array is array(0 to OUTPUT_CHANNELS - 1) of t_pixel_array;
-		variable output : t_output_array;
+		type t_conv2d_output_array is array(0 to OUTPUT_CHANNELS - 1) of t_pixel_array;
+		variable output : t_conv2d_output_array;
 		variable output_line : line;
         variable file_name_out : string(1 to 25) := "tmp/conv2d_1_output00.txt";
 	begin
@@ -179,7 +203,6 @@ begin
         variable file_name_out : string(1 to 26) := "tmp/pooling_1_output00.txt";
 	begin
 		if s_Pool_Valid_o = '1' and rising_edge(s_Clk_i) then
-			--report integer'image(K);
 			for I in 0 to OUTPUT_CHANNELS - 1 loop
 				output(I)(K) := to_integer(unsigned(s_Pool_Data_o((I+1)*BIT_WIDTH_OUT - 1 downto I*BIT_WIDTH_OUT)));
 			end loop;
@@ -195,6 +218,46 @@ begin
 				end loop;
 				file_close(kernel_file);
 			end loop;
+		end if;	
+	end process;
+	
+	get_output_serializer : process(s_Clk_i, serialize_done)
+		variable K : integer := 0;
+		variable output : t_serializer_array;
+		variable output_line : line;
+        variable file_name_out : string(1 to 25) := "tmp/serializer_output.txt";
+	begin
+		if s_Serializer_Valid_o = '1' and rising_edge(s_Clk_i) then
+			output(K) := to_integer(unsigned(s_Serializer_Data_o));
+			K := K + 1;
+		elsif serialize_done = '1' then
+			file_open(kernel_file, file_name_out, write_mode);
+			for I in 0 to SERIALIZER_OUTPUT_ARRAY_SIZE - 1 loop
+				write(output_line, output(I));
+				writeline(kernel_file, output_line);
+			end loop;
+			file_close(kernel_file);
+		end if;	
+	end process;
+	
+	get_final_output : process(s_Clk_i, sim_ended)
+		variable K : integer := 0;
+        variable file_name_out : string(1 to 14) := "tmp/output.txt";
+		variable output_line : line;
+		variable output : t_output_array;
+	begin
+		if s_NN_Valid_o = '1' and rising_edge(s_Clk_i) then
+			for I in 0 to OUTPUT_COUNT - 1 loop
+				output(K*OUTPUT_COUNT + I) := to_integer(unsigned(s_NN_Data_o((I+1)*BIT_WIDTH_IN - 1 downto I*BIT_WIDTH_IN)));
+			end loop;
+			K := K + 1;
+		elsif sim_ended = '1' then
+			file_open(kernel_file, file_name_out, write_mode);
+			for J in 0 to OUTPUT_ARRAY_SIZE - 1 loop
+				write(output_line, output(J));
+				writeline(kernel_file, output_line);
+			end loop;
+			file_close(kernel_file);
 		end if;	
 	end process;
 
@@ -251,15 +314,19 @@ begin
 		s_C1_Last_i <= '0';
 		s_C1_Valid_i <= '0';
 		s_C1_X_i <= (others => '0');
-		for L in 0 to 100 loop
+		for L in 0 to 20 loop
 			wait until rising_edge(s_Clk_i);
 		end loop;
 		conv2d_done <= '1';
-		for L in 0 to 200 loop
+		for L in 0 to 20 loop
 			wait until rising_edge(s_Clk_i);
 		end loop;
 		pool_done <= '1';
-		for L in 0 to 100 loop
+		for L in 0 to 20 loop
+			wait until rising_edge(s_Clk_i);
+		end loop;
+		serialize_done <= '1';
+		for L in 0 to 20 loop
 			wait until rising_edge(s_Clk_i);
 		end loop;
 		sim_ended <= '1';

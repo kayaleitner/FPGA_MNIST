@@ -9,12 +9,10 @@ import torchvision
 import torchvision.transforms as transforms
 from torch import nn
 import torch.nn.functional as F
-from torch.quantization import convert
 
-import NeuralNetwork.nn.util
-import NeuralNetwork.nn.core
-from NeuralNetwork.Torch.models import LeNet
-from NeuralNetwork.nn.util import MNIST_CLASSES
+import EggNet
+import EggNet.Reader
+from EggNet.Torch.models import LeNet
 
 
 def train_model(model, criterion, optimizer, scheduler, num_epochs=25, device='cpu'):
@@ -103,7 +101,7 @@ def create_combined_model(model_fe):
         model_fe.quant,  # Quantize the input
         model_fe.conv1,
         model_fe.bn1,
-        NeuralNetwork.NN.core.relu,
+        EggNet.relu,
         model_fe.maxpool,
         model_fe.layer1,
         model_fe.layer2,
@@ -236,7 +234,7 @@ if __name__ == '__main__':
     # data sets & data loaders
     trainset = torchvision.datasets.MNIST('./data', download=True, train=True, transform=transform)
     testset = torchvision.datasets.MNIST('./data', download=True, train=False, transform=transform)
-    class_names = MNIST_CLASSES
+    class_names = EggNet.Reader.MNIST_CLASSES
     dataloaders = {
         'train': torch.utils.data.DataLoader(trainset, batch_size=9, shuffle=True),
         'val': torch.utils.data.DataLoader(testset, batch_size=9, shuffle=True)

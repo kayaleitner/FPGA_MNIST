@@ -4,6 +4,7 @@ use ieee.numeric_std.all;
 --USE ieee.math_real.ceil;
 --USE ieee.math_real.log2;
 use work.kernel_pkg.all;
+use work.clogb2_Pkg.all;
 use work.Kernel3x3;
 
 entity ConvChannelTemplate is
@@ -30,26 +31,6 @@ entity ConvChannelTemplate is
 end ConvChannelTemplate;
 
 architecture beh of ConvChannelTemplate is
-
-	function clogb2 (bit_depth : integer) return integer is                  
-	 	variable depth  : integer := bit_depth;                               
-	 	variable count  : integer := 1;                                       
-	 begin                                                                   
-	 	 for clogb2 in 1 to bit_depth loop  -- Works for up to 32 bit integers
-	      if (bit_depth <= 2) then                                           
-	        count := 1;                                                      
-	      else                                                               
-	        if(depth <= 1) then                                              
-	 	       count := count;                                                
-	 	     else                                                             
-	 	       depth := depth / 2;                                            
-	          count := count + 1;                                            
-	 	     end if;                                                          
-	 	   end if;                                                            
-	   end loop;                                                             
-	   return(count);        	                                              
-	 end;     
-
 	
 	--constant SUM_WIDTH : integer := KERNEL_WIDTH_OUT + integer(ceil(log2(real(N)))) + 1;
 	constant SUM_WIDTH : integer := KERNEL_WIDTH_OUT + clogb2(N)+ 1;

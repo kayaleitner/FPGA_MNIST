@@ -5,12 +5,14 @@ import subprocess
 import filecmp
 import numpy as np
 import matplotlib.pyplot as plt 
+from sys import exit
+import json
 
 # %% import custom modules
 import vhdl_testbench as tb 
-
-file_names = ["../../../../../net/final_weights/fpi/cn1.k.txt",
-         "../../../../../net/final_weights/fpi/cn2.k.txt"]
+config_file_name = "../../../../../net/final_weights/int8_fpi/config.json"
+file_names = ["../../../../../net/final_weights/int8_fpi/cn1.k.txt",
+              "../../../../../net/final_weights/int8_fpi/cn2.k.txt"]
 
 # %% Helper function to split array into n roughly equal parts
 def chunk_array(seq, num):
@@ -23,10 +25,6 @@ def chunk_array(seq, num):
         last += avg
 
     return out
-
-# %% Quantization function for floating point weights
-def quantize(a):
-    return a
 
 # %% Pooling function
     
@@ -62,6 +60,9 @@ def pool(CO, file_name_pool_in, file_name_pool_out, width):
         pool_input_file.close()
         pool_output_file.close()
 
+fp_json = open(config_file_name, 'r')
+config_data = json.load(fp_json)
+
 # %% parameters
 KEEP_TEMPORARY_FILES = True
 KERNEL_SIZE = 3
@@ -69,12 +70,12 @@ NUMBER_OF_TEST_BLOCKS = 3
 CI_L1 = 1
 CO_L1 = 16
 CI_L2 = 16
-CO_L2 = 32
+CO_L2 = 24
+DATA_WIDTH = 8
 
 IMG_WIDTH = 28
 IMG_HIGTH = 28
 BLOCK_SIZE = IMG_WIDTH*IMG_HIGTH
-
 
 l1_weights_file_name = file_names[0]
 l2_weights_file_name = file_names[1]
@@ -97,7 +98,7 @@ l1_test_kernels = tb.get_Kernels(l1_test_vectors,IMG_WIDTH)
 
 # %% calculate Layer 1 output as new memory controller input 
 l1_weights_file = open(l1_weights_file_name, 'r')
-l1_weights = np.array(list(map(quantize, np.loadtxt(l1_weights_file, dtype=np.int8)))).reshape((3,3,CI_L1,CO_L1))
+l1_weights = np.array(list(np.loadtxt(l1_weights_file, dtype=np.int8))).reshape((3,3,CI_L1,CO_L1))
 l1_weights_file.close()
 
 l1_weights_reshaped = np.ndarray((CO_L1,CI_L1,3,3))
@@ -107,7 +108,7 @@ for i in range(0, CI_L1):
             for y in range(0,KERNEL_SIZE):
                 l1_weights_reshaped[j][i][y][x] = l1_weights[x][y][i][j]
                 
-l1_msb = np.ones(CO_L1,dtype=np.int32)*15
+l1_msb = np.ones(CO_L1,dtype=np.int32)*(config_data["shifts"][0] + DATA_WIDTH - 1)
 l1_features = tb.conv_2d(l1_test_kernels,l1_weights_reshaped,l1_msb)
 tb.write_features_to_file(l1_features,layernumber=1)
 
@@ -127,7 +128,7 @@ for i in range(0, KERNEL_SIZE*KERNEL_SIZE):
     conv2d0_input_files[i].close()
 
 
-# %% Run test and compare output
+# %% Run test and compare output form conv2d0
 
 print("Compiling and running conv2d0 testbench...")
 
@@ -144,7 +145,7 @@ for i in range(0, CO_L1):
     file_name_emu_current = file_name_emu.replace("{I}", str(i))
     if filecmp.cmp(file_name_sim_current, file_name_emu_current) != True:
         print("Simulation and emulation output not the same for conv2d0, channel " + str(i))
-        quit()
+        exit()
 
 print("Simulation and emulation output the same for conv2d0")
 
@@ -156,6 +157,22 @@ pool(CO_L1, file_name_sim, "tmp/pool_output{I}.txt", IMG_WIDTH)
 IMG_WIDTH //= 2
 IMG_HIGTH //= 2
 BLOCK_SIZE = IMG_WIDTH*IMG_HIGTH
+
+# %% Run test and compare output foor pool0
+file_name_sim = "tmp/pool_output{I}.txt"
+file_name_emu = "tmp/pooling_0_output{I}.txt"
+
+for i in range(0, CO_L1):
+    i_str = str(i)
+    if len(i_str) == 1:
+        i_str = "0" + i_str
+    file_name_sim_current = file_name_sim.replace("{I}", i_str)
+    file_name_emu_current = file_name_emu.replace("{I}", i_str)
+    if filecmp.cmp(file_name_sim_current, file_name_emu_current) != True:
+        print("Simulation and emulation output not the same for pool0, channel " + str(i))
+        exit()
+
+print("Simulation and emulation output the same for pool0")
 
 # %% Get input for layer 2 from output of layer 1
 file_name_in = "tmp/pool_output{I}.txt"
@@ -183,7 +200,7 @@ l2_test_kernels = tb.get_Kernels(l2_test_vectors,IMG_WIDTH)
 
 # %% calculate Layer 2 output as new memory controller input 
 l2_weights_file = open(l2_weights_file_name, 'r')
-l2_weights = np.array(list(map(quantize, np.loadtxt(l2_weights_file, dtype=np.int8)))).reshape((3,3,CI_L2,CO_L2))
+l2_weights = np.array(list(np.loadtxt(l2_weights_file, dtype=np.int8))).reshape((3,3,CI_L2,CO_L2))
 l2_weights_file.close()
 
 l2_weights_reshaped = np.ndarray((CO_L2,CI_L2,3,3))
@@ -193,7 +210,7 @@ for i in range(0, CI_L2):
             for y in range(0,KERNEL_SIZE):
                 l2_weights_reshaped[j][i][y][x] = l2_weights[x][y][i][j]
 
-l2_msb = np.ones(CO_L2,dtype=np.int32)*15
+l2_msb = np.ones(CO_L2,dtype=np.int32)*(config_data["shifts"][1] + DATA_WIDTH - 1)
 l2_features = tb.conv_2d(l2_test_kernels,l2_weights_reshaped,l2_msb)
 tb.write_features_to_file(l2_features,layernumber=2)
 
@@ -218,8 +235,7 @@ for i in range(0, CI_L2):
     for j in range(0, KERNEL_SIZE*KERNEL_SIZE):
         conv2d1_input_files[i][j].close()
 
-# %% Run test and compare output for layer 2
-
+# %% Run test and compare output for conv2d1
 print("Compiling and running conv2d1 testbench...")
 
 subprocess.call("run_conv2d_1.bat")
@@ -235,10 +251,9 @@ for i in range(0, CO_L2):
     file_name_emu_current = file_name_emu.replace("{I}", str(i))
     if filecmp.cmp(file_name_sim_current, file_name_emu_current) != True:
         print("Simulation and emulation output not the same for conv2d1, channel " + str(i))
-        exit
-
+        exit()
+        
 print("Simulation and emulation output the same for conv2d1")
-
 
 # %% Pooling after layer 2
 
@@ -249,7 +264,23 @@ IMG_WIDTH //= 2
 IMG_HIGTH //= 2
 BLOCK_SIZE = IMG_WIDTH*IMG_HIGTH
 
-# %% Get input for dense layer
+# %% Run test and compare output for pool1
+file_name_sim = "tmp/dense_layer_input{I}.txt"
+file_name_emu = "tmp/pooling_1_output{I}.txt"
+
+for i in range(0, CO_L2):
+    i_str = str(i)
+    if len(i_str) == 1:
+        i_str = "0" + i_str
+    file_name_sim_current = file_name_sim.replace("{I}", i_str)
+    file_name_emu_current = file_name_emu.replace("{I}", i_str)
+    if filecmp.cmp(file_name_sim_current, file_name_emu_current) != True:
+        print("Simulation and emulation output not the same for pool1, channel " + str(i))
+        exit()
+
+print("Simulation and emulation output the same for pool1")
+
+# %% Get input for NN (unit-)test bench. this is a single block of feature sets in natural order (i.e. not reshaped by serializer)
 
 file_nn = open("tmp/nn_input.txt", "w")
 
@@ -269,33 +300,65 @@ file_nn.close()
 
 # %% Get output for dense layer
 
-denselayer_1_file_name = "../../../../../net/final_weights/fpi/fc1.w.txt"
-denselayer_2_file_name = "../../../../../net/final_weights/fpi/fc2.w.txt"
+denselayer_1_file_name = "../../../../../net/final_weights/int8_fpi/fc1.w.txt"
+denselayer_2_file_name = "../../../../../net/final_weights/int8_fpi/fc2.w.txt"
+denselayer_1_bias_file_name = "../../../../../net/final_weights/int8_fpi/fc1.b.txt"
+denselayer_2_bias_file_name = "../../../../../net/final_weights/int8_fpi/fc2.b.txt"
 
-DL1_INPUT_NEURONS = 1568
+dl1_bias_file = open(denselayer_1_bias_file_name, 'r')
+dl1_bias = np.loadtxt(dl1_bias_file, dtype=np.int16);
+dl1_bias_file.close()
+
+dl2_bias_file = open(denselayer_2_bias_file_name, 'r')
+dl2_bias = np.loadtxt(dl2_bias_file, dtype=np.int16);
+dl2_bias_file.close()
+
+DL1_INPUT_NEURONS = IMG_WIDTH*IMG_HIGTH*CO_L2
 DL1_OUTPUT_NEURONS = 32
 DL2_INPUT_NEURONS = 32
 DL2_OUTPUT_NEURONS = 10
 
 dl1_weights_file = open(denselayer_1_file_name, 'r')
-dl1_weights = np.array(list(map(quantize, np.loadtxt(dl1_weights_file, dtype=np.int8)))).reshape((DL1_INPUT_NEURONS, DL1_OUTPUT_NEURONS))
+dl1_weights = np.array(list(np.loadtxt(dl1_weights_file, dtype=np.int8))).reshape((DL1_INPUT_NEURONS, DL1_OUTPUT_NEURONS))
 dl1_weights_file.close()
 
+#reshape weights for fully connected layer 1
+permutation = [None]*DL1_INPUT_NEURONS
+for i in range(0, DL1_INPUT_NEURONS):
+    permutation[i] = int(i/BLOCK_SIZE) + (i % BLOCK_SIZE)*CO_L2
+idx = np.empty_like(permutation)
+idx[permutation] = np.arange(len(permutation))
+dl1_weights_permutated = dl1_weights[idx,:]
+
 dl2_weights_file = open(denselayer_2_file_name, 'r')
-dl2_weights = np.array(list(map(quantize, np.loadtxt(dl2_weights_file, dtype=np.int8)))).reshape((DL2_INPUT_NEURONS, DL2_OUTPUT_NEURONS))
+dl2_weights = np.array(list(np.loadtxt(dl2_weights_file, dtype=np.int8))).reshape((DL2_INPUT_NEURONS, DL2_OUTPUT_NEURONS))
 dl2_weights_file.close()
 
-file_nn = open("tmp/nn_input.txt", "r")
-denselayer_input = np.loadtxt(file_nn, dtype=np.int32)
-file_nn.close()
+file_serializer = open("tmp/serializer_output.txt", "r")
+serializer_output = np.loadtxt(file_serializer, dtype=np.int32)
+file_serializer.close()
+serializer_output_chunked = chunk_array(serializer_output, NUMBER_OF_TEST_BLOCKS)
 
-dl1_output = np.matmul(denselayer_input, dl1_weights)
-dl1_test_output = dl1_output
-dl1_output >>= 8
-dl1_output = np.clip(dl1_output, a_min = 0, a_max = 255)
-dl2_output = np.matmul(dl1_output, dl2_weights)
-dl2_output >>= 8
-dl2_output = np.clip(dl2_output, a_min = 0, a_max = 255)
+output_file = open("tmp/output.txt", "r")
+output = np.loadtxt(output_file)
+output_file.close();
+output_chunked = chunk_array(output, NUMBER_OF_TEST_BLOCKS)
+
+# %% Simulate dense layer, 
+
+for i in range(0, NUMBER_OF_TEST_BLOCKS):
+    dl1_output = np.matmul(serializer_output_chunked[i], dl1_weights_permutated) + dl1_bias;
+    dl1_output >>= 8
+    dl1_output = np.clip(dl1_output, a_min = 0, a_max = 255)
+    dl2_output = np.matmul(dl1_output, dl2_weights) + dl2_bias;
+    dl2_output >>= 8
+    dl2_output = np.clip(dl2_output, a_min = 0, a_max = 255)
+    for j in range(0, DL2_OUTPUT_NEURONS):
+        if dl2_output[j] != output_chunked[i][j]:
+            print("Output of dense layer not the same as simulation")
+            exit()
+
+print("Simulation and emulation output the same for dense layer")
 
 # %% delete tmp folder 
 if not KEEP_TEMPORARY_FILES:

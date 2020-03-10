@@ -1,6 +1,6 @@
 import numpy as np
 
-from NeuralNetwork import Ext as nnext
+from EggNet.NeuralNetwork import Ext as nnext
 
 
 class LayerActivations:
@@ -79,11 +79,11 @@ def check_torch_conv_hook(m, x, y, kernel, bias):
     x = x.numpy()
     y = y.numpy()
 
-    import NeuralNetwork
+    from EggNet import NeuralNetwork
     bk = bias
     bias = np.reshape(bias, newshape=(1,-1,1,1)) # make 4d
     y_ = NeuralNetwork.nn.conv2d_torch(x, kernel) + bias
-    yk_ = NeuralNetwork.nn.conv2d(xk, kk) +bk
+    yk_ = NeuralNetwork.nn.conv2d(xk, kk) + bk
     # Check if y and y_ are equal
 
     e = y - y_

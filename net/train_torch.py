@@ -15,7 +15,7 @@ EXPORT_DIR = 'np'
 SCRIPT_PATH = os.path.dirname(os.path.abspath(__file__))
 
 try:
-    import NeuralNetwork.Ext as nnext
+    import EggNet.NeuralNetwork.Ext as nnext
 except ImportError as error:
     print("Unable to import NeuralNetwork.Ext. Is it installed?")
     print(error)

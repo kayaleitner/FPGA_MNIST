@@ -8,8 +8,8 @@ USE work.clogb2_Pkg.all;
 entity NeuralNetwork is
 	generic(
 		VECTOR_WIDTH : integer := 8;
-		INPUT_COUNT  : integer := 1568;
-    PATH         : string := "../NN_IP/EGGNet_1.0";
+		INPUT_COUNT  : integer := 1176;
+		PATH         : string := "../NN_IP/EGGNet_1.0";
 		OUTPUT_COUNT : integer := 10
 	); 
 	port(
@@ -27,16 +27,16 @@ end NeuralNetwork;
 
 architecture Behavioral of NeuralNetwork is
   
-  constant INPUT_COUNT_L1 : integer := INPUT_COUNT;
+	constant INPUT_COUNT_L1 : integer := INPUT_COUNT;
 	constant OUTPUT_COUNT_L1 : integer := 32;
 	constant INPUT_COUNT_L2 : integer := OUTPUT_COUNT_L1;
 	constant OUTPUT_COUNT_L2 : integer := OUTPUT_COUNT;
   
-  constant DENSE_PATH : string := "/src/DenseLayer/";
-  constant ROM_FILE_L1 : string := PATH & DENSE_PATH & "dense_layer_1.mif"; 
-  constant BIAS_FILE_L1 : string := PATH & DENSE_PATH & "bias_terms_L1.mif";  
-  constant ROM_FILE_L2 : string := PATH & DENSE_PATH & "dense_layer_2.mif"; 
-  constant BIAS_FILE_L2 : string := PATH & DENSE_PATH & "bias_terms_L2.mif";
+	constant DENSE_PATH : string := "/src/DenseLayer/";
+	constant ROM_FILE_L1 : string := PATH & DENSE_PATH & "dense_layer_1.mif"; 
+	constant BIAS_FILE_L1 : string := PATH & DENSE_PATH & "bias_terms_L1.mif";  
+	constant ROM_FILE_L2 : string := PATH & DENSE_PATH & "dense_layer_2.mif"; 
+	constant BIAS_FILE_L2 : string := PATH & DENSE_PATH & "bias_terms_L2.mif";
 
 	signal s_L1_Reset_i, s_L2_Reset_i : std_logic := '0';
 	signal s_L1_Start_i, s_L2_Start_i : std_logic := '0';
@@ -67,7 +67,7 @@ architecture Behavioral of NeuralNetwork is
 	signal data_cnt_L1, data_cnt_L1_next   : integer range 0 to INPUT_COUNT_L1 := 0;
 	signal data_cnt_L2, data_cnt_L2_next   : integer range 0 to INPUT_COUNT_L2 := 0;
 	signal data_cnt_out, data_cnt_out_next : integer range 0 to OUTPUT_COUNT_L2 := 0;
-  signal do_output : std_logic;
+	signal do_output : std_logic;
 	--signal data_o_cnt : integer range 0 to OUTPUT_COUNT := OUTPUT_COUNT;
 	
 begin
@@ -100,7 +100,7 @@ begin
         OUTPUT_COUNT  => OUTPUT_COUNT_L2,
 		ROM_FILE      => ROM_FILE_L2,
 		BIAS_WIDTH    => VECTOR_WIDTH*2,
-        BIAS_FILE     => BIAS_FILE_L1)
+        BIAS_FILE     => BIAS_FILE_L2)
     port map(
 		Resetn_i => Resetn_i,
 		Reset_calculation_i => s_L2_Reset_i,
@@ -269,7 +269,7 @@ begin
 			Data_o <= (others => '0');
 			Last_o <= '0';
 			Valid_o <= '0';
-      do_output <= '0';
+			do_output <= '0';
 		elsif rising_edge(Clk_i) then
 			Data_o <= (others => '0');
 			Last_o <= '0';
@@ -277,11 +277,11 @@ begin
 			if state_next = ST_END then
 				do_output <= '1';
 			end if;
-			if Ready_i = '1' then
+			if Ready_i = '1' and do_output = '1' then
 				Valid_o <= '1';
 				Data_o <= Data_o_reg;
 				Last_o <= '1';
-        do_output <= '0';
+				do_output <= '0';
 			end if;
 		end if;
 	end process; 
