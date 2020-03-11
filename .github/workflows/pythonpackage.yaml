@@ -72,8 +72,11 @@ jobs:
       - name: Test Install
         run: |
           cd python/EggNetExtension
-          python setup.py build_ext sdist bdist_wheel
+          python setup.py build_ext
+          python setup.py build_ext --build-lib ./EggNetExtension
+          python setup.py bdist_wheel
           # Install from setup.py
+          
           pip install .
           # ToDo: Check install from
 

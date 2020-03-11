@@ -25,30 +25,8 @@ except AttributeError:
 
 
 def readme():
-    with open('../README.md') as f:
+    with open('./README.md') as f:
         return f.read()
-
-
-def recursive_source_file_search(f, path):
-    """
-    Recursively searches in path for .c or .cpp files and adds them to f
-    :param f: list of strings
-    :param path: folder path that should be searched
-    :return: None
-    """
-    for (dirpath, dirnames, filenames) in walk(path):
-        for filename in filenames:
-            if filename.endswith('.c') or filename.endswith('.cpp'):
-                if dirpath == "./":
-                    f.append(filename)
-                else:
-                    f.append(dirpath + "/" + filename)
-
-        for dirname in dirnames:
-            # ToDo: Check, if this recursive call is even necessary or if walk() does all the work
-            subdirpath = os.path.join(dirpath, dirname)
-            recursive_source_file_search(f, subdirpath)
-    return
 
 
 def download_numpy_interface(path):
@@ -75,91 +53,25 @@ def download_numpy_interface(path):
     return
 
 
-class SwigExtension(Extension):
-    pass
-
-
-class CMakeExtension(Extension):
-    def __init__(self, name, sourcedir=''):
-        Extension.__init__(self, name, sources=[])
-        self.sourcedir = os.path.abspath(sourcedir)
-
-
-class CMakeBuild(build_ext):
-    """
-    CMake Build Extension from
-    https://www.benjack.io/2017/06/12/python-cpp-tests.html
-    """
-
-    def run(self):
-        try:
-            out = subprocess.check_output(['cmake', '--version'])
-        except OSError:
-            raise RuntimeError(
-                "CMake must be installed to build the following extensions: " +
-                ", ".join(e.name for e in self.extensions))
-
-        if platform.system() == "Windows":
-            cmake_version = LooseVersion(re.search(r'version\s*([\d.]+)',
-                                                   out.decode()).group(1))
-            if cmake_version < '3.1.0':
-                raise RuntimeError("CMake >= 3.1.0 is required on Windows")
-
-        for ext in self.extensions:
-            self.build_extension(ext)
-
-    def build_extension(self, ext):
-        extdir = os.path.abspath(
-            os.path.dirname(self.get_ext_fullpath(ext.name)))
-        cmake_args = ['-DCMAKE_LIBRARY_OUTPUT_DIRECTORY=' + extdir,
-                      '-DPYTHON_EXECUTABLE=' + sys.executable]
-
-        cfg = 'Debug' if self.debug else 'Release'
-        build_args = ['--config', cfg]
-
-        if platform.system() == "Windows":
-            cmake_args += ['-DCMAKE_LIBRARY_OUTPUT_DIRECTORY_{}={}'.format(
-                cfg.upper(),
-                extdir)]
-            if sys.maxsize > 2 ** 32:
-                cmake_args += ['-A', 'x64']
-            build_args += ['--', '/m']
-        else:
-            cmake_args += ['-DCMAKE_BUILD_TYPE=' + cfg]
-            build_args += ['--', '-j2']
-
-        env = os.environ.copy()
-        env['CXXFLAGS'] = '{} -DVERSION_INFO=\\"{}\\"'.format(
-            env.get('CXXFLAGS', ''),
-            self.distribution.get_version())
-        if not os.path.exists(self.build_temp):
-            os.makedirs(self.build_temp)
-        subprocess.check_call(['cmake', ext.sourcedir] + cmake_args,
-                              cwd=self.build_temp, env=env)
-        subprocess.check_call(['cmake', '--build', '.'] + build_args,
-                              cwd=self.build_temp)
-        print()  # Add an empty line for cleaner output
-
-
 # Download numpy.i if needed
-if not os.path.exists('./numpy.i'):
+if not os.path.exists('./EggNetExtension/numpy.i'):
     print('Downloading numpy.i')
     project_dir = os.path.dirname(os.path.abspath(__file__))
-    download_numpy_interface(path='.')
+    download_numpy_interface(path='./EggNetExtension/')
 
-source_files = ['./NNExtension.i', './cconv.c',
-                './cpool.c', './crelu.c',
-                'cmatmul.c', './chelper.c']
-source_files = [os.path.abspath(sfile) for sfile in source_files]
+source_files = ['./EggNetExtension/NNExtension.i', './EggNetExtension/cconv.c',
+                './EggNetExtension/cpool.c', './EggNetExtension/crelu.c',
+                './EggNetExtension/cmatmul.c', './EggNetExtension/chelper.c']
+
 print("************************ SOURCE FILES *************************")
 print(source_files)
 print("************************ SOURCE FILES *************************")
-include_dirs = [os.path.abspath('NeuralNetwork/Ext/'), numpy_include]
+include_dirs = ['./EggNetExtension/', numpy_include]
 
 # Simple Platform Check (not entirely accurate because here should the compiler be checked)
 # ToDo: Should be done better for example via CMake -> https://www.benjack.io/2017/06/12/python-cpp-tests.html
 if platform.system() == 'Linux':
-    extra_args = []
+    extra_args = ['-std=gnu99']
 elif platform.system() == 'Darwin':
     extra_args = ['--verbose', '-Rpass=loop-vectorize', '-Rpass-analysis=loop-vectorize', '-ffast-math']
 elif platform.system() == 'Windows':
@@ -169,14 +81,14 @@ else:
     raise RuntimeError('Operating System not supported?')
 extra_link_args = []
 
-NN_ext_module = SwigExtension('_EggNetExtension',
-                              sources=source_files,
-                              include_dirs=include_dirs,
-                              swig_opts=['-py3'],
-                              extra_compile_args=extra_args,
-                              extra_link_args=extra_link_args,
-                              depends=['numpy'],
-                              optional=True)
+NN_ext_module = Extension('_EggNetExtension',
+                          sources=source_files,
+                          include_dirs=include_dirs,
+                          swig_opts=['-py3'],
+                          extra_compile_args=extra_args,
+                          extra_link_args=extra_link_args,
+                          depends=['numpy'],
+                          optional=True)
 
 setup(name='EggNetExtension',
       version='1.0',
@@ -185,14 +97,11 @@ setup(name='EggNetExtension',
       license="MIT",
       description="""NN calculation library for python""",
       url='https://github.com/marbleton/FPGA_MNIST',
-      packages=find_packages(),
+      packages=['EggNetExtension'],
       package_data={
           # If any package contains *.txt or *.rst files, include them:
           '': ['*.txt', '*.rst', '*.i', '*.c', '*.h'],
       },
       ext_modules=[NN_ext_module],
-      test_requires=['numpy', 'wget', 'idx2numpy', 'tensorflow', 'keras', 'torch'],
       install_requires=['numpy', 'wget', 'idx2numpy'],
       )
-
-
