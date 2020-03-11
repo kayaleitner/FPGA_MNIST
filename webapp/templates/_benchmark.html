@@ -3,26 +3,43 @@
         <h2>Eggnet Benchmark!</h2>
         Here is the chance to run a simulation of the FPGA.
     </b-row>
-    <b-row class="benchmark">
+    <b-row class="benchmark" style="padding: 0 3em;">
     <b-card header="Run Benchmark" style="width: 100%">
         <b-form inline>
             <label class="mr-sm-2" for="inline-form-custom-select-pref">Dataset</label>
             <b-form-select
-                    id="inline-form-custom-select-pref"
+                    id="dataset"
                     class="mb-2 mr-sm-2 mb-sm-0"
-                    :options="[{ text: 'Choose...', value: null }, 'TrainSet', 'TestSet']"
+                    v-model="benchmark_form.dataset"
+                    :options="[{ text: 'Choose...', value: null },
+                                { text: 'Train Set', value: 'train' },
+                                { text: 'Test Set', value: 'test' }]"
                     :value="null"
             ></b-form-select>
 
             <label class="mr-sm-2" for="inline-form-input-username">Network</label>
             <b-form-select
-                    id="inline-form-custom-select-pref"
+                    id="execution"
+                    v-model="benchmark_form.execution"
                     class="mb-2 mr-sm-2 mb-sm-0"
-                    :options="[{ text: 'Choose...', value: null }, 'Floating Point (CPU)', 'Fix-Point (CPU)', 'Fix-Point (FPGA)']"
+                    :options="[{ text: 'Choose...', value: null },
+                                { text: 'Floating Point (CPU)', value: 'cpu_float' },
+                                { text: 'Fix-Point (CPU)', value: 'cpu_fpi' },
+                                { text: 'Fix-Point (FPGA)', value: 'fpga_fpi' }]"
                     :value="null"
             ></b-form-select>
-
-            <b-button variant="primary">Run Benchmark</b-button>
+            <label class="mr-sm-2" for="inline-form-input">Batch Size</label>
+            <b-form-select
+                    id="batch"
+                    v-model="benchmark_form.n_batches"
+                    class="mb-2 mr-sm-2 mb-sm-0"
+                    :options="[{ text: 'Choose...', value: null },
+                               { text: '10', value: 10 },
+                               { text: '100', value: 100 },
+                               { text: '1000', value: 1000 }]"
+                    :value="null"
+            ></b-form-select>
+            <b-button variant="primary" @Click="onRunBenchmark">Run Benchmark</b-button>
         </b-form>
     </b-card>
     </b-row>
@@ -31,7 +48,7 @@
         <b-table striped
                  hover
                  :items="mnist_results"
-                 :sort-compare-options="{ numeric: true, sensitivity: 'base' }">
+                 :fields="mnist_fields">
         </b-table>
     </b-row>
 </section>

@@ -2,10 +2,18 @@
 Connect to the FPGA inside of this file
 """
 
+import os
 
-# TODO: IMPORT KERNEL LIB HERE
-# Import FPGA Lib
-# import EggPGA
+import EggNet
+import EggNet.Reader
+import numpy as np
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+TRAIN_IMAGES = os.path.join(BASE_DIR, '../train-images-idx3-ubyte.gz')
+TRAIN_LABELS = os.path.join(BASE_DIR, '../train-labels-idx1-ubyte.gz')
+TEST_IMAGES = os.path.join(BASE_DIR, '../t10k-images-idx3-ubyte.gz')
+TEST_LABELS = os.path.join(BASE_DIR, '../t10k-labels-idx1-ubyte.gz')
+
 
 def get_size(size_in_bytes, suffix="B"):
     """
@@ -223,3 +231,95 @@ def get_uptime():
         uptime_string = str(timedelta(seconds=uptime_seconds))
 
     return uptime_string, upt
+
+
+def run_benchmark(options):
+    import time
+
+    use_int_images = options['execution'].endswith('_fpi')
+
+    if options['execution'] == 'cpu_fpi':
+        net = get_fpi_network_instance()
+    elif options['execution'] == 'cpu_float':
+        net = get_float_network_instance()
+    else:
+        raise NotImplementedError()
+
+    if options['dataset'] == 'test':
+        imgs = EggNet.Reader.MNIST.idxgz2numpy(TEST_IMAGES)
+        lbls = EggNet.Reader.MNIST.idxgz2numpy(TEST_LABELS)
+    elif options['dataset'] == 'train':
+        imgs = EggNet.Reader.MNIST.idxgz2numpy(TEST_IMAGES)
+        lbls = EggNet.Reader.MNIST.idxgz2numpy(TEST_LABELS)
+    else:
+        raise NotImplementedError()
+
+    start_time = time.time()
+    acc = net.evaluate_network_accuracy(batch_size=50, train_images=imgs, train_labels=lbls,
+                                        images_as_int=use_int_images, n_batches=options['n_batches'])
+    end_time = time.time()
+    delta_t = end_time - start_time
+
+    # Return the data
+    d = {
+        'index': 0,
+        'data_set': options['dataset'],
+        'network': options['execution'],
+        'accuracy': f"{acc:g}",
+        'time': f"{delta_t:g}",
+        'n_batches': options['n_batches']
+    }
+
+    return d
+
+
+def get_fpi_network_instance():
+    npz_filepath = os.path.abspath(os.path.join(BASE_DIR, '../../net/final_weights/int4_fpi/all.npz'))
+    config_path = os.path.abspath(os.path.join(BASE_DIR, '../../net/final_weights/int4_fpi/config.json'))
+    return EggNet.FpiLeNet.init_npz(npz_path=npz_filepath, config_path=config_path)
+
+
+def get_float_network_instance():
+    npz_filepath = os.path.abspath(os.path.join(BASE_DIR, '../../net/final_weights/float/all.npz'))
+    return EggNet.LeNet.init_npz(npz_path=npz_filepath)
+
+
+def eval_image(image):
+    # Extend Image
+    net = get_fpi_network_instance()
+
+    x = np.reshape(image, (1, 28, 28)).astype(np.int32)
+    y = net.forward(inputs=x)
+    return int(y.argmax(-1))
+
+
+if __name__ == '__main__':
+    eval_image(np.zeros((28, 28)))
+
+
+def get_quant_details():
+    import json
+    config_path = os.path.abspath(os.path.join(BASE_DIR, '../../net/final_weights/int4_fpi/config.json'))
+    with open(config_path, "r") as f:
+        data = json.load(f)
+
+    d = []
+
+    for i in range(4):
+        d.extend(
+            [
+                {
+                    'id': f'Layer {i}: Weights',
+                    'bits': data['input_bits'][i],
+                    'frac': data['input_frac'][i],
+                },
+                {
+                    'id': f'Layer {i}: Output',
+                    'bits': data['output_bits'][i],
+                    'frac': data['output_frac'][i],
+                }])
+    return d
+
+
+def get_quant_weight_plot(layer_num):
+    return None

@@ -163,6 +163,11 @@ def main():
     fweights = quant2float(qweights, options)
     save_weights(fweights, qweights, weights, config=options, qprefix='int4')
 
+    np.savez('final_weights/float/all', **weights)
+    np.savez('final_weights/int4_fake_quant/all', **fweights)
+    np.savez('final_weights/int4_fpi/all', **qweights)
+
+
     # Check if it has worked
     our_net = init_network_from_weights(weights, from_torch=False)
     fake_net = init_fake_network_from_weights(qweights=fweights, shift=shift, options=options)

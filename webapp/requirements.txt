@@ -18,3 +18,5 @@ tornado==6.0.4
 Werkzeug==1.0.0
 wget==3.2
 WTForms==2.2.1
+EggNet==1.0
+EggNetExtension==1.0

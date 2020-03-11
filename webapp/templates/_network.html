@@ -11,16 +11,43 @@
          <figcaption class="figure-caption text-right">The famous EggNet designed by Yellow et AL.</figcaption>
      </figure>
 
-    <p>Some text about Network design. Convolutional Neural Network
-        <ul>
-            <li>Conv-Layer</li>
-            <li></li>
-        </ul>
+    <p>
+         We use a four layer structure as seen in the picture.
+        The first layers are <em>Convolutional layers</em> where the output is defined by:
+        $$ z(i,j) = (f*g)(i,j) = \sum_{m=-\infty}^{\infty} \sum_{n=-\infty}^{\infty} f(m,n) g(m-i,n-j) $$
+        Here $f$ and $g$ are some arbitrary two dimensional tensors.
+        For our neural network one of the tensors is a $3$-by-$3$ kernel, where the values are learned.
+        The first layer convolutional features $16$ of this operations and the second convolutional layer $24$.
+        Convolutional layers are a common, state-of-the-art way to achieve good results in image recognition tasks.
+        To reduce the computational workload, the image is downsampled after each convolutional step.
+        Although different methods exist, we choose the <em>Max. Pooling</em> approach for $2$x$2$ image patches.
     </p>
-
+     <p>
+         The second important layer type is the <em>Fully Connected Layer</em>. Here the output $z$ for an two dimensional input
+         $x$ is defined by
+        $$ 	z = xW + b $$
+         where $W$ and $b$ are learned parameters. Those layers have high computation and memory demands and should therefore used with care.
+         In our case we used them to interpret the features that are extracted from the convolutional layers and for final classification.
+     </p>
+     <p>
+         Another important factor of Deep Neural Networks are non-linear activation functions to give the network the ability to learn arbitrary functions.
+         We used the <em>Rectified Linear Unit (ReLU)</em> which leads to good result and is also computational very cheap.
+        $$  f(x) = \begin{cases} x \quad \text{if} \quad x > 0 \\ 0 \quad \text{else} \end{cases} $$
+        This function was used for every layer output, which also enabled us to save an extra bit, because the values could be stored as signed integers.
+    </p>
      <h3>Quantization of the network</h3>
      For a sreal floating point number we can represent it via
      $$ v = Q \cdot 2^{-m}  $$
-    where $Q$ and $m$ are integers
+    where $Q$ and $m$ are integers. We used a per layer quantization and achieved a near floating point performance with just minor performance drops.
+     We achieved this by analyzing the distribution of the weights and biases as well as the input and output data of the network for each layers.
+     This showed us the expected value range of this parameters and enabled to use to select good values for $m$ and $Q$.
 </b-row>
+     <b-row class="text-area">
+        <h4>Quantization Details, 4 Bit</h4>
+        <b-table striped
+                 hover
+                 :items="quant_4_data"
+                 :fields="quant_4_fields">
+        </b-table>
+    </b-row>
 </section>

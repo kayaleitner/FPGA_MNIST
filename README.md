@@ -20,19 +20,14 @@ Baischer Lukas, Leitner Anton, Kulnik Benjamin, Marschner Stefan, Cerv Miha
 Project Structure
 ----------------
 
-`net`: Here is everything stored that is relevant for training and designing the network. Pretrained netork parameters
-are available for _torch_, _keras_ and in _numpy_ format.
+`net`: Here is everything stored that is relevant for training and designing the network. Pretrained netork parameters are available for _torch_, _keras_ and in _numpy_ format.
 
 `vivado`: 
-This is the main project folder where the VHDL implementaiton of the neural network is stored. Additionally the linux
-driver software source files are stored in `vivado/Software`. For compiling and running the testbenches **ghdl 0.3.7** 
-and **Vivado 2017.4** have been used. Additional python is needed to generate some of the source files or to run some
+This is the main project folder where the VHDL implementaiton of the neural network is stored. Additionally the linux driver software source files are stored in `vivado/Software`. For compiling and running the testbenches **ghdl 0.3.7**  and **Vivado 2017.4** have been used. Additional python is needed to generate some of the source files or to run some
 testbenches.
 
 `python`:
-This folder contains support software to verify the network. All basic network operations like 2d convolutions and pooling
-is reprogrammed. This is not necessary but helped to understand the internal functioning of the opaque interfaces of 
-_keras_ and _pytorch_.
+This folder contains support software to verify the network. All basic network operations like 2d convolutions and poolingis reprogrammed. This is not necessary but helped to understand the internal functioning of the opaque interfaces of _keras_ and _pytorch_.
 
 `webapp`:
 Here the Web app control software is stored. It is based on _Flask_ and the _LTEAdmin_. Here images can be upladed
@@ -72,19 +67,21 @@ Tasks
 - [x] Verfiy all the calculations
 - [x] Prepare Linux for the Zedboard
 - [x] Write the basic Neural Network Operations in VHDL
-- [ ] Write a custom driver for the FPGA
-- [ ] Setup FPGA to communicate with PC or use embedded Linux
-- [ ] Verfiy VHDL implementation
+- [x] Write a custom driver for the FPGA
+- [x] Setup FPGA to communicate with PC or use embedded Linux
+- [x] Verfiy VHDL implementation
 - [x] Optimize Network: Fixed Point
 - [ ] Optimize Network: Parallelization and Pipelining
 - [ ] Install driver, python and setup software on the zedboard
 
 ### Optional Tasks
 
+Other nice to have features, which will be tried to implement, if there is enough time.
+
 - [x] Webinterface for Easy Control
 - [ ] Backpropagation on FPGA
 - [ ] Custom Pytorch Extension to use the FPGA from within Torch
-- [ ] CI Pipeline for VHDL/Vivado Build & Tests
+- [x] CI Pipeline for VHDL/Vivado Build & Tests
 
 ## Top Level Overview
 

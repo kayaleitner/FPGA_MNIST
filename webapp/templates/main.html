@@ -34,37 +34,19 @@
                 <p>This is a student project from TU Vienna in the course 384.157 SoC Design Laboratoy.
                 Goal was to develop a full system focusing on a specific topic.</p>
             </b-row>
-
+            <hr/>
             {% include "_mnist.html" %}
-
-            <b-row class="interface">
-                <b-jumbotron header="Zedboard Interface" style="width: 100%">
-                <b-column class="params" style="display:block; width:45%;">
-                    <b-list-group>
-                        <b-list-group-item> Start Image <b-input></b-input></b-list-group-item>
-                        <b-list-group-item> Ending Image <b-input></b-input></b-list-group-item>
-                    </b-list-group>
-                </b-column>
-                <b-column class="controls" style="display:block; width:45%;">
-                    <b-button variant="light"> Start</b-button>
-                    <b-table stacked :fields="fields" :items="items"></b-table>
-                </b-column>
-                </b-jumbotron>
-            </b-row>
-
+            <hr/>
             {% include "_network.html" %}
-
-            <b-row class="documentation text-area">
-                <h2>Documentation</h2>
-                <p>Here Image of Top Level Design. And then maybe a pagination with code samples of different modules</p>
-            </b-row>
-
+            <hr/>
+            {% include '_uploadimage.html' %}
+            <hr/>
             {% include "_benchmark.html" %}
-
+            <hr/>
             {% include "_sysinfo.html" %}
-
+            <hr/>
             {% include "_credits.html" %}
-
+            <hr/>
         </b-column>
     </b-row>
 

@@ -1,10 +1,14 @@
 from flask import Flask, render_template, jsonify, redirect, request
 from bokeh.plotting import figure
-from bokeh.embed import components
+from bokeh.embed import components, json_item
+from bokeh.palettes import gray
 from py import fpga
 from py.DataHandler import DataHandler
 from py.forms import DataToFPGA
 import numpy as np
+import base64
+import cv2
+import json
 
 app = Flask(__name__)
 # Bootstrap(app)
@@ -75,6 +79,13 @@ def get_image_json():
         return {'error': 'index not in range 0 to 9999'}
 
 
+@app.route('/api/v1/run_benchmark', methods=['POST'])
+def api_run_benchmark():
+    data = request.get_json()
+    accuracy = fpga.run_benchmark(options=data)
+    return jsonify(accuracy)
+
+
 @app.errorhandler(404)
 def page_not_found(e):
     return render_template('404.html'), 404
@@ -91,6 +102,16 @@ def api_get_system_stats():
     data = fpga.get_system_stats(verbose=False)
     return jsonify(data)
 
+@app.route('/api/v1/system/quant', methods=['GET'])
+def api_get_quantization_details():
+    data = fpga.get_quant_details()
+    return jsonify(data)
+
+@app.route('/api/v1/system/quant_plot/<i>', methods=['GET'])
+def api_get_quantization_plot():
+    data = fpga.get_quant_weight_plot(layer_num=i)
+    return jsonify(data)
+
 
 @app.after_request
 def add_header(r):
@@ -103,6 +124,46 @@ def add_header(r):
     r.headers["Expires"] = "0"
     r.headers['Cache-Control'] = 'public, max-age=0'
     return r
+
+
+@app.route('/api/uploadimage', methods=['GET', 'POST'])
+def resimg():
+    if request.method == 'POST':
+        data = request.get_json()
+        data = data['file']
+        image_b64 = data.split(",")[1]
+        binary = base64.b64decode(image_b64)
+        image = np.asarray(bytearray(binary), dtype="uint8")
+        image = cv2.imdecode(image, cv2.IMREAD_COLOR)
+        image_gray = rgb2gray(image)
+        image_gray = np.uint8(image_gray)
+
+        calcnumber = fpga.eval_image(image=image_gray)
+        plot = figure(
+            plot_height=280,
+            plot_width=280,
+        )
+
+        image_gray = np.flipud(image_gray)
+        y = np.where(image_gray)[0]
+        x = np.where(image_gray)[1]
+        palette = gray(256)
+        cols = np.take(palette, image_gray.reshape(image_gray.size))
+        plot.square(x, y, color=cols, size=10)
+
+        data = {
+            'plot': json_item(plot),
+            'calcnumber': str(calcnumber)
+        }
+        return jsonify(data)
+    else:
+        return 404
+
+
+def rgb2gray(rgb):
+    r, g, b = rgb[:, :, 0], rgb[:, :, 1], rgb[:, :, 2]
+    gray = 0.2989 * r + 0.5870 * g + 0.1140 * b
+    return gray
 
 
 if __name__ == '__main__':

@@ -1,3 +1,5 @@
+// import axios from 'axios';
+
 var eggnet = new Vue({
 
     el: '#app',
@@ -5,38 +7,142 @@ var eggnet = new Vue({
     data: {
         fields: ['Images Sent', 'Correct Guesses', 'Percent', 'Time Passed'],
         items: {},
+
         mnist_results: [
             // ToDo: Load this dynamically?
-          { age: 40, first_name: 'Dickerson', last_name: 'Macdonald' },
-          { age: 21, first_name: 'Larsen', last_name: 'Shaw' },
-          { age: 89, first_name: 'Geneva', last_name: 'Wilson' },
-          { age: 38, first_name: 'Jami', last_name: 'Carney' }
+            {index: 0, data_set: 'Train Set', n_batches: 1, network: 'CPU', accuracy: '0.999', time: '0.01'},
+
         ],
-        systemStats: String
+        mnist_fields: [
+            {
+                key: 'index',
+                sortable: true
+            },
+            {
+                key: 'data_set',
+                label: 'Data Set',
+                sortable: false
+            },
+            {
+                key: 'n_batches',
+                label: '# Batches',
+                sortable: true
+            },
+            {
+                key: 'network',
+                sortable: true
+            },
+            {
+                key: 'accuracy',
+                sortable: true
+            },
+            {
+                key: 'time',
+                sortable: true
+            }
+        ],
+
+        quant_4_data : [],
+        quant_4_fields : [
+             {
+                key: 'id',
+                label: 'Type',
+                sortable: false
+            },
+            {
+                key: 'bits',
+                label: '$\log_2(Q)$ (Total Bits)',
+                sortable: true
+            },
+            {
+                key: 'frac',
+                label: '$m$ (Fraction)',
+                sortable: true
+            },
+        ],
+
+        systemStats: String,
+        calcnumber: '',
+        image: Object,
+        hasImage: false,
+
+
+        benchmark_form: {
+            dataset: null,
+            execution: null,
+            n_batches: null
+        }
     },
-
-
-
     delimiters: ['[[', ']]'],
 
     methods: {
         getSystemStats: function () {
-            let path ='/api/v1/system/stats';
+            let path = '/api/v1/system/stats';
             axios.get(path)
                 .then((data => {
-                    console.log(data)
-                    this.systemStats = data.data
+                    console.log(data);
+                    this.systemStats = data.data;
                 }));
+        },
+
+
+        onRunBenchmark: function (evt) {
+            // console.log(JSON.stringify(this.form));
+            const path = '/api/v1/run_benchmark';
+            axios.post(path, this.benchmark_form)
+                .then((res) => {
+                    return res.data;
+                })
+                .then((data => {
+                    console.log(data);
+                    this.mnist_results.push(data)
+                }));
+        },
+
+        fetch_quantization: function() {
+            let path = '/api/v1/system/quant';
+            axios.get(path)
+                .then((data => {
+                    console.log(data);
+                    this.quant_4_data = data.data;
+                }));
+        },
+
+        setImage(file) {
+            document.getElementById('bok-prev').innerHTML = '';
+
+            this.image = file;
+            this.hasImage = true;
+            data = {file};
+            let path = document.location.origin + '/api/uploadimage';
+            axios.post(path, data)
+                .then((res) => {
+                    return res.data;
+                })
+                .then((item) => {
+                    Bokeh.embed.embed_item(item.plot, "bok-prev");
+                    this.calcnumber = item.calcnumber;
+                    console.log(this.calcnumber);
+                })
+                .catch((error) => {
+                    // eslint-disable-next-line
+                    console.error(error);
+                });
         }
     },
 
     mounted() {
-        this.getSystemStats()
-        setInterval(this.getSystemStats, 5000)
+        this.getSystemStats();
+        add_random_mnist_images();
+        setup_chats();
+        setInterval(this.getSystemStats, 5000);
+        this.fetch_quantization();
     }
 });
 
-
+/**
+ * Sets up the charts
+ */
 function setup_chats() {
     //10000 milliseconds = 10 seconds
 
@@ -137,7 +243,7 @@ function setup_chats() {
             // Update CPU history
             let sum = 0;
 
-            for(let i = 0; i < data.length; i++ ) {
+            for (let i = 0; i < data.length; i++) {
                 sum += parseFloat(data[i], 10); //don't forget to add the base
             }
             const avg = sum / data.length;
@@ -160,23 +266,27 @@ function setup_chats() {
     }, chart_refresh_interval);
 }
 
+/**
+ * Adds random mnist images
+ */
 function add_random_mnist_images() {
     let keys = [];
     for (let i = 0; i < 10; i++) {
         keys[i] = i;
     }
 
+    const container = document.getElementById("mnist-image-container");
     const n_images_per_class = 10;
     for (let i = 0; i < n_images_per_class; i++) {
         for (let j = 0; j < 10; j++) {
-            shuffled_keys = shuffle(keys);
-            container = document.getElementById("mnist-image-container");
 
-            new_div = document.createElement('div');
+            const shuffled_keys = shuffle(keys);
+
+            let new_div = document.createElement('div');
             new_div.setAttribute('class', 'card');
 
-            new_img = document.createElement('img');
-            new_img.src = '/static/img/mnist/' + shuffled_keys[i] +  '/' + shuffled_keys[j] + '.png';
+            const new_img = document.createElement('img');
+            new_img.src = '/static/img/mnist/' + shuffled_keys[i] + '/' + shuffled_keys[j] + '.png';
             new_img.setAttribute('class', 'mnist-image');
 
 
@@ -185,7 +295,15 @@ function add_random_mnist_images() {
         }
     }
 
+    setInterval(function () {
+        container.scrollBy(1, 0);
+    }, 40);
+}
 
+function pageScroll() {
+    container.scrollBy(1, 0);
+    scrollDelay = setTimeout(pageScroll, 10);
+    scrolldelay = setTimeout(pageScroll, 10);
 }
 
 /**
@@ -202,10 +320,3 @@ function shuffle(a) {
     }
     return a;
 }
-
-window.onload = function () {
-    setup_chats();
-    add_random_mnist_images();
-};
-
-
