@@ -10,33 +10,28 @@ var eggnet = new Vue({
 
         mnist_results: [
             // ToDo: Load this dynamically?
-          { age: 40, first_name: 'Dickerson', last_name: 'Macdonald' },
-          { age: 21, first_name: 'Larsen', last_name: 'Shaw' },
-          { age: 89, first_name: 'Geneva', last_name: 'Wilson' },
-          { age: 38, first_name: 'Jami', last_name: 'Carney' }
+            {age: 40, first_name: 'Dickerson', last_name: 'Macdonald'},
+            {age: 21, first_name: 'Larsen', last_name: 'Shaw'},
+            {age: 89, first_name: 'Geneva', last_name: 'Wilson'},
+            {age: 38, first_name: 'Jami', last_name: 'Carney'}
         ],
 
         systemStats: String,
-
+        calcnumber: '',
         image: Object,
         hasImage: false,
 
-        form: {
-          dataset: '',
-          execution: '',
-        },
 
-      calcnumber: '',
-
+        benchmark_form: {
+            dataset: '',
+            execution: '',
+        }
     },
-
-
-
     delimiters: ['[[', ']]'],
 
     methods: {
         getSystemStats: function () {
-            let path ='/api/v1/system/stats';
+            let path = '/api/v1/system/stats';
             axios.get(path)
                 .then((data => {
                     console.log(data);
@@ -49,9 +44,9 @@ var eggnet = new Vue({
 
             // console.log(JSON.stringify(this.form));
 
-            const path ='/api/v1/run_benchmark';
+            const path = '/api/v1/run_benchmark';
 
-            axios.post(path, JSON.stringify(this.form))
+            axios.post(path, JSON.stringify(this.benchmark_form))
                 .then((data => {
                     console.log(data);
                     this.systemStats = data.data;
@@ -59,20 +54,25 @@ var eggnet = new Vue({
         },
 
         setImage(file) {
-          document.getElementById('bok-prev').innerHTML = ''
+            document.getElementById('bok-prev').innerHTML = '';
 
-          this.image = file;
-          this.hasImage = true;
-          data = {file}
-          let path = document.location.origin + '/api/uploadimage';
-          axios.post(path,data)
-              .then((res) => {return res.data; })
-              .then((item) => {Bokeh.embed.embed_item(item, "bok-prev");
-                               this.calcnumber = '6'})
-              .catch((error) => {
-                // eslint-disable-next-line
-                console.error(error);
-              });
+            this.image = file;
+            this.hasImage = true;
+            data = {file};
+            let path = document.location.origin + '/api/uploadimage';
+            axios.post(path, data)
+                .then((res) => {
+                    return res.data;
+                })
+                .then((item) => {
+                    Bokeh.embed.embed_item(item.plot, "bok-prev");
+                    this.calcnumber = item.calcnumber;
+                    console.log(this.calcnumber);
+                })
+                .catch((error) => {
+                    // eslint-disable-next-line
+                    console.error(error);
+                });
         }
     },
 
@@ -187,7 +187,7 @@ function setup_chats() {
             // Update CPU history
             let sum = 0;
 
-            for(let i = 0; i < data.length; i++ ) {
+            for (let i = 0; i < data.length; i++) {
                 sum += parseFloat(data[i], 10); //don't forget to add the base
             }
             const avg = sum / data.length;
@@ -240,14 +240,14 @@ function add_random_mnist_images() {
     }
 
     setInterval(function () {
-        container.scrollBy(1,0);
+        container.scrollBy(1, 0);
     }, 40);
 }
 
 function pageScroll() {
-    container.scrollBy(1,0);
+    container.scrollBy(1, 0);
     scrollDelay = setTimeout(pageScroll, 10);
-    scrolldelay = setTimeout(pageScroll,10);
+    scrolldelay = setTimeout(pageScroll, 10);
 }
 
 /**

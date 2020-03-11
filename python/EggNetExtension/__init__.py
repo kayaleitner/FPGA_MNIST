@@ -3,6 +3,6 @@
 """
 
 try:
-    from EggNetExtension import *
+    from .EggNetExtension import *
 except:
     print("Neural Network Extension not found")

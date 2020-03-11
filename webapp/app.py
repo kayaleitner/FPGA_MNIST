@@ -8,6 +8,7 @@ from py.forms import DataToFPGA
 import numpy as np
 import base64
 import cv2
+import json
 
 app = Flask(__name__)
 # Bootstrap(app)
@@ -77,9 +78,10 @@ def get_image_json():
     else:
         return {'error': 'index not in range 0 to 9999'}
 
+
 @app.route('/api/v1/run_benchmark', methods=['POST'])
 def api_run_benchmark():
-    data = request.get_json()
+    data = json.load(request.form)
     id = fpga.run_benchmark(options=data)
     return jsonify(id)
 
@@ -113,7 +115,8 @@ def add_header(r):
     r.headers['Cache-Control'] = 'public, max-age=0'
     return r
 
-@app.route('/api/uploadimage', methods=['GET','POST'])
+
+@app.route('/api/uploadimage', methods=['GET', 'POST'])
 def resimg():
     if request.method == 'POST':
         data = request.get_json()
@@ -125,6 +128,7 @@ def resimg():
         image_gray = rgb2gray(image)
         image_gray = np.uint8(image_gray)
 
+        calcnumber = fpga.eval_image(image=image_gray)
         plot = figure(
             plot_height=280,
             plot_width=280,
@@ -137,14 +141,19 @@ def resimg():
         cols = np.take(palette, image_gray.reshape(image_gray.size))
         plot.square(x, y, color=cols, size=10)
 
-    return json_item(plot)
+        data = {
+            'plot': json_item(plot),
+            'calcnumber': str(calcnumber)
+        }
+        return jsonify(data)
+    else:
+        return 404
 
 
 def rgb2gray(rgb):
-    r, g, b = rgb[:,:,0], rgb[:,:,1], rgb[:,:,2]
+    r, g, b = rgb[:, :, 0], rgb[:, :, 1], rgb[:, :, 2]
     gray = 0.2989 * r + 0.5870 * g + 0.1140 * b
     return gray
-
 
 
 if __name__ == '__main__':

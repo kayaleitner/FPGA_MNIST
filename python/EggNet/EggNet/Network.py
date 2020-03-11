@@ -357,26 +357,26 @@ def _get_layers(weights_dict, target_bits, fraction_bits):
 
         EggNet.ReshapeLayer(newshape=(-1, 28, 28, 1)),
         EggNet.Conv2dLayer(in_channels=1, out_channels=3, kernel_size=3, kernel_init_weights=qk1,
-                          bias_init_weights=qb1, use_bias=True),
+                           bias_init_weights=qb1, use_bias=True),
         EggNet.ShiftLayer(target_bits=target_bits, target_frac_bits=fraction_bits, source_bits=16,
-                         source_frac_bits=dfrac_bits),
+                          source_frac_bits=dfrac_bits),
         EggNet.ReluActivationLayer(),
         EggNet.MaxPool2dLayer(),
         EggNet.Conv2dLayer(in_channels=3, out_channels=9, kernel_size=3, kernel_init_weights=qk2,
-                          bias_init_weights=qb2, use_bias=True),
+                           bias_init_weights=qb2, use_bias=True),
         EggNet.ShiftLayer(target_bits=target_bits, target_frac_bits=fraction_bits, source_bits=16,
-                         source_frac_bits=dfrac_bits),
+                          source_frac_bits=dfrac_bits),
         EggNet.ReluActivationLayer(),
         EggNet.MaxPool2dLayer(),
         EggNet.FlattenLayer(),
         EggNet.BreakpointLayer(enabled=False),
         EggNet.FullyConnectedLayer(input_size=ni3, output_size=no3, dtype=np.int16, weights=qw3, bias=qb3),
         EggNet.ShiftLayer(target_bits=target_bits, target_frac_bits=fraction_bits, source_bits=16,
-                         source_frac_bits=dfrac_bits),
+                          source_frac_bits=dfrac_bits),
         EggNet.ReluActivationLayer(),
         EggNet.FullyConnectedLayer(input_size=ni4, output_size=no4, dtype=np.int16, weights=qw4, bias=qb4),
         EggNet.ShiftLayer(target_bits=target_bits, target_frac_bits=fraction_bits, source_bits=16,
-                         source_frac_bits=dfrac_bits),
+                          source_frac_bits=dfrac_bits),
         EggNet.SoftmaxLayer()
     ]
 
@@ -446,3 +446,69 @@ class FpiLeNet(Network):
                              fc2, rs4]
 
         super(FpiLeNet, self).__init__(self.lenet_layers)
+
+    @staticmethod
+    def init_npz(npz_path:str, config_path:str):
+        import json
+        qweights = np.load(npz_path)
+
+        with open(config_path, "r") as f:
+            options = json.load(f)
+        shift = options['shifts']
+        return init_quant_network_from_weights(qweights, shift=shift, options=options)
+
+
+def init_network_from_weights(weights, from_torch):
+    """
+    Initializes a new network from passed weight dictionary.
+
+    Args:
+        weights: The network weight dict
+        from_torch: Can be set to true if the weights are from torch and needs additional shuffling
+
+    Returns:
+        The initialized network
+    """
+    our_net = LeNet(reshape_torch=from_torch)
+    our_net.cn1.weights = weights['cn1.k']
+    our_net.cn1.bias = weights['cn1.b']
+    our_net.cn2.weights = weights['cn2.k']
+    our_net.cn2.bias = weights['cn2.b']
+    our_net.fc1.weights = weights['fc1.w']
+    our_net.fc1.bias = weights['fc1.b']
+    our_net.fc2.weights = weights['fc2.w']
+    our_net.fc2.bias = weights['fc2.b']
+    return our_net
+
+
+
+
+
+def init_fake_network_from_weights(qweights, shift, options):
+    """
+
+    Args:
+        qweights:
+        shift:
+        options:
+
+    Returns:
+
+    """
+    our_net = FpiLeNet(qweights, shifts=shift, options=options, real_quant=False)
+    return our_net
+
+
+def init_quant_network_from_weights(qweights, shift, options):
+    """
+
+    Args:
+        qweights:
+        shift:
+        options:
+
+    Returns:
+
+    """
+    our_net = FpiLeNet(qweights, shifts=shift, options=options, real_quant=True)
+    return our_net

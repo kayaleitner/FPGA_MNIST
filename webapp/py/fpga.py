@@ -2,10 +2,11 @@
 Connect to the FPGA inside of this file
 """
 
+import EggNet
+import numpy as np
+import os
 
-# TODO: IMPORT KERNEL LIB HERE
-# Import FPGA Lib
-#import EggNet
+from EggNet import FpiLeNet
 
 
 def get_size(size_in_bytes, suffix="B"):
@@ -225,6 +226,27 @@ def get_uptime():
 
     return uptime_string, upt
 
+
 def run_benchmark(options):
     print(options)
     pass
+
+
+def get_network_instance():
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+    npz_filepath = os.path.abspath(os.path.join(BASE_DIR, '../../net/final_weights/int4_fpi/all.npz'))
+    config_path = os.path.abspath(os.path.join(BASE_DIR, '../../net/final_weights/int4_fpi/config.json'))
+    return EggNet.FpiLeNet.init_npz(npz_path=npz_filepath, config_path=config_path)
+
+
+def eval_image(image):
+    # Extend Image
+    net = get_network_instance()
+
+    x = np.reshape(image, (1, 28, 28)).astype(np.int32)
+    y = net.forward(inputs=x)
+    return int(y.argmax(-1))
+
+
+if __name__ == '__main__':
+    eval_image(np.zeros((28, 28)))
