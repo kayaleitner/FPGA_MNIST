@@ -102,6 +102,10 @@ def api_get_system_stats():
     data = fpga.get_system_stats(verbose=False)
     return jsonify(data)
 
+@app.route('/api/v1/system/quant', methods=['GET'])
+def api_get_quantization_details():
+    data = fpga.get_quant_details()
+    return jsonify(data)
 
 @app.after_request
 def add_header(r):

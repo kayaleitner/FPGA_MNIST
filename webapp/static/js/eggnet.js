@@ -13,6 +13,53 @@ var eggnet = new Vue({
             {index: 0, data_set: 'Train Set', n_batches: 1, network: 'CPU', accuracy: '0.999', time: '0.01'},
 
         ],
+        mnist_fields: [
+            {
+                key: 'index',
+                sortable: true
+            },
+            {
+                key: 'data_set',
+                label: 'Data Set',
+                sortable: false
+            },
+            {
+                key: 'n_batches',
+                label: '# Batches',
+                sortable: true
+            },
+            {
+                key: 'network',
+                sortable: true
+            },
+            {
+                key: 'accuracy',
+                sortable: true
+            },
+            {
+                key: 'time',
+                sortable: true
+            }
+        ],
+
+        quant_4_data : [],
+        quant_4_fields : [
+             {
+                key: 'id',
+                label: 'Type',
+                sortable: false
+            },
+            {
+                key: 'bits',
+                label: '$\log_2(Q)$ (Total Bits)',
+                sortable: true
+            },
+            {
+                key: 'frac',
+                label: '$m$ (Fraction)',
+                sortable: true
+            },
+        ],
 
         systemStats: String,
         calcnumber: '',
@@ -43,10 +90,21 @@ var eggnet = new Vue({
             // console.log(JSON.stringify(this.form));
             const path = '/api/v1/run_benchmark';
             axios.post(path, this.benchmark_form)
-                .then((res) => {return res.data; })
+                .then((res) => {
+                    return res.data;
+                })
                 .then((data => {
                     console.log(data);
                     this.mnist_results.push(data)
+                }));
+        },
+
+        fetch_quantization: function() {
+            let path = '/api/v1/system/quant';
+            axios.get(path)
+                .then((data => {
+                    console.log(data);
+                    this.quant_4_data = data.data;
                 }));
         },
 
@@ -78,6 +136,7 @@ var eggnet = new Vue({
         add_random_mnist_images();
         setup_chats();
         setInterval(this.getSystemStats, 5000);
+        this.fetch_quantization();
     }
 });
 

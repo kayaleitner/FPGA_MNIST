@@ -35,8 +35,6 @@
         $$  f(x) = \begin{cases} x \quad \text{if} \quad x > 0 \\ 0 \quad \text{else} \end{cases} $$
         This function was used for every layer output, which also enabled us to save an extra bit, because the values could be stored as signed integers.
     </p>
-
-
      <h3>Quantization of the network</h3>
      For a sreal floating point number we can represent it via
      $$ v = Q \cdot 2^{-m}  $$
@@ -44,4 +42,12 @@
      We achieved this by analyzing the distribution of the weights and biases as well as the input and output data of the network for each layers.
      This showed us the expected value range of this parameters and enabled to use to select good values for $m$ and $Q$.
 </b-row>
+     <b-row class="text-area">
+        <h4>Quantization Details, 4 Bit</h4>
+        <b-table striped
+                 hover
+                 :items="quant_4_data"
+                 :fields="quant_4_fields">
+        </b-table>
+    </b-row>
 </section>
