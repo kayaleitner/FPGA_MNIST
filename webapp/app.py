@@ -107,6 +107,12 @@ def api_get_quantization_details():
     data = fpga.get_quant_details()
     return jsonify(data)
 
+@app.route('/api/v1/system/quant_plot/<i>', methods=['GET'])
+def api_get_quantization_plot():
+    data = fpga.get_quant_weight_plot(layer_num=i)
+    return jsonify(data)
+
+
 @app.after_request
 def add_header(r):
     """

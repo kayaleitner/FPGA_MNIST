@@ -319,3 +319,7 @@ def get_quant_details():
                     'frac': data['output_frac'][i],
                 }])
     return d
+
+
+def get_quant_weight_plot(layer_num):
+    return None
