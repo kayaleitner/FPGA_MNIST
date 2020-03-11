@@ -1,20 +1,19 @@
-library IEEE;
-use ieee.std_logic_1164.all;
-use ieee.numeric_std.all;
+LIBRARY IEEE;
+USE ieee.std_logic_1164.ALL;
+USE ieee.numeric_std.ALL;
 
-entity relu_nbit is
-    generic( N : integer );
-    port (
-        x_i : in std_logic_vector(N-1 downto 0);
-        x_o : out std_logic_vector(N-1 downto 0)
+ENTITY relu_nbit IS
+    GENERIC (N : INTEGER);
+    PORT (
+        x_i : IN std_logic_vector(N - 1 DOWNTO 0);
+        x_o : OUT std_logic_vector(N - 1 DOWNTO 0)
     );
-end relu_nbit;
+END relu_nbit;
+ARCHITECTURE behavior OF relu_nbit IS
 
+BEGIN
 
-architecture behavior of relu_nbit is
+    x_o <= x_i WHEN x_i(N - 1) = '0' ELSE
+        (OTHERS => '0');
 
-begin
-
-    x_o <= x_i when x_i(N-1) = '0' else (others => '0');
-
-end behavior ; -- behavior
+END behavior; -- behavior
