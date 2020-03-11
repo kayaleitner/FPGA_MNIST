@@ -8,6 +8,8 @@ Python with Version 3.6 is used for development. Also the requirements can be in
 pip install -r requirements.txt
 ```
 
+Also install the EggNet Package from the same repository!
+
 ## Run
 
 For development this can be used.
@@ -24,8 +26,8 @@ python -m flask run -h 0.0.0.0
 
 - [x] Add MNIST Test Data
 - [x] Add More Charts
-- [ ] Image Upload
-- [ ] Benchmark Formsheet  
+- [x] Image Upload
+- [x] Benchmark Formsheet  
 
 ## References
 
