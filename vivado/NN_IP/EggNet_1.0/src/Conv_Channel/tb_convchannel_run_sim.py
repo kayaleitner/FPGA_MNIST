@@ -149,7 +149,7 @@ def main():
 
     # --- Setup Paths
     path_dict = {}
-    for key, value in FILENAMES_INT4.items():
+    for key, value in FILENAMES_INT8.items():
         path_dict[key] = os.path.abspath(os.path.join(script_folder_path(), value))
 
     l1_weights_file_name = path_dict['cn1.k']
@@ -196,23 +196,23 @@ def main():
     # Generate data for test vectors
 
     # %% create test data file
-    # image_data = tb.gen_testdata(BLOCK_SIZE,NUMBER_OF_TEST_BLOCKS, CI_L1)
+    #image_data = tb.gen_testdata(BLOCK_SIZE,NUMBER_OF_TEST_BLOCKS, CI_L1)
+
+    image_data = np.ndarray((NUMBER_OF_TEST_BLOCKS, BLOCK_SIZE, CI_L1), dtype=np.uint8)
+    
+    for i in range(0, NUMBER_OF_TEST_BLOCKS):
+        image_data[i] = np.expand_dims(imgs[random_i[i], :, :].flatten(), axis=1)
 
     # %% generate test vectors
-    l1_test_vectors = tb.get_vectors_from_data(imgs[random_i, :, :], IMG_WIDTH, IMG_HEIGTH, NUMBER_OF_TEST_BLOCKS)
+    l1_test_vectors = tb.get_vectors_from_data(image_data, IMG_WIDTH, IMG_HEIGTH, NUMBER_OF_TEST_BLOCKS)
 
     # %% generate test kernels
     l1_test_kernels = tb.get_Kernels(l1_test_vectors, IMG_WIDTH)
     l1_test_kernels >>= (INPUT_DATA_WIDTH - config_data["input_bits"][0])
 
     # %% calculate Layer 1 output as new memory controller input
-    l1_weights_file = open(l1_weights_file_name, 'r')
-    l1_weights = np.array(list(np.loadtxt(l1_weights_file, dtype=np.int8))).reshape((3, 3, CI_L1, CO_L1))
-    l1_weights_file.close()
-
-    l1_bias_file = open(l1_bias_file_name, 'r')
-    l1_bias = np.array(list(np.loadtxt(l1_bias_file, dtype=np.int16)))
-    l1_bias_file.close()
+    l1_weights = np.load(l1_weights_file_name)
+    l1_bias = np.load(l1_bias_file_name)
 
     l1_weights_reshaped = np.ndarray((CO_L1, CI_L1, 3, 3))
     for i in range(0, CI_L1):

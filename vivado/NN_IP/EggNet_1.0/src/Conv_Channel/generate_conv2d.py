@@ -7,7 +7,7 @@ import re
 import json
 import argparse
 
-BITS = 4
+BITS = 8
 num_layers = 2
 
 config_file_name = "../../../../../net/final_weights/int8_fpi/config.json"
@@ -39,14 +39,6 @@ def main():
     template_path = script_relative_path_to_abspath('conv2d_template.in.vhd')
     output_path = script_relative_path_to_abspath('channels/conv2d_benni.vhd')
 
-    cn1_k = np.load(weight_paths[0])
-    cn2_k = np.load(weight_paths[1])
-
-    create_conv_channel(template_file_path=template_path,
-                        output_file_path=output_path,
-                        conv_weights=cn1_k[:, :, :, 0],
-                        conv_channel_name='conv2d_channel_benni')
-
     num_input_channels = [None] * num_layers
     num_output_channels = [None] * num_layers
     kernel_arrays = [None] * num_layers
@@ -67,6 +59,14 @@ def main():
     fp_json = open(config_file_name, 'r')
     config_data = json.load(fp_json)
 
+    cn1_k = np.load(weight_paths[0])
+    cn2_k = np.load(weight_paths[1])
+
+    create_conv_channel(template_file_path=template_path,
+                        output_file_path=output_path,
+                        conv_weights=cn1_k[:, :, :, 0],
+                        conv_channel_name='conv2d_channel_benni')
+    
     for i in range(0, num_layers):
         msb[i] = config_data["shifts"][i] + config_data["output_bits"][i] - 1
         file = open(file_names[i], 'r')
@@ -84,15 +84,15 @@ def main():
         for x in range(0, num_input_channels[i]):
             for y in range(0, num_output_channels[i]):
                 kernel_strings[i][x][y] = "(" + \
-                                          str(kernel_arrays[i][0][0][x][y]) + ", " + \
-                                          str(kernel_arrays[i][1][0][x][y]) + ", " + \
-                                          str(kernel_arrays[i][2][0][x][y]) + ", " + \
-                                          str(kernel_arrays[i][0][1][x][y]) + ", " + \
-                                          str(kernel_arrays[i][1][1][x][y]) + ", " + \
-                                          str(kernel_arrays[i][2][1][x][y]) + ", " + \
-                                          str(kernel_arrays[i][0][2][x][y]) + ", " + \
-                                          str(kernel_arrays[i][1][2][x][y]) + ", " + \
-                                          str(kernel_arrays[i][2][2][x][y]) + ")"
+                                           str(kernel_arrays[i][0][0][x][y]) + ", " + \
+                                           str(kernel_arrays[i][1][0][x][y]) + ", " + \
+                                           str(kernel_arrays[i][2][0][x][y]) + ", " + \
+                                           str(kernel_arrays[i][0][1][x][y]) + ", " + \
+                                           str(kernel_arrays[i][1][1][x][y]) + ", " + \
+                                           str(kernel_arrays[i][2][1][x][y]) + ", " + \
+                                           str(kernel_arrays[i][0][2][x][y]) + ", " + \
+                                           str(kernel_arrays[i][1][2][x][y]) + ", " + \
+                                           str(kernel_arrays[i][2][2][x][y]) + ")"
         channel_strings[i] = []
         for y in range(0, num_output_channels[i]):
             channel_strings[i].append('')
