@@ -16,7 +16,6 @@ class MNIST(Dataset):
     _classnames = map(str, [i for i in range(10)])
 
     def __init__(self, folder_path=None):
-
         self.downloader = EggNet.Reader.MnistDataDownloader(folder_path=folder_path)
 
     def train_labels(self):
@@ -41,10 +40,22 @@ class MNIST(Dataset):
     def get_train_iterator(self, batch_size):
         return DatasetIterator(batch_size=batch_size, x=self.train_images() / 255.0, y=self.train_labels())
 
+    @staticmethod
+    def idxgz2numpy(filepath):
+        """
+        Opens a gzip compressed idx file and returns it as a numpy array
+        Args:
+            filepath:
+
+        Returns:
+
+        """
+        return idx2numpy.convert_from_file(gzip.open(filename=filepath))
+
 
 class DatasetIterator:
 
-    def __init__(self, batch_size, x,y):
+    def __init__(self, batch_size, x, y):
         self.batch_size = batch_size
         self.y = y
         self.x = x
@@ -64,5 +75,3 @@ class DatasetIterator:
             x = self.x[i:i + self.batch_size]
             y = self.y[i:i + self.batch_size]
             return x, y
-
-

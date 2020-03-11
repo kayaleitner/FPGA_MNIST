@@ -10,10 +10,8 @@ var eggnet = new Vue({
 
         mnist_results: [
             // ToDo: Load this dynamically?
-            {age: 40, first_name: 'Dickerson', last_name: 'Macdonald'},
-            {age: 21, first_name: 'Larsen', last_name: 'Shaw'},
-            {age: 89, first_name: 'Geneva', last_name: 'Wilson'},
-            {age: 38, first_name: 'Jami', last_name: 'Carney'}
+            {index: 0, data_set: 'Train Set', n_batches: 1, network: 'CPU', accuracy: '0.999', time: '0.01'},
+
         ],
 
         systemStats: String,
@@ -23,8 +21,9 @@ var eggnet = new Vue({
 
 
         benchmark_form: {
-            dataset: '',
-            execution: '',
+            dataset: null,
+            execution: null,
+            n_batches: null
         }
     },
     delimiters: ['[[', ']]'],
@@ -41,15 +40,13 @@ var eggnet = new Vue({
 
 
         onRunBenchmark: function (evt) {
-
             // console.log(JSON.stringify(this.form));
-
             const path = '/api/v1/run_benchmark';
-
-            axios.post(path, JSON.stringify(this.benchmark_form))
+            axios.post(path, this.benchmark_form)
+                .then((res) => {return res.data; })
                 .then((data => {
                     console.log(data);
-                    this.systemStats = data.data;
+                    this.mnist_results.push(data)
                 }));
         },
 

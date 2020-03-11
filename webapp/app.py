@@ -81,9 +81,9 @@ def get_image_json():
 
 @app.route('/api/v1/run_benchmark', methods=['POST'])
 def api_run_benchmark():
-    data = json.load(request.form)
-    id = fpga.run_benchmark(options=data)
-    return jsonify(id)
+    data = request.get_json()
+    accuracy = fpga.run_benchmark(options=data)
+    return jsonify(accuracy)
 
 
 @app.errorhandler(404)

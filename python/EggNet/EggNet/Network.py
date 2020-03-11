@@ -149,6 +149,34 @@ class Network:
 
         return weights_dict
 
+    def evaluate_network_accuracy(self, batch_size, train_images, train_labels,
+                              images_as_int=False, n_batches=None, intermediates=False):
+        i = 0
+        total_correct = 0
+
+        if n_batches is None:
+            N = train_images.shape[0]
+        else:
+            N = n_batches * batch_size
+
+        while i < N-1:
+
+            if images_as_int:
+                x = train_images[i:i + batch_size].astype(np.int32)
+            else:
+                x = train_images[i:i + batch_size] / 255.0
+
+            y_ = train_labels[i:i + batch_size]
+            y = self.forward(x)
+            y = y.argmax(-1)
+
+            total_correct += np.sum(y == y_)
+            i += batch_size
+
+        accuracy = total_correct / N
+
+        return accuracy
+
 
 class LeNet(Network):
     """
@@ -190,6 +218,11 @@ class LeNet(Network):
         self.lenet_layers = [r1, cn1, mp1, cn2, mp2, r2, fc1, fc2]
 
         super(LeNet, self).__init__(self.lenet_layers)
+
+    @staticmethod
+    def init_npz(npz_path: str):
+        qweights = np.load(npz_path)
+        return init_network_from_weights(weights=qweights)
 
     @staticmethod
     def get_keras_model(save_dir=None):
@@ -458,7 +491,7 @@ class FpiLeNet(Network):
         return init_quant_network_from_weights(qweights, shift=shift, options=options)
 
 
-def init_network_from_weights(weights, from_torch):
+def init_network_from_weights(weights, from_torch=False):
     """
     Initializes a new network from passed weight dictionary.
 
