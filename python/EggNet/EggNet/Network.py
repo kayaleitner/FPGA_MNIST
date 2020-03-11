@@ -72,6 +72,14 @@ class Network:
         return z
 
     def forward_intermediate(self, inputs):
+        """
+        Evaluates the network for the inputs and outputs the result for each layer
+        Args:
+            inputs:
+
+        Returns:
+
+        """
         z = inputs
         zs = []
         for ix, layer in enumerate(self.layers):

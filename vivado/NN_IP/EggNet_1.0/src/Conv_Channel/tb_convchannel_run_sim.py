@@ -48,7 +48,6 @@ elif BITS == 8:
     denselayer_1_bias_file_name = "../../../../../net/final_weights/int8_fpi/fc1.b.txt"
     denselayer_2_bias_file_name = "../../../../../net/final_weights/int8_fpi/fc2.b.txt"
 
-
 FILENAMES_INT4 = {
     'config': "../../../../../net/final_weights/int4_fpi/config.json",
     'cn1.k': "../../../../../net/final_weights/int4_fpi/cn1.k.npy",
@@ -127,8 +126,10 @@ def script_folder_path() -> str:
     return os.path.dirname(os.path.abspath(__file__))
 
 
-def main():
+BASE_DIR = os.path.abspath(script_folder_path())
 
+
+def main():
     SCR_DIR = script_folder_path()
     TMP_DIR = os.path.join(SCR_DIR, 'tmp')
 
@@ -146,7 +147,6 @@ def main():
     IMG_HEIGTH = 28
     BLOCK_SIZE = IMG_WIDTH * IMG_HEIGTH
 
-
     # --- Setup Paths
     path_dict = {}
     for key, value in FILENAMES_INT4.items():
@@ -163,6 +163,12 @@ def main():
     with open(config_file_name, 'r') as fp_json:
         config_data = json.load(fp_json)
 
+    npz_filepath = os.path.abspath(os.path.join(BASE_DIR, '../../../../../net/final_weights/int4_fpi/all.npz'))
+    config_path = os.path.abspath(os.path.join(BASE_DIR, '../../../../../net/final_weights/int4_fpi/config.json'))
+
+    pynet = EggNet.LeNet.init_npz(npz_path=npz_filepath)
+    py_quant_net = EggNet.FpiLeNet.init_npz(npz_path=npz_filepath, config_path=config_path)
+
     mnist = EggNet.Reader.MNIST(folder_path=TMP_DIR)
     labels = mnist.test_labels()
     imgs = mnist.test_images()
@@ -177,6 +183,16 @@ def main():
         axs[j].imshow(imgs[random_i[j]], cmap='gray')
     fig.show()
 
+    y, y_layers = py_quant_net.forward_intermediate(inputs=imgs[random_i])
+    print(f" y == y_ ? : {y == labels[random_i]}")
+
+    fig, axes = plt.subplots(nrows=4, ncols=4)
+    for i in range(4):
+        for j in range(4):
+            _img = y_layers[1]
+            ix = j + i * 4
+            axes[i, j].imshow(y_layers[2][0, :, :, ix], cmap='gray')
+    fig.show()
     # Generate data for test vectors
 
     # %% create test data file
