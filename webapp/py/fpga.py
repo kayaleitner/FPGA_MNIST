@@ -309,12 +309,12 @@ def get_quant_details():
         d.extend(
             [
                 {
-                    'id': f'Layer {i}: Weights',
-                    'bits': data['input_bits'][i],
-                    'frac': data['input_frac'][i],
+                    'id': f'Layer {i+1}: Weights',
+                    'bits': data['weight_bits'][i],
+                    'frac': data['weight_frac'][i],
                 },
                 {
-                    'id': f'Layer {i}: Output',
+                    'id': f'Layer {i+1}: Output',
                     'bits': data['output_bits'][i],
                     'frac': data['output_frac'][i],
                 }])
