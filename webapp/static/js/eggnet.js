@@ -17,7 +17,7 @@ let eggnet = new Vue({
         mnist_results: [
             {index: 0, data_set: 'Train Set', n_batches: 1, network: 'CPU', accuracy: '0.999', time: '0.01'},
         ],
-
+        mnist_in_progress: false,
         mnist_fields: [
             {
                 key: 'index',
@@ -93,6 +93,7 @@ let eggnet = new Vue({
 
         onRunBenchmark: function (evt) {
             // console.log(JSON.stringify(this.form));
+            this.mnist_in_progress = true;
             const path = '/api/v1/run_benchmark';
             axios.post(path, this.benchmark_form)
                 .then((res) => {
@@ -100,7 +101,8 @@ let eggnet = new Vue({
                 })
                 .then((data => {
                     console.log(data);
-                    this.mnist_results.push(data)
+                    this.mnist_results.push(data);
+                    this.mnist_in_progress = false;
                 }));
         },
 

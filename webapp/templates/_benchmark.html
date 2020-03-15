@@ -39,7 +39,13 @@
                                { text: '1000', value: 1000 }]"
                     :value="null"
             ></b-form-select>
-            <b-button variant="primary" @Click="onRunBenchmark">Run Benchmark</b-button>
+            <b-button variant="primary"
+                      @Click="onRunBenchmark"
+                      :disabled="mnist_in_progress">
+                <strong v-if="mnist_in_progress"><b-spinner  small type="grow"></b-spinner></strong>
+                <strong v-else> Run Benchmark</strong>
+            </b-button>
+
         </b-form>
     </b-card>
     </b-row>
