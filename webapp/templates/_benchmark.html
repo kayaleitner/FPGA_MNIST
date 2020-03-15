@@ -1,7 +1,7 @@
 <section id="benchmark">
     <b-row class="text-area">
         <h2>Eggnet Benchmark!</h2>
-        Here is the chance to run a simulation of the FPGA.
+        Here is the chance to run a simulation of the FPGA. A single batch consits of 100 images.
     </b-row>
     <b-row class="benchmark" style="padding: 0 3em;">
     <b-card header="Run Benchmark" style="width: 100%">
@@ -34,9 +34,11 @@
                     v-model="benchmark_form.n_batches"
                     class="mb-2 mr-sm-2 mb-sm-0"
                     :options="[{ text: 'Choose...', value: null },
+                               { text: '1', value: 1 },
+                               { text: '5', value: 5 },
                                { text: '10', value: 10 },
-                               { text: '100', value: 100 },
-                               { text: '1000', value: 1000 }]"
+                               { text: '50', value: 50 },
+                               { text: '100', value: 100 }]"
                     :value="null"
             ></b-form-select>
             <b-button variant="primary"
