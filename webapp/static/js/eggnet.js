@@ -1,8 +1,14 @@
+// import Vue from 'vue';
 // import axios from 'axios';
+// import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
 
-var eggnet = new Vue({
+
+let eggnet = new Vue({
 
     el: '#app',
+
+    // Add the fontawesome component. Taken from here: https://github.com/FortAwesome/vue-fontawesome
+    // components: {},
 
     data: {
         fields: ['Images Sent', 'Correct Guesses', 'Percent', 'Time Passed'],
@@ -41,9 +47,9 @@ var eggnet = new Vue({
             }
         ],
 
-        quant_4_data : [],
-        quant_4_fields : [
-             {
+        quant_4_data: [],
+        quant_4_fields: [
+            {
                 key: 'id',
                 label: 'Type',
                 sortable: false
@@ -98,7 +104,7 @@ var eggnet = new Vue({
                 }));
         },
 
-        fetch_quantization: function() {
+        fetch_quantization: function () {
             let path = '/api/v1/system/quant';
             axios.get(path)
                 .then((data => {
@@ -189,6 +195,10 @@ function setup_chats() {
             ]
         },
         options: {
+            animation: {
+                duration: 0 // general animation time
+            },
+            lineTension: 0,
             scales: {
                 yAxes: [
                     {
@@ -266,7 +276,7 @@ function setup_chats() {
 }
 
 /**
- * Adds random mnist images
+ * Adds random MNIST images
  */
 function add_random_mnist_images() {
     let keys = [];

@@ -293,10 +293,6 @@ def eval_image(image):
     return int(y.argmax(-1))
 
 
-if __name__ == '__main__':
-    eval_image(np.zeros((28, 28)))
-
-
 def get_quant_details():
     import json
     config_path = os.path.abspath(os.path.join(BASE_DIR, '../../net/final_weights/int4_fpi/config.json'))
@@ -309,12 +305,12 @@ def get_quant_details():
         d.extend(
             [
                 {
-                    'id': f'Layer {i+1}: Weights',
+                    'id': f'Layer {i + 1}: Weights',
                     'bits': data['weight_bits'][i],
                     'frac': data['weight_frac'][i],
                 },
                 {
-                    'id': f'Layer {i+1}: Output',
+                    'id': f'Layer {i + 1}: Output',
                     'bits': data['output_bits'][i],
                     'frac': data['output_frac'][i],
                 }])
@@ -323,3 +319,14 @@ def get_quant_details():
 
 def get_quant_weight_plot(layer_num):
     return None
+
+
+if __name__ == '__main__':
+    # eval_image(np.zeros((28, 28)))
+    options = {
+        'dataset': 'test',
+        'execution': 'cpu_fpi',
+        'n_batches': 100
+    }
+
+    run_benchmark(options=options)
