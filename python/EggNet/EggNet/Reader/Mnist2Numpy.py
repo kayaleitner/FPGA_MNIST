@@ -66,6 +66,8 @@ class MnistDataDownloader:
             wget.download(url, fullpath)
             self.datapaths.append(fullpath)
 
+        self.mnist_downloaded = True
+
     def get_path(self, dataset_type: DataSetType):
 
         if self.mnist_downloaded:

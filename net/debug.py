@@ -1,6 +1,6 @@
 import numpy as np
 
-from EggNet.NeuralNetwork import Ext as nnext
+import EggNetExtension as nnext
 
 
 class LayerActivations:
@@ -37,12 +37,12 @@ class LayerActivations:
     def torch_convolution_check(module, x, y, kernel, bias):
         # Use tupel unpacking?
         x = x[0]
-        #x = x.numpy()
-        #y = y.numpy()
+        # x = x.numpy()
+        # y = y.numpy()
         x = LayerActivations.torch_conv_activations_to_keras(x)
         y = LayerActivations.torch_conv_activations_to_keras(y)
-        #import NeuralNetwork
-        #y_ = NeuralNetwork.nn.conv2d_torch(x, kernel)
+        # import NeuralNetwork
+        # y_ = NeuralNetwork.nn.conv2d_torch(x, kernel)
         y_ = nnext.conv2d_float(x, kernel, stride=1) + bias
 
 
@@ -81,7 +81,7 @@ def check_torch_conv_hook(m, x, y, kernel, bias):
 
     from EggNet import NeuralNetwork
     bk = bias
-    bias = np.reshape(bias, newshape=(1,-1,1,1)) # make 4d
+    bias = np.reshape(bias, newshape=(1, -1, 1, 1))  # make 4d
     y_ = NeuralNetwork.nn.conv2d_torch(x, kernel) + bias
     yk_ = NeuralNetwork.nn.conv2d(xk, kk) + bk
     # Check if y and y_ are equal

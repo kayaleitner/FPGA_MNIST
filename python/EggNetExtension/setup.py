@@ -71,7 +71,7 @@ include_dirs = ['./EggNetExtension/', numpy_include]
 # Simple Platform Check (not entirely accurate because here should the compiler be checked)
 # ToDo: Should be done better for example via CMake -> https://www.benjack.io/2017/06/12/python-cpp-tests.html
 if platform.system() == 'Linux':
-    extra_args = ['-std=gnu99']
+    extra_args = ['-std=gnu99','--ffast-math', '-funsafe-math-optimizations']
 elif platform.system() == 'Darwin':
     extra_args = ['--verbose', '-Rpass=loop-vectorize', '-Rpass-analysis=loop-vectorize', '-ffast-math']
 elif platform.system() == 'Windows':

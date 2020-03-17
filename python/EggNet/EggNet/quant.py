@@ -619,3 +619,11 @@ def rescale_fixed_point(x, input_bits=32, input_frac_bits=16, output_bits=8, out
         xo = np.left_shift(x, -shift)
     xo = np.clip(xo, a_min=out_min_val, a_max=out_max_val).astype(dtype=target_type)
     return xo
+
+
+def clip_linear_float(x, lsb, fsr):
+    return np.clip(lsb * np.round(x / lsb), a_min=0, a_max=2 ** fsr - lsb)
+
+
+def clip_log_float(x, lsb, fsr):
+    return np.clip(lsb * np.round(np.log2(x)), a_min=0, a_max=2 ** fsr - lsb)

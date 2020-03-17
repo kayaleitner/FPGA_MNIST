@@ -8,6 +8,7 @@ extern "C" {
 #include <stdlib.h>
 #include <assert.h>
 #include <stdint.h>
+#include "dbg.h"
 
 // Uncomment Block Below to make use of SIMD Processor extensions for various architectures
 #if defined(_MSC_VER)

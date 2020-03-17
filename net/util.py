@@ -235,6 +235,17 @@ def perform_real_quant(weight_dict,
     return d_out, shift, options
 
 
+def non_linear_quant(weight_dict, boundaries):
+
+
+    d_out = {}
+    for i, (key, value) in enumerate(weight_dict.items()):
+        # check key if it is weight or bias
+        w = np.clip(value / boundaries, a_min=bias_min[bi], a_max=bias_max[bi]).round().astype(traget_dtype)
+        # Those are now ints, convert back to floats
+        d_out[key] = w
+    return d_out, shift, options
+
 def quant2float(qweights, options):
     w_scale = options['w_scale']
     bias_scale = options['bias_scale']

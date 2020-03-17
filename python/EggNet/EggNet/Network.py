@@ -150,7 +150,7 @@ class Network:
         return weights_dict
 
     def evaluate_network_accuracy(self, batch_size, train_images, train_labels,
-                              images_as_int=False, n_batches=None, intermediates=False):
+                                  images_as_int=False, n_batches=None, intermediates=False):
         i = 0
         total_correct = 0
 
@@ -159,7 +159,7 @@ class Network:
         else:
             N = n_batches * batch_size
 
-        while i < N-1:
+        while i < N - 1:
 
             if images_as_int:
                 x = train_images[i:i + batch_size].astype(np.int32)
@@ -481,7 +481,7 @@ class FpiLeNet(Network):
         super(FpiLeNet, self).__init__(self.lenet_layers)
 
     @staticmethod
-    def init_npz(npz_path:str, config_path:str):
+    def init_npz(npz_path: str, config_path: str):
         import json
         qweights = np.load(npz_path)
 
@@ -512,9 +512,6 @@ def init_network_from_weights(weights, from_torch=False):
     our_net.fc2.weights = weights['fc2.w']
     our_net.fc2.bias = weights['fc2.b']
     return our_net
-
-
-
 
 
 def init_fake_network_from_weights(qweights, shift, options):
