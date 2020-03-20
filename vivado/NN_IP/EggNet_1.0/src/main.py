@@ -1,14 +1,21 @@
 import os
+import sys
 import shutil
 import subprocess
 import argparse
 from typing import List
 import logging
+import importlib
 
 TEST_BENCH_PREFIXES = ['tb_']
 TEST_BENCH_SUFFIXES = ['_tb']
 
-testbench_logger = logging.Logger(name='', level=logging.DEBUG)
+# We don't need to check this files
+EXCLUDED_FILES = ['run.py', 'main.py']
+
+logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
+testbench_logger = logging.getLogger('TestbenchLogger')
+testbench_logger.setLevel(logging.DEBUG)
 
 
 def main():
@@ -36,7 +43,7 @@ def generate_layers():
 
         # We only care about files
         for file in files:
-            if file.startswith('generate_') and file.endswith('.py'):
+            if (file.startswith('generate_') and file.endswith('.py')) and (file not in EXCLUDED_FILES):
                 # Run the python script
                 testbench_logger.info(file)
                 subprocess.check_output(['python', file], cwd=root, stderr=subprocess.STDOUT)
@@ -50,7 +57,8 @@ def run_py_testbenches():
 
         # We only care about files
         for file in files:
-            if file.endswith('.py') and (file.startswith('tb_') or file.endswith('_tb.py')):
+            if file.endswith('.py') and (file.startswith('tb_') or file.endswith('_tb.py')) and (
+                    file not in EXCLUDED_FILES):
                 # Run the python script
                 testbench_logger.info(file)
                 subprocess.check_output(['python', file], cwd=root)

@@ -18,7 +18,7 @@ file_names = ["../../../../../net/final_weights/int8_fpi/cn1.k.txt",
 binary_files = ["../../../../../net/final_weights/int8_fpi/cn1.k.npy",
                 "../../../../../net/final_weights/int8_fpi/cn2.k.npy"]
 
-num_layers = 2
+
 if BITS == 4:
     config_file_name = "../../../../../net/final_weights/int4_fpi/config.json"
     file_names = ["../../../../../net/final_weights/int4_fpi/cn1.k.txt",
@@ -35,9 +35,52 @@ elif BITS == 8:
 
 def main():
 
+
+
+    # ----------------------
+    # --- Clean Up Work Dir
+    # ----------------------
+
+    # %% create tmp folder, delete folder if not tmp exists and create new one
+    if os.path.isdir('channels'):
+        shutil.rmtree('channels')
+    os.makedirs('channels', exist_ok=True)
+    os.makedirs('channels_shift', exist_ok=True)
+
+    # ----------------------
+    # --- Setup Conv Layers
+    # ----------------------
+
     weight_paths = list(map(script_relative_path_to_abspath, binary_files))
     template_path = script_relative_path_to_abspath('conv2d_template.in.vhd')
-    output_path = script_relative_path_to_abspath('channels/conv2d_benni.vhd')
+
+    with open(config_file_name, 'r') as fp_json:
+        config_data = json.load(fp_json)
+
+    # --- Read weights
+    cn1_k = np.load(weight_paths[0])
+    cn2_k = np.load(weight_paths[1])
+
+    # --- Generate Channels for Layer 1
+    for i in range(cn1_k.shape[-1]):
+        output_path = script_relative_path_to_abspath(f'channels_shift/conv2d_l1_{i}.vhd')
+        create_conv_channel(template_file_path=template_path,
+                            output_file_path=output_path,
+                            conv_weights=cn1_k[:, :, :, i],
+                            conv_channel_name='conv2d_channel_benni')
+
+    # --- Generate Channels for Layer 2
+    for i in range(cn2_k.shape[-1]):
+        output_path = script_relative_path_to_abspath(f'channels_shift/conv2d_l2_{i}.vhd')
+        create_conv_channel(template_file_path=template_path,
+                            output_file_path=output_path,
+                            conv_weights=cn2_k[:, :, :, i],
+                            conv_channel_name='conv2d_channel_benni')
+
+
+    # ----------------------
+    # --- Setup Conv Layers
+    # ----------------------
 
     num_input_channels = [None] * num_layers
     num_output_channels = [None] * num_layers
@@ -47,26 +90,8 @@ def main():
     msb = [None] * num_layers
     biases = [None] * num_layers
 
-    # %% create tmp folder, delete folder if not tmp exists and create new one
-    if os.path.isdir('channels'):
-        shutil.rmtree('channels')
 
-    try:
-        os.mkdir('channels')
-    except:
-        print("Error creating temp channel folder!")
 
-    fp_json = open(config_file_name, 'r')
-    config_data = json.load(fp_json)
-
-    cn1_k = np.load(weight_paths[0])
-    cn2_k = np.load(weight_paths[1])
-
-    create_conv_channel(template_file_path=template_path,
-                        output_file_path=output_path,
-                        conv_weights=cn1_k[:, :, :, 0],
-                        conv_channel_name='conv2d_channel_benni')
-    
     for i in range(0, num_layers):
         msb[i] = config_data["shifts"][i] + config_data["output_bits"][i] - 1
         file = open(file_names[i], 'r')
@@ -84,15 +109,15 @@ def main():
         for x in range(0, num_input_channels[i]):
             for y in range(0, num_output_channels[i]):
                 kernel_strings[i][x][y] = "(" + \
-                                           str(kernel_arrays[i][0][0][x][y]) + ", " + \
-                                           str(kernel_arrays[i][1][0][x][y]) + ", " + \
-                                           str(kernel_arrays[i][2][0][x][y]) + ", " + \
-                                           str(kernel_arrays[i][0][1][x][y]) + ", " + \
-                                           str(kernel_arrays[i][1][1][x][y]) + ", " + \
-                                           str(kernel_arrays[i][2][1][x][y]) + ", " + \
-                                           str(kernel_arrays[i][0][2][x][y]) + ", " + \
-                                           str(kernel_arrays[i][1][2][x][y]) + ", " + \
-                                           str(kernel_arrays[i][2][2][x][y]) + ")"
+                                          str(kernel_arrays[i][0][0][x][y]) + ", " + \
+                                          str(kernel_arrays[i][1][0][x][y]) + ", " + \
+                                          str(kernel_arrays[i][2][0][x][y]) + ", " + \
+                                          str(kernel_arrays[i][0][1][x][y]) + ", " + \
+                                          str(kernel_arrays[i][1][1][x][y]) + ", " + \
+                                          str(kernel_arrays[i][2][1][x][y]) + ", " + \
+                                          str(kernel_arrays[i][0][2][x][y]) + ", " + \
+                                          str(kernel_arrays[i][1][2][x][y]) + ", " + \
+                                          str(kernel_arrays[i][2][2][x][y]) + ")"
         channel_strings[i] = []
         for y in range(0, num_output_channels[i]):
             channel_strings[i].append('')
