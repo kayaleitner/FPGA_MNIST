@@ -53,8 +53,8 @@ jobs:
           python tb_MemCtrl_run_sim.py
 
       - name: Test Conv Channels
-      run: |
-        pwd
-        cd vivado/NN_IP/EggNet_1.0/src/Conv_Channel/
-        python generate_conv2d.py
-        python tb_convchannel_run_sim.py
+        run: |
+          pwd
+          cd vivado/NN_IP/EggNet_1.0/src/Conv_Channel/
+          python generate_conv2d.py
+          python tb_convchannel_run_sim.py
