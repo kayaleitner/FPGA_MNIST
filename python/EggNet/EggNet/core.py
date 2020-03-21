@@ -318,8 +318,8 @@ def conv2d_fast(data_in, kernel, stride=1):
         the convolution result
     """
     import EggNetExtension
-    # ToDo: Find a way to move this type checking to the wrapper layer in C
 
+    # TODO: Find a way to move this type checking to the wrapper layer in C
     if data_in.dtype == np.float32:
         return EggNetExtension.conv2d_float(data_in=data_in, kernel=kernel, stride=stride)
 
@@ -336,7 +336,7 @@ def conv2d_fast(data_in, kernel, stride=1):
         return EggNetExtension.conv2d_int32_t(data_in=data_in, kernel=kernel, stride=stride)
 
     else:
-        # ToDo: Add missing types
+        # TODO: Add missing types
         raise NotImplementedError()
 
 

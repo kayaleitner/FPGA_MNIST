@@ -29,19 +29,6 @@ def datatype_for_bits(bits):
 
 
 def np_bits(dtype):
-    d = {
-        np.int64: 64,
-        np.uint64: 64,
-        np.int32: 32,
-        np.uint32: 32,
-        np.int16: 16,
-        np.uint16: 16,
-        np.int8: 8,
-        np.uint8: 8,
-    }
-    # ToDo: This doesnt work reliably. Why?
-    # return d[dtype]
-
     return int(np.log2(np_ncodes(dtype)))
 
 
@@ -63,7 +50,6 @@ def to_fpi_old(x, fraction_bits, target_type, zero_point=0):
     max_val = (2 ** non_fraction_bits) - 1
     min_val = -(2 ** non_fraction_bits)
     # At least a single bit is needed
-    # ToDo: Is this always the case?
     assert non_fraction_bits > 0
 
     lsb = (max_val - min_val) / np_ncodes(target_type)
@@ -255,7 +241,6 @@ class Fpi(numbers.Number):
 def to_fix_point(value: float, fraction_bits: int, target_type: np.dtype, zero_point=0.0) -> Fpi:
     non_fraction_bits = np_bits(target_type) - fraction_bits - 1
     # At least a single bit is needed
-    # ToDo: Is this always the case?
     assert non_fraction_bits > 0
     max_val = (2 ** non_fraction_bits) - 1
     min_val = -(2 ** non_fraction_bits)
@@ -341,7 +326,7 @@ def cluster_quantization(w, n_centroids):
 
     """
 
-    # ToDo: Implement cluster quantization
+    # TODO: Implement cluster quantization
 
     pass
 
@@ -619,6 +604,15 @@ def rescale_fixed_point(x, input_bits=32, input_frac_bits=16, output_bits=8, out
         xo = np.left_shift(x, -shift)
     xo = np.clip(xo, a_min=out_min_val, a_max=out_max_val).astype(dtype=target_type)
     return xo
+
+
+def max_val(bits, signed=True):
+    return 2 ** (bits - 1) - 1 if signed else 2 ** bits - 1
+
+
+def get_lsb(bits, m, signed=True):
+    assert bits > 1
+    return max_val(bits=bits, signed=signed) / (2 ** m)
 
 
 def clip_linear_float(x, lsb, fsr):

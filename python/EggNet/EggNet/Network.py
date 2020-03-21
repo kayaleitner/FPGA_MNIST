@@ -338,7 +338,7 @@ class LeNet(Network):
                         pass
 
                 weight_loaded = np.loadtxt(weight_file)
-                # ToDo: Finish this up by mapping the weights to the right layer
+                # TODO: Finish this up by mapping the weights to the right layer
 
 
 def _lenet_to_dict(network: LeNet):

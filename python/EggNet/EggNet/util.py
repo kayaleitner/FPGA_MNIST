@@ -21,7 +21,7 @@ def ind2sub(ind, shape):
 def channels_last_2_channels_first(x: np.ndarray):
     """
     Converts a tensor with shape [B,H,W,C] to a tensor with shape [B,C,H,W]
-    ToDo: Definitely needs a test
+    TODO: Write a testcase for this function
     """
     B, H, W, C = x.shape
     y = np.zeros(shape=(B, C, H, W))
@@ -29,14 +29,14 @@ def channels_last_2_channels_first(x: np.ndarray):
         for h in range(H):
             for w in range(W):
                 for c in range(C):
-                    # ToDo: Vectorize without changing behaviour or rewrite in C for performance
+                    # TODO: Vectorize without changing behaviour or rewrite in C for performance
                     y[b, c, h, w] = x[b, h, w, c]
 
 
 def channels_first_2_channels_last(x: np.ndarray):
     """
     Converts a tensor with shape [B,C,H,W] to a tensor with shape [B,H,W,C]
-    ToDo: Definitely needs a test
+    TODO: Write a testcase for this function
     """
     B, C, H, W = x.shape
     y = np.zeros(shape=(B, H, W, C))
@@ -44,7 +44,7 @@ def channels_first_2_channels_last(x: np.ndarray):
         for h in range(H):
             for w in range(W):
                 for c in range(C):
-                    # ToDo: Vectorize without changing behaviour or rewrite in C for performance
+                    # TODO: Vectorize without changing behaviour or rewrite in C for performance
                     y[b, h, w, c] = x[b, c, h, w]
 
 
@@ -68,7 +68,6 @@ def matplotlib_imshow(img, one_channel=False, denorm_func=None):
 
     if one_channel:
         img = img.mean(dim=0)
-    # ToDo: Somethings still wrong here
     if denorm_func is not None:
         # img = img / 2 + 0.5  # denormalize
         img = denorm_func(img)

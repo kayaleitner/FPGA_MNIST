@@ -23,7 +23,7 @@ class ReLU_FPGA(torch.autograd.Function):
         to stash information for backward computation. You can cache arbitrary
         objects for use in the backward pass using the ctx.save_for_backward method.
 
-        ToDo: Place here the access to the FPGA
+        ToDO: Place here the access to the FPGA
         """
         ctx.save_for_backward(input)
         return NNExt.relu1D(NNExt)
@@ -56,7 +56,7 @@ class FullyConnect_FPGA(torch.autograd.Function):
         to stash information for backward computation. You can cache arbitrary
         objects for use in the backward pass using the ctx.save_for_backward method.
 
-        ToDo: Place here the access to the FPGA
+        TODO: Place here the access to the FPGA
         """
         ctx.save_for_backward(input)
 
