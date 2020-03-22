@@ -24,6 +24,7 @@ jobs:
 
   convert-issues:
     runs-on: ubuntu-latest
+    name: Convert TODOs to Github Issues
     steps:
       - uses: "actions/checkout@master"
       - name: "TODO to Issue"

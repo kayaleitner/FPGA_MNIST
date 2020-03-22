@@ -326,7 +326,7 @@ def cluster_quantization(w, n_centroids):
 
     """
 
-    # TODO: Implement cluster quantization
+    # TODO Implement cluster quantization
 
     pass
 

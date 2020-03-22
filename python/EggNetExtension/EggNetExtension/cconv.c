@@ -6,6 +6,35 @@
 #include "chelper.h"
 
 
+int conv2d_s(const int* __restrict data_in,
+           const int batch,
+           const int in_h,
+           const int in_w,
+           const int in_ch,
+           const int* __restrict kernel_shift,
+           const int fh,
+           const int fw,
+           const int kin_ch,
+           const int kout_ch,
+           const int* __restrict kernel_sign,
+           const int fh_s,
+           const int fw_s,
+           const int kin_ch_s,
+           const int kout_ch_s,
+           const int stride,
+           int* __restrict *   pdata_out,
+           int*      pbatch_out,
+           int*      pout_h,
+           int*      pout_w,
+           int*      pout_ch) {
+
+
+    return 0;
+
+
+}
+
+
 int conv2d(const float* __restrict data_in,
            const int batch,
            const int in_h,

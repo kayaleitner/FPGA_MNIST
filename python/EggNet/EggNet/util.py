@@ -29,7 +29,7 @@ def channels_last_2_channels_first(x: np.ndarray):
         for h in range(H):
             for w in range(W):
                 for c in range(C):
-                    # TODO: Vectorize without changing behaviour or rewrite in C for performance
+                    # TODO Vectorize without changing behaviour or rewrite in C for performance
                     y[b, c, h, w] = x[b, h, w, c]
 
 
@@ -44,7 +44,7 @@ def channels_first_2_channels_last(x: np.ndarray):
         for h in range(H):
             for w in range(W):
                 for c in range(C):
-                    # TODO: Vectorize without changing behaviour or rewrite in C for performance
+                    # TODO Vectorize without changing behaviour or rewrite in C for performance
                     y[b, h, w, c] = x[b, c, h, w]
 
 

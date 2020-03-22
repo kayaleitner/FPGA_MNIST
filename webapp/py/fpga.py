@@ -71,7 +71,7 @@ def get_system_stats(verbose=False):
         print("Total cores:", psutil.cpu_count(logical=True))
 
         # CPU frequencies
-        # ToDo: cpu_freq() doesnt work on the Zedboard (Linaro/Ubuntu/Lib Error?)
+        # TODO cpu_freq() doesnt work on the Zedboard (Linaro/Ubuntu/Lib Error?)
         # cpufreq = psutil.cpu_freq()
         # if cpufreq is not None:
         #     print(f"Max Frequency: {cpufreq.max:.2f}Mhz")
@@ -168,7 +168,7 @@ def get_system_stats_dict():
     svmem = psutil.virtual_memory()
     bt = psutil.boot_time()
 
-    # ToDo: This is not supported at the moment on Linaro.
+    # TODO This is not supported at the moment on Linaro.
     # cpufreq = psutil.cpu_freq()
 
     stats = {

@@ -23,7 +23,7 @@ add_library(
     crelu.c
     cconv.c
 )
-
+target_compile_features(EggNetExtension_c PUBLIC c_restrict)
 
 add_executable(scratch scratch.c)
 target_link_libraries(scratch PRIVATE EggNetExtension_c)
