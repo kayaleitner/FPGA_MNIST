@@ -145,9 +145,16 @@ def perform_real_quant(weight_dict,
     their fixed point representation
 
     Args:
-        weight_dict: Dictionary containing numpy arrays
-        target_bits: Target bit length of the integer values
-        frac_bits: Target fraction bit width
+        weight_dict:
+        in_bits:
+        in_frac:
+        w_bits:
+        w_frac:
+        out_bits:
+        out_frac:
+        activations_signed:
+        additions:
+        traget_dtype:
 
     Returns:
         Dictionary with original keys, containing quantized values
@@ -196,7 +203,6 @@ def perform_real_quant(weight_dict,
             out_min[i] = 0
             out_scale[i] = 1 / 2 ** oa_f[i]
 
-
     options = {
         'input_bits': ia_b,
         'input_frac': ia_f,
@@ -218,7 +224,7 @@ def perform_real_quant(weight_dict,
         'shifts': shift
     }
 
-    # ToDo: This becomes a bit hacky
+    # TODO Cleanup needed, this becomes a bit hacky
     wi = 0
     bi = 0
     d_out = {}
@@ -234,17 +240,6 @@ def perform_real_quant(weight_dict,
         d_out[key] = w
     return d_out, shift, options
 
-
-def non_linear_quant(weight_dict, boundaries):
-
-
-    d_out = {}
-    for i, (key, value) in enumerate(weight_dict.items()):
-        # check key if it is weight or bias
-        w = np.clip(value / boundaries, a_min=bias_min[bi], a_max=bias_max[bi]).round().astype(traget_dtype)
-        # Those are now ints, convert back to floats
-        d_out[key] = w
-    return d_out, shift, options
 
 def quant2float(qweights, options):
     w_scale = options['w_scale']
@@ -349,7 +344,7 @@ def evaluate_network_full(batch_size, network, train_images, train_labels,
                     y_layers_out[ix] = np.concatenate((y_layers_out[ix], y_layers[ix]), axis=0)
         y = y.argmax(-1)
 
-        # ToDo: Might be a faster way
+        # TODO Might be a faster way
         for pred, label in zip(y, y_):
             confusion_matrix[pred, label] = confusion_matrix[pred, label] + 1
 

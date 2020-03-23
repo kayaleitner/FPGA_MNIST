@@ -4,6 +4,7 @@ use IEEE.NUMERIC_STD.all;
 
 package clogb2_Pkg is
 
+	-- # TODO Logarithms are not defined for negative values -> change interface to NATURAL instead of INTEGER
 	function clogb2 (bit_depth : INTEGER) return INTEGER;
 
 end clogb2_Pkg;

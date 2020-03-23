@@ -51,18 +51,18 @@ def train(nepochs=DEFAULT_EPOCHS, batch_size=BATCH_SIZE, plot_history=DEFAULT_PL
         Conv2D(filters=16, kernel_size=3, padding='same', activation='linear', use_bias=True,
                kernel_constraint=kernel_constraint),
         Dropout(0.25),
-        ReLU(max_value=4.0),
+        ReLU(max_value=3.75),
         MaxPooling2D(),
         # BatchNormalization(axis=-1),  # Normalize along the channels (meaning last axis)
         Conv2D(filters=24, kernel_size=3, padding='same', activation='linear', use_bias=True,
                kernel_constraint=kernel_constraint),
         Dropout(0.25),
-        ReLU(max_value=4.0),
+        ReLU(max_value=15.0),
         MaxPooling2D(),
         Flatten(),
         Dense(32, activation='linear', kernel_constraint=kernel_constraint),
         Dropout(0.25),
-        ReLU(max_value=4.0),
+        ReLU(max_value=15.0),
         Dense(10, activation='softmax', kernel_constraint=kernel_constraint)
     ])
 

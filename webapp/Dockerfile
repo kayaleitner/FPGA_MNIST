@@ -39,14 +39,11 @@ RUN echo $HOME
 RUN echo ${PYENV_ROOT}
 RUN echo ${PATH}
 
-# Install 3.6.10
-RUN pyenv install 3.6.10
-# Set the version to use it as global
-RUN pyenv global 3.6.10
+# Install 3.6.10 &  set the version to use it as global
+RUN pyenv install 3.6.10 && pyenv global 3.6.10
 
 COPY deploy_requirements.txt /
 RUN pip install -r deploy_requirements.txt
-
 
 ENTRYPOINT ["python"]
 CMD ["app.py"]

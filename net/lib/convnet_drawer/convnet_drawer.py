@@ -97,7 +97,7 @@ class Model:
         self.y = min([f.get_top() for f in self.feature_maps]) - config.text_margin - config.text_size \
             - config.bounding_box_margin
         self.width = self.feature_maps[-1].right + config.bounding_box_margin * 2 + 30 * 2
-        # TODO: automatically calculate the ad-hoc offset "30" from description length
+        # TODO automatically calculate the ad-hoc offset "30" from description length
         self.height = - self.y * 2 + config.text_size
 
     def save_fig(self, filename):
@@ -185,7 +185,7 @@ class FeatureMap1D(FeatureMap):
         self.left = left
         c_ = math.pow(self.c, config.channel_scale)
         self.right = left + config.one_dim_width
-        # TODO: reflect text length to right
+        # TODO reflect text length to right
         x1 = left
         y1 = - c_ / 2
         x2 = left + config.one_dim_width

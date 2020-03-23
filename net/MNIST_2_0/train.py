@@ -39,8 +39,8 @@ Tensorflow example for creating a MNIST image classification model with Keras
 See: https://www.tensorflow.org/tutorials/images/classification
 See: https://www.tensorflow.org/guide/keras/save_and_serialize
 
-ToDo: Extract the weights and store them in a non-binary format
 """
+
 
 IMG_HEIGHT = 28
 IMG_WIDTH = 28

@@ -96,8 +96,12 @@ def make_plots():
     weights = read_np_keras(target_dtype=np.float32)
 
     # Input activation bits and fractions
-    ia_b = np.array([5, 5, 5, 5])
-    ia_f = np.array([4, 0, 0, 0])
+    ia_b = np.array([9, 4, 4, 4])
+    ia_f = np.array([8, 2, 0, 0])
+
+    # zB
+    # v = Q * 2^-2
+    # |Q| = 4bit
 
     # Weights bits and fractions
     # w_b = np.array([4, 4, 4, 4])
@@ -106,12 +110,17 @@ def make_plots():
     w_f = np.array([2, 5, 5, 5])
 
     # Output activation bits and fractions
-    oa_b = np.array([5, 5, 5, 5])
-    oa_f = np.array([0, 0, 0, 0])
-    qweights, shift, options = perform_real_quant(weights,
+    oa_b = np.array([4, 4, 4, 4])
+    oa_f = np.array([2, 0, 0, 2])
+
+    # Last Output is signed, because we dont have a ReLU Layer there
+    oa_signed = np.array([False, False, False, True])
+
+    qweights, shift, options = perform_real_quant(weight_dict=weights,
                                                   in_bits=ia_b, in_frac=ia_f,
                                                   w_bits=w_b, w_frac=w_f,
-                                                  out_bits=oa_b, out_frac=oa_f)
+                                                  out_bits=oa_b, out_frac=oa_f, activations_signed=oa_signed)
+
     fweights = quant2float(qweights, options)
 
     our_net = init_network_from_weights(weights, from_torch=False)
@@ -156,7 +165,7 @@ def main():
     # Last Output is signed, becuase we dont have a ReLU Layer there
     oa_signed = np.array([False, False, False, True])
 
-    qweights, shift, options = perform_real_quant(weights,
+    qweights, shift, options = perform_real_quant(weight_dict=weights,
                                                   in_bits=ia_b, in_frac=ia_f,
                                                   w_bits=w_b, w_frac=w_f,
                                                   out_bits=oa_b, out_frac=oa_f, activations_signed=oa_signed)
@@ -166,7 +175,6 @@ def main():
     np.savez('final_weights/float/all', **weights)
     np.savez('final_weights/int4_fake_quant/all', **fweights)
     np.savez('final_weights/int4_fpi/all', **qweights)
-
 
     # Check if it has worked
     our_net = init_network_from_weights(weights, from_torch=False)
@@ -236,37 +244,46 @@ def save_weights(fweights, qweights, weights, config, qprefix):
 
     config = prepare_config(config)
 
+    # --------------------
+    # -- Save Real Quant
+    # --------------------
+
+    dirname = os.path.join('final_weights', f'{qprefix}_fpi')
+    with open(os.path.join(dirname, 'config.json'), 'w') as fp:
+        json.dump(config, fp)
     for key, value in qweights.items():
-        dirname = os.path.join('final_weights', f'{qprefix}_fpi')
         os.makedirs(dirname, exist_ok=True)
         filename = os.path.join(dirname, key)
         x_ = value.flatten()
-
-        with open(os.path.join(dirname, 'config.json'), 'w') as fp:
-            json.dump(config, fp)
-
         np.savetxt(fname=filename + '.txt', X=x_, fmt='%i', header=str(value.shape))
         np.save(file=filename, arr=value)
+
+    # --------------------
+    # -- Save Fake Quant
+    # --------------------
+
+    dirname = os.path.join('final_weights', f'{qprefix}_fake_quant')
+    with open(os.path.join(dirname, 'config.json'), 'w') as fp:
+        json.dump(config, fp)
     for key, value in fweights.items():
-        dirname = os.path.join('final_weights', f'{qprefix}_fake_quant')
         os.makedirs(dirname, exist_ok=True)
         filename = os.path.join(dirname, key)
         x_ = value.flatten()
-        with open(os.path.join(dirname, 'config.json'), 'w') as fp:
-            json.dump(config, fp)
-
         np.savetxt(fname=filename + '.txt', X=x_, header=str(value.shape))
         np.save(file=filename, arr=value)
+
+    # --------------------
+    # -- Save Floats
+    # --------------------
     for key, value in weights.items():
         dirname = os.path.join('final_weights', 'float')
         os.makedirs(dirname, exist_ok=True)
         filename = os.path.join(dirname, key)
         x_ = value.flatten()
-
         np.savetxt(fname=filename + '.txt', X=x_, header=str(value.shape))
         np.save(file=filename, arr=value)
 
 
 if __name__ == '__main__':
-    # make_plots()
+    make_plots()
     main()

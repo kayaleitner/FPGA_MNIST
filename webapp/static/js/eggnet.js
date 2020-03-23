@@ -9,7 +9,7 @@ var eggnet = new Vue({
         items: {},
 
         mnist_results: [
-            // ToDo: Load this dynamically?
+            // TODO Load this dynamically?
             {index: 0, data_set: 'Train Set', n_batches: 1, network: 'CPU', accuracy: '0.999', time: '0.01'},
 
         ],

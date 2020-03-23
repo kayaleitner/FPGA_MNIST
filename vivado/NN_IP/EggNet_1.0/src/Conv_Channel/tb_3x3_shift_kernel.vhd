@@ -13,7 +13,8 @@ architecture beh of tb_3x3_shift_kernel is
 	constant BIT_WIDTH_OUT : INTEGER := 20;
 
 	--test kernel
-	constant WEIGHT : weight_array_t := (-125, -128, -128, -128, 31, 67, -128, 62, 127);
+	constant WEIGHT_SHIFTS : conv_kernel_3x3_weight_shift_t := (-125, -128, -128, -128, 31, 67, -128, 62, 127);
+	constant WEIGHT_SIGNS : conv_kernel_3x3_weight_sign_t := (-125, -128, -128, -128, 31, 67, -128, 62, 127);
 	constant INPUTS : weight_array_t := (0, 0, 0, 74, 247, 41, 69, 215, 148);
 
 	constant CLK_PERIOD : TIME := 10 ns; -- 100MHz
@@ -37,7 +38,7 @@ begin
 			Valid_i => s_Valid_i,
 			X_i => s_X_i,
 			Y_o => s_Y_o
-			);
+		);
 
 	-- Generates the clock signal
 	clkgen : process

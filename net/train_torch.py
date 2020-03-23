@@ -473,7 +473,6 @@ def load_torch(filepath=TORCH_SAVE_FILE):
     # model = get_lenet_model()
     # model.load_state_dict(torch.load(TORCH_STATES_SAVE_FILE))
 
-    # ToDo: Better way would be the line below but it doesnt work for me :(
     model = torch.load(filepath)
 
     return model

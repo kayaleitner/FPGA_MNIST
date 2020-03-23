@@ -47,6 +47,10 @@ architecture beh of Conv2D_0 is
   signal ready_out : std_logic_vector(OUTPUT_CHANNELS - 1 downto 0);
   signal valid_out : std_logic_vector(OUTPUT_CHANNELS - 1 downto 0);
   signal last_out : std_logic_vector(OUTPUT_CHANNELS - 1 downto 0);
+
+  constant WEIGHT_SHIFTS : kernel_array_t := (0 => (3, 1, 1, 4, 3, 2, 1, 1, 3));
+  constant WEIGHT_SIGNS : kernel_sign_array_t := (0 => ('0', '0', '0', '1', '1', '0', '1', '1', '0'));
+		
 begin
   Ready_o <= ready_out(0);
   Valid_o <= valid_out(0);

@@ -226,7 +226,7 @@ void *tx_image_batch(int dma_count, uint8_t *image_buffer,  int batch, int heigh
 	pthread_mutex_unlock(&buffer_write_lock); // unlock interface
 
 
-	// ToDo: Is this line still neeeded
+	// TODO Is this line still neeeded
 		// for (i = 0; i < TRANSFER_SIZE; i++)
        	// 		tx_proxy_interface_p->buffer[i] = *IMG_GET(1,1,1,1)++;;
 

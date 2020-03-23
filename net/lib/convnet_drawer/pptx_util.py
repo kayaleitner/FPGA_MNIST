@@ -41,7 +41,7 @@ class MyPresentation:
             line.dash_style = MSO_LINE.DASH
 
     def add_text(self, x, y, body, color, size):
-        # TODO: set color
+        # TODO set color
         textbox = self.shapes.add_textbox(Pt(x), Pt(y), Pt(0), Pt(0))
         textbox.text = body
         text_frame = textbox.text_frame

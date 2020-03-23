@@ -89,42 +89,6 @@ def chunk_array(seq, num):
 
 # %% Pooling function
 
-def pool(CO, file_name_pool_in, file_name_pool_out, width):
-    buffer = np.ndarray((2, width), dtype=int)
-    for i in range(0, CO):
-        i_str = str(i)
-        if len(i_str) == 1:
-            i_str = "0" + i_str
-        file_name_in_current = file_name_pool_in.replace("{I}", i_str)
-        file_name_out_current = file_name_pool_out.replace("{I}", i_str)
-        pool_input_file = open(file_name_in_current, "r")
-        pool_output_file = open(file_name_out_current, "w")
-
-        buf_i = 0
-        buf_j = 0
-
-        for line in pool_input_file:
-            buffer[buf_j][buf_i] = int(line)
-            if buf_i != width - 1:
-                buf_i += 1
-            elif buf_j != 1:
-                buf_j += 1
-                buf_i = 0
-            else:
-                for x in range(0, int(width / 2)):
-                    vals = [buffer[0][x * 2], buffer[0][x * 2 + 1], buffer[1][x * 2], buffer[1][x * 2 + 1]]
-                    max_val = max(vals)
-                    pool_output_file.write(str(max_val) + "\n")
-                buf_i = 0
-                buf_j = 0
-
-        pool_input_file.close()
-        pool_output_file.close()
-
-
-def script_folder_path() -> str:
-    return os.path.dirname(os.path.abspath(__file__))
-
 
 BASE_DIR = os.path.abspath(script_folder_path())
 
@@ -482,6 +446,43 @@ def clean_up_workspace(tmp_dir):
     if os.path.isdir(tmp_dir):
         shutil.rmtree(tmp_dir)
     os.makedirs(tmp_dir, exist_ok=True)
+
+
+def pool(CO, file_name_pool_in, file_name_pool_out, width):
+    buffer = np.ndarray((2, width), dtype=int)
+    for i in range(0, CO):
+        i_str = str(i)
+        if len(i_str) == 1:
+            i_str = "0" + i_str
+        file_name_in_current = file_name_pool_in.replace("{I}", i_str)
+        file_name_out_current = file_name_pool_out.replace("{I}", i_str)
+        pool_input_file = open(file_name_in_current, "r")
+        pool_output_file = open(file_name_out_current, "w")
+
+        buf_i = 0
+        buf_j = 0
+
+        for line in pool_input_file:
+            buffer[buf_j][buf_i] = int(line)
+            if buf_i != width - 1:
+                buf_i += 1
+            elif buf_j != 1:
+                buf_j += 1
+                buf_i = 0
+            else:
+                for x in range(0, int(width / 2)):
+                    vals = [buffer[0][x * 2], buffer[0][x * 2 + 1], buffer[1][x * 2], buffer[1][x * 2 + 1]]
+                    max_val = max(vals)
+                    pool_output_file.write(str(max_val) + "\n")
+                buf_i = 0
+                buf_j = 0
+
+        pool_input_file.close()
+        pool_output_file.close()
+
+
+def script_folder_path() -> str:
+    return os.path.dirname(os.path.abspath(__file__))
 
 
 if __name__ == '__main__':

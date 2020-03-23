@@ -84,7 +84,7 @@ jobs:
           # Install from setup.py
           
           pip install .
-          # ToDo: Check install from
+          # TODO Check install from
 
       - name: Upload Python Package
         uses: actions/upload-artifact@v1

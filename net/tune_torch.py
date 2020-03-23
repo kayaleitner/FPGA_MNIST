@@ -76,7 +76,7 @@ def main():
     #img_bach_torch = np.reshape(img_batch, newshape=(-1, 1, 28, 28)).astype(np.float32)
     #_imshow(img_bach_torch, mode='torch')
     #lbl_torch = net(torch.from_numpy(img_bach_torch))
-    lbl_torch = lbl_torch.topk(1)[1].numpy().flatten()  # ToDo: Maybe simplify this expression a bit
+    lbl_torch = lbl_torch.topk(1)[1].numpy().flatten()  # TODO Maybe simplify this expression a bit
 
     # To check the output of the fully connected layers against our net
     LayerActivations(net, layer_num=0, validate_func=LayerActivations)
