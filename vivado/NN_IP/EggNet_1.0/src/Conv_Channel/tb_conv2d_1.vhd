@@ -14,8 +14,8 @@ entity tb_conv2d_1 is
 end tb_conv2d_1;
 
 architecture beh of tb_conv2d_1 is
-	constant BIT_WIDTH_IN : integer := 8; -- change this to 5 if running with int8
-	constant BIT_WIDTH_OUT : integer := 8; -- this too
+	constant BIT_WIDTH_IN : integer := 4; -- change this to 5 if running with int8
+	constant BIT_WIDTH_OUT : integer := 4; -- this too
 	constant INPUT_CHANNELS : integer := 16;
 	constant OUTPUT_CHANNELS : integer := 24;
 	constant OUTPUT_COUNT : integer := 10;

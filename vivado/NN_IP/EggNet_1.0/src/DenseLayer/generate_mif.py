@@ -2,7 +2,7 @@
 import numpy as np
 import json
 
-BITS = 8
+BITS = 4
 
 if BITS == 4:
     config_file_name = "../../../../../net/final_weights/int4_fpi/config.json"

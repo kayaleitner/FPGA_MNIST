@@ -12,7 +12,7 @@ end tb_conv2d_0;
 
 architecture beh of tb_conv2d_0 is
 	constant BIT_WIDTH_IN : integer := 8; -- change this to 5 if running with int8
-	constant BIT_WIDTH_OUT : integer := 8; -- this too
+	constant BIT_WIDTH_OUT : integer := 4; -- this too
 	constant INPUT_CHANNELS : integer := 1;
 	constant OUTPUT_CHANNELS : integer := 16;
 	constant CLK_PERIOD : time := 10 ns; -- 100MHz

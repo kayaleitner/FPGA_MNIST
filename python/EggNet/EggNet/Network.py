@@ -480,8 +480,8 @@ class FpiLeNet(Network):
         self.fc2.bias = weights['fc2.b']
 
         self.lenet_layers = [r1,
-                             cn1, mp1, rs1,
-                             cn2, mp2, rs2,
+                             cn1, rs1, mp1,
+                             cn2, rs2, mp2,
                              r2,
                              fc1, rs3,
                              fc2, rs4]

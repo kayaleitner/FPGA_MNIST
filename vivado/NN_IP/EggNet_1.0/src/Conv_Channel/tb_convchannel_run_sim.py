@@ -24,7 +24,7 @@ WHEN SWITCHING BETWEEN INT4 AND INT8:
     3. Change the input and output bit width in tb_conv2d0 and tb_conv2d1
     3. Set BITS in this script and run it
 '''
-BITS = 8
+BITS = 4
 
 if BITS == 4:
     config_file_name = "../../../../../net/final_weights/int4_fpi/config.json"
@@ -132,6 +132,7 @@ BASE_DIR = os.path.abspath(script_folder_path())
 def main():
     SCR_DIR = script_folder_path()
     TMP_DIR = os.path.join(SCR_DIR, 'tmp')
+    TMP_DIR_MNIST = os.path.join(SCR_DIR, 'tmp_mnist')
 
     # %% parameters
     KEEP_TEMPORARY_FILES = True
@@ -149,7 +150,7 @@ def main():
 
     # --- Setup Paths
     path_dict = {}
-    for key, value in FILENAMES_INT8.items():
+    for key, value in FILENAMES_INT4.items():
         path_dict[key] = os.path.abspath(os.path.join(script_folder_path(), value))
 
     l1_weights_file_name = path_dict['cn1.k']
@@ -158,7 +159,7 @@ def main():
     l2_bias_file_name = path_dict['cn2.b']
     config_file_name = path_dict['config']
 
-    # clean_up_workspace(tmp_dir=TMP_DIR)
+    clean_up_workspace(tmp_dir=TMP_DIR)
 
     with open(config_file_name, 'r') as fp_json:
         config_data = json.load(fp_json)
@@ -169,7 +170,7 @@ def main():
     pynet = EggNet.LeNet.init_npz(npz_path=npz_filepath)
     py_quant_net = EggNet.FpiLeNet.init_npz(npz_path=npz_filepath, config_path=config_path)
 
-    mnist = EggNet.Reader.MNIST(folder_path=TMP_DIR)
+    mnist = EggNet.Reader.MNIST(folder_path=TMP_DIR_MNIST)
     labels = mnist.test_labels()
     imgs = mnist.test_images()
 
@@ -184,7 +185,7 @@ def main():
     fig.show()
 
     y, y_layers = py_quant_net.forward_intermediate(inputs=imgs[random_i])
-    print(f" y == y_ ? : {y == labels[random_i]}")
+    #print(f" y == y_ ? : {y == labels[random_i]}")
 
     fig, axes = plt.subplots(nrows=4, ncols=4)
     for i in range(4):
@@ -208,7 +209,7 @@ def main():
 
     # %% generate test kernels
     l1_test_kernels = tb.get_Kernels(l1_test_vectors, IMG_WIDTH)
-    l1_test_kernels >>= (INPUT_DATA_WIDTH - config_data["input_bits"][0])
+    l1_test_kernels >>= max(INPUT_DATA_WIDTH - config_data["input_bits"][0], 0)
 
     # %% calculate Layer 1 output as new memory controller input
     l1_weights = np.load(l1_weights_file_name)
@@ -239,6 +240,8 @@ def main():
 
     for i in range(0, KERNEL_SIZE * KERNEL_SIZE):
         conv2d0_input_files[i].close()
+        
+    l1_features_eggnet = np.reshape(y_layers[2], newshape=(3,-1,16))
 
     # %% Run test and compare output from conv2d0
 
@@ -282,7 +285,7 @@ def main():
         if filecmp.cmp(file_name_sim_current, file_name_emu_current) != True:
             print("Simulation and emulation output not the same for pool0, channel " + str(i))
             exit()
-
+            
     print("Simulation and emulation output the same for pool0")
 
     # %% Get input for layer 2 from output of layer 1
@@ -310,13 +313,8 @@ def main():
     l2_test_kernels = tb.get_Kernels(l2_test_vectors, IMG_WIDTH)
 
     # %% calculate Layer 2 output as new memory controller input
-    l2_weights_file = open(l2_weights_file_name, 'r')
-    l2_weights = np.array(list(np.loadtxt(l2_weights_file, dtype=np.int8))).reshape((3, 3, CI_L2, CO_L2))
-    l2_weights_file.close()
-
-    l2_bias_file = open(l2_bias_file_name, 'r')
-    l2_bias = np.array(list(np.loadtxt(l2_bias_file, dtype=np.int16)))
-    l2_bias_file.close()
+    l2_weights = np.load(l2_weights_file_name)
+    l2_bias = np.load(l2_bias_file_name)
 
     l2_weights_reshaped = np.ndarray((CO_L2, CI_L2, 3, 3))
     for i in range(0, CI_L2):

@@ -7,7 +7,7 @@ import re
 import json
 import argparse
 
-BITS = 8
+BITS = 4
 num_layers = 2
 
 config_file_name = "../../../../../net/final_weights/int8_fpi/config.json"
