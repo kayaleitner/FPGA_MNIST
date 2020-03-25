@@ -279,6 +279,7 @@ begin
 				while not endfile(kernel_file) loop
 					readline(kernel_file, input_line);
 					read(input_line, input_int);
+					-- # TODO The ordering of the values in the file is crucial and should be documented
 					channel_input(J)(I)(K) := input_int;
 					K := K + 1;
 				end loop;

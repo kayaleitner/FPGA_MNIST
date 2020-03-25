@@ -175,6 +175,7 @@ begin
                 readline(kernel_file, input_line);
 				read(input_line, input_int);
 				-- Testbench: Reads first the pixels and then the weight terms
+				-- # TODO The ordering of the values in the file is crucial and should be documented
 				kernel_input(I)(K) := input_int;
 				K := K + 1;
             end loop;
