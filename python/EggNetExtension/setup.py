@@ -81,14 +81,14 @@ else:
     raise RuntimeError('Operating System not supported?')
 extra_link_args = []
 
-NN_ext_module = Extension('_EggNetExtension',
+NN_ext_module = Extension('EggNetExtension._EggNetExtension',
                           sources=source_files,
                           include_dirs=include_dirs,
                           swig_opts=['-py3'],
                           extra_compile_args=extra_args,
                           extra_link_args=extra_link_args,
                           depends=['numpy'],
-                          optional=True)
+                          optional=False)
 
 setup(name='EggNetExtension',
       version='1.0',
