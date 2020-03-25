@@ -1,13 +1,4 @@
 numpy
-pandas
 matplotlib
-tensorflow
 wget
-pyviz
-graphviz
-pydotplus
-flask
-torch
-torchvision
-keras
 idx2numpy
