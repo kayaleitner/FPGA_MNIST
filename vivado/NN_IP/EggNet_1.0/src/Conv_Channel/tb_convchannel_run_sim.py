@@ -301,7 +301,7 @@ Checking Conv Layer 0
         #    print("Simulation and emulation output not the same for conv2d0, channel " + str(i))
         #    exit()
 
-    print("Finished Checking Layer 0")
+    print("Finished Checking Conv Layer 0")
     print()
 
     # %% Pooling after layer 1
@@ -343,7 +343,9 @@ Checking Pool Layer 0
         #         #     print("Simulation and emulation output not the same for pool0, channel " + str(i))
         #         #     exit()
 
-    print("Simulation and emulation output the same for pool0")
+    print("Finished Checking Pool Layer 0")
+    print()
+
 
     # %% Get input for layer 2 from output of layer 1
     file_name_in = "tmp/pool_output{I}.txt"
@@ -509,7 +511,7 @@ Checking Pool Layer 0
     dl2_weights_file.close()
 
     file_serializer = open("tmp/serializer_output.txt", "r")
-    serializer_output = np.loadtxt(file_serializer, dtype=np.int32)
+    serializer_output = np.loadtxt(file_serializer, dtypekei=np.int32)
     file_serializer.close()
     serializer_output_chunked = chunk_array(serializer_output, NUMBER_OF_TEST_BLOCKS)
 
@@ -554,10 +556,12 @@ def plot_image_debug(channel_index: int, img1_ac: np.ndarray, img2_one_channel: 
     plt.imshow(
         np.concatenate((img1_ac[batch_index, :, :, channel_index], img2_one_channel[batch_index, :, :, 0]), axis=1),
         cmap='gray')
+    plt.colorbar()
     plt.show()
     plt.imshow(
         img1_ac[batch_index, :, :, channel_index] - img2_one_channel[batch_index, :, :, 0],
         cmap='gray')
+    plt.colorbar()
     plt.show()
 
 

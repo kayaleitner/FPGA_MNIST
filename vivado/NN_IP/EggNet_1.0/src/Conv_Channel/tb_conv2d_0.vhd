@@ -40,6 +40,10 @@ architecture beh of tb_conv2d_0 is
 	
 begin
   
+	---------------------------------------------------------
+	-- Init DUTs
+	---------------------------------------------------------
+
 	uit_0 : entity work.Conv2D_0
 	generic map(
 		BIT_WIDTH_IN,
@@ -82,6 +86,10 @@ begin
 		M_layer_tready_i => '1'
 	);
   
+	---------------------------------------------------------
+	-- Helpers
+	---------------------------------------------------------
+	
 	-- Generates the clock signal
 	clkgen : process
 	begin
@@ -104,6 +112,11 @@ begin
 		wait;
 	end process; 
 	
+	---------------------------------------------------------
+	-- Generate Output Conv2D
+	---------------------------------------------------------
+	
+	-- Process to write the output of conv layer to file
 	get_output_conv2d : process(s_Clk_i, conv2d_done)
 		variable K : integer := 0;
 		type t_output_array is array(0 to OUTPUT_CHANNELS - 1) of t_pixel_array;
@@ -131,6 +144,7 @@ begin
 		end if;	
 	end process;
 	
+	-- Process to write the output of pool layer to file
 	get_output_pooling : process(s_Clk_i, sim_ended)
 		variable K : integer := 0;
 		type t_output_array_pool is array(0 to OUTPUT_CHANNELS - 1) of t_pixel_array_pool;
@@ -167,6 +181,7 @@ begin
 		variable K : integer := 0;
 	begin
 		
+		-- First Read contents of file and store it in the kernel_input array
 		for I in 0 to KERNEL_SIZE - 1 loop
 			file_name(19) := char_num(I+1);
             file_open(kernel_file, file_name, read_mode);
@@ -176,6 +191,11 @@ begin
 				read(input_line, input_int);
 				-- Testbench: Reads first the pixels and then the weight terms
 				-- # TODO The ordering of the values in the file is crucial and should be documented
+				-- Looks like the convention is for reading:
+				--
+				--	1) read all input pixles for the first 3x3 input -> first -> first col, first row
+				--  2) read all input pixels for the second 3x3 input -> second -> first col, second row
+				--  3) ...
 				kernel_input(I)(K) := input_int;
 				K := K + 1;
             end loop;
@@ -187,7 +207,10 @@ begin
 		s_C0_Valid_i <= '0';
 		wait until rising_edge(s_n_Res_i);
 		wait until rising_edge(s_C0_Ready_o);
+
+		-- Pipe the output to the actual conv channel
 		for J in 0 to INPUT_ARRAY_SIZE - 1 loop
+			
 			wait until rising_edge(s_Clk_i);
 			while s_C0_Ready_o = '0' loop
 				s_C0_Last_i <= '0';
@@ -195,17 +218,22 @@ begin
 				s_C0_Valid_i <= '0';
 				wait until rising_edge(s_Clk_i);
 			end loop;
+			
+			-- For the end of every line send the Last_i signal
 			if (J mod IMG_WIDTH) = IMG_WIDTH - 1 then
 				s_C0_Last_i <= '1';
 			else
 				s_C0_Last_i <= '0';
 			end if;
+
 			s_C0_Valid_i <= '1';
 			for I in 0 to KERNEL_SIZE - 1 loop
 				s_C0_X_i((I+1)*BIT_WIDTH_IN - 1 downto I*BIT_WIDTH_IN) <= std_logic_vector(to_unsigned(kernel_input(I)(J), BIT_WIDTH_IN));
 			end loop;
-		end loop;
+		
+			end loop;
 		wait until rising_edge(s_Clk_i);
+
 		s_C0_Last_i <= '0';
 		s_C0_Valid_i <= '0';
 		s_C0_X_i <= (others => '0');
