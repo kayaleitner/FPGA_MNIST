@@ -10,6 +10,8 @@ import idx2numpy
 import numpy.random as rand
 from sys import exit
 import json
+import pathlib
+import platform
 
 # %% import custom modules
 import vhdl_testbench as tb
@@ -47,6 +49,8 @@ elif BITS == 8:
     denselayer_2_file_name = "../../../../../net/final_weights/int8_fpi/fc2.w.txt"
     denselayer_1_bias_file_name = "../../../../../net/final_weights/int8_fpi/fc1.b.txt"
     denselayer_2_bias_file_name = "../../../../../net/final_weights/int8_fpi/fc2.b.txt"
+else:
+    raise NotImplementedError()
 
 FILENAMES_INT4 = {
     'config': "../../../../../net/final_weights/int4_fpi/config.json",
@@ -127,26 +131,34 @@ def script_folder_path() -> str:
 
 
 BASE_DIR = os.path.abspath(script_folder_path())
+SCR_DIR = script_folder_path()
+TMP_DIR = os.path.join(SCR_DIR, 'tmp')
+TMP_DIR_MNIST = os.path.join(SCR_DIR, 'tmp_mnist')
+
+# %% parameters
+KEEP_TEMPORARY_FILES = True
+KERNEL_SIZE = 3
+NUMBER_OF_TEST_BLOCKS = 3
+CI_L1 = 1
+CO_L1 = 16
+CI_L2 = 16
+CO_L2 = 24
+INPUT_DATA_WIDTH = 8
+
+# IMG_WIDTH = 28
+# IMG_HEIGTH = 28
+# IMG_HEIGTH_PAD = 30
+# IMG_WIDTH_PAD = 30
+
+
+SCRIPT_PATH = pathlib.Path(__file__).parent
 
 
 def main():
-    SCR_DIR = script_folder_path()
-    TMP_DIR = os.path.join(SCR_DIR, 'tmp')
-    TMP_DIR_MNIST = os.path.join(SCR_DIR, 'tmp_mnist')
-
-    # %% parameters
-    KEEP_TEMPORARY_FILES = True
-    KERNEL_SIZE = 3
-    NUMBER_OF_TEST_BLOCKS = 3
-    CI_L1 = 1
-    CO_L1 = 16
-    CI_L2 = 16
-    CO_L2 = 24
-    INPUT_DATA_WIDTH = 8
-
-    IMG_WIDTH = 28
-    IMG_HEIGTH = 28
-    BLOCK_SIZE = IMG_WIDTH * IMG_HEIGTH
+    # -- Setup some constants
+    IMG_WIDTH, IMG_HEIGHT = 28, 28
+    IMG_WIDTH_PAD, IMG_HEIGTH_PAD = 30, 30
+    BLOCK_SIZE = IMG_WIDTH * IMG_HEIGHT
 
     # --- Setup Paths
     path_dict = {}
@@ -169,7 +181,8 @@ def main():
 
     pynet = EggNet.LeNet.init_npz(npz_path=npz_filepath)
     py_quant_net = EggNet.FpiLeNet.init_npz(npz_path=npz_filepath, config_path=config_path)
-    py_quant_net.cn1.bias = np.load(l1_bias_file_name)  # TODO BUG Looks like the bias values in the 'all.npz' file are wrong
+    py_quant_net.cn1.bias = np.load(
+        l1_bias_file_name)  # TODO BUG Looks like the bias values in the 'all.npz' file are wrong
     mnist = EggNet.Reader.MNIST(folder_path=TMP_DIR_MNIST)
     labels = mnist.test_labels()
     imgs = mnist.test_images()
@@ -179,52 +192,25 @@ def main():
 
     # fill testdata vector and plot random test images
 
-    fig, axs = plt.subplots(ncols=NUMBER_OF_TEST_BLOCKS)
-    for j in range(0, NUMBER_OF_TEST_BLOCKS):
-        axs[j].imshow(imgs[random_i[j]], cmap='gray')
-    fig.show()
+    plot_input_images(imgs, random_i)
 
     x = imgs[random_i].astype(np.int32)
-
     y, y_layers = py_quant_net.forward_intermediate(inputs=x)
-    # print(f" y == y_ ? : {y == labels[random_i]}")
 
-    fig, axes = plt.subplots(nrows=4, ncols=4)
-    for i in range(4):
-        for j in range(4):
-            _img = y_layers[1]
-            ix = j + i * 4
-            axes[i, j].imshow(y_layers[2][0, :, :, ix], cmap='gray')
-    fig.show()
+    # print(f" y == y_ ? : {y == labels[random_i]}")
+    _img = y_layers[1]
+
+    plot_conv0_output(y_layers)
+
     # Generate data for test vectors
 
     # %% create test data file
     # image_data_flat = tb.gen_testdata(BLOCK_SIZE,NUMBER_OF_TEST_BLOCKS, CI_L1)
-
-    image_data = np.expand_dims(x,axis=3)
-    image_data_padded = np.pad(image_data, ((0, 0), (1, 1), (1, 1), (0, 0)), 'constant', constant_values=(0, 0))
-    image_data_flat = np.reshape(image_data, newshape=(NUMBER_OF_TEST_BLOCKS, -1, CI_L1))
-
-    IMG_HEIGTH_PAD = 30
-    IMG_WIDTH_PAD = 30
-    l1_new_test_vectors = np.zeros((NUMBER_OF_TEST_BLOCKS, IMG_WIDTH_PAD*IMG_HEIGTH, KERNEL_SIZE, CI_L1), dtype=np.int)
-
-    for h in range(1, IMG_HEIGTH_PAD-1):
-        for w in range(0, IMG_WIDTH_PAD):
-            ix = w + (h-1)*IMG_WIDTH_PAD
-            image_patch = image_data_padded[:, h-1:h+1+1, w,:]
-            i#mage_patch = np.expand_dims(image_patch, axis=1)
-            l1_new_test_vectors[:,ix,:,:] = image_patch
-
-    l1_new_test_kernels = np.zeros((NUMBER_OF_TEST_BLOCKS, IMG_HEIGTH, IMG_WIDTH, KERNEL_SIZE, KERNEL_SIZE, CI_L1),dtype=np.int)
-    for h in range(IMG_HEIGTH):
-        for w in range(IMG_WIDTH):
-            hx, wx = h+1, w+1
-            l1_new_test_kernels[:,h,w,:,:,:] = image_data_padded[:,hx-1:hx+2,wx-1:wx+2,:]
-    l1_new_flat_test_kernels = np.reshape(l1_new_test_kernels, newshape=(NUMBER_OF_TEST_BLOCKS, -1, KERNEL_SIZE, KERNEL_SIZE, CI_L1))
+    image_data_flat, l1_new_flat_test_kernels = get_test_vectors_and_kernels(IMG_HEIGHT, IMG_HEIGTH_PAD, IMG_WIDTH,
+                                                                             IMG_WIDTH_PAD, x)
 
     # %% generate test vectors
-    l1_test_vectors = tb.get_vectors_from_data(image_data_flat, IMG_WIDTH, IMG_HEIGTH, NUMBER_OF_TEST_BLOCKS)
+    l1_test_vectors = tb.get_vectors_from_data(image_data_flat, IMG_WIDTH, IMG_HEIGHT, NUMBER_OF_TEST_BLOCKS)
 
     # %% generate test kernels
     l1_test_kernels = tb.get_Kernels(l1_test_vectors, IMG_WIDTH)
@@ -234,61 +220,25 @@ def main():
     l1_weights = np.load(l1_weights_file_name)
     l1_bias = np.load(l1_bias_file_name)
     l1_moved_weights = np.moveaxis(l1_weights, 2, 0)
+    l1_weights_reshaped = np.moveaxis(l1_weights, source=(0, 1, 2, 3), destination=(2, 3, 1, 0))
 
     y_conv_layer_out = np.sum(np.multiply(l1_new_flat_test_kernels, l1_moved_weights), axis=(2, 3)) + l1_bias
     y_conv_layer_out = np.clip(y_conv_layer_out.astype(np.int) >> 8, a_min=0, a_max=15)
-    # Make sure integer is used for this & maybe use a more public function like "zeros"
-    l1_weights_reshaped = np.zeros(shape=(CO_L1, CI_L1, 3, 3), dtype=np.int)
-
-    for i in range(0, CI_L1):
-        for j in range(0, CO_L1):
-            for x in range(0, KERNEL_SIZE):
-                for y in range(0, KERNEL_SIZE):
-                    # TODO I think this was the bug
-                    l1_weights_reshaped[j][i][x][y] = l1_weights[x][y][i][j]
-                    # l1_weights_reshaped[j][i][y][x] = l1_weights[x][y][i][j]
-
-    # The operation above can be minimized to this line
-    l1_weights_reshaped_2 = np.moveaxis(l1_weights, source=(0, 1, 2, 3), destination=(3, 2, 1, 0))
 
     l1_msb = np.ones(CO_L1, dtype=np.int32) * (config_data["shifts"][0] + config_data["output_bits"][0] - 1)
-    l1_features = tb.conv_2d(l1_test_kernels, l1_weights_reshaped, l1_msb, l1_bias, config_data["output_bits"][0], shifts=config_data['shifts'][0])
+    l1_features = tb.conv_2d(l1_test_kernels, l1_weights_reshaped, l1_msb, l1_bias, config_data["output_bits"][0],
+                             shifts=config_data['shifts'][0])
 
-    # TODO This function saves the outputs in the wrong order?
-    tb.write_features_to_file(l1_features, layernumber=1)
+    tb.write_features_to_file(l1_features, layernumber=1)  # TODO This function saves the outputs in the wrong order?
+    create_vhdl_test_kernel_files(IMG_HEIGHT, IMG_WIDTH, l1_test_kernels)
 
-    conv2d0_input_files = [None] * KERNEL_SIZE * KERNEL_SIZE
-
-    for i in range(0, KERNEL_SIZE * KERNEL_SIZE):
-        conv2d0_input_files[i] = open("tmp/conv2d_0_input" + str(i) + ".txt", "w")
-
-    # for i in range(0, NUMBER_OF_TEST_BLOCKS):
-    #     for j in range(0, IMG_WIDTH * IMG_HEIGTH):
-    #         for c in range(0, CI_L1):
-    #             for kh in range(0, KERNEL_SIZE):
-    #                 for kw in range(0, KERNEL_SIZE):
-    #                     num = kw + kh * KERNEL_SIZE
-    #                     conv2d0_input_files[num].write(str(l1_test_kernels[i][j][kh][kw][c]) + "\n")
-
-    # TODO BUG NUMBER 2!!!
-    for c in range(0, CI_L1):
-        for kh in range(0, KERNEL_SIZE):
-            for kw in range(0, KERNEL_SIZE):
-                for i in range(0, NUMBER_OF_TEST_BLOCKS):
-                    for j in range(0, IMG_WIDTH * IMG_HEIGTH):
-                        num = kw + kh * KERNEL_SIZE
-                        conv2d0_input_files[num].write(str(l1_test_kernels[i][j][kh][kw][c]) + "\n")
-
-
-    for i in range(0, KERNEL_SIZE * KERNEL_SIZE):
-        conv2d0_input_files[i].close()
+    # ------------------------------------------
+    # %% Compare the Output with the EggNet
+    # ------------------------------------------
 
     l1_features_eggnet_2d = y_layers[2]
     l1_features_2d = np.reshape(l1_features, newshape=(3, 28, 28, 16))
-
     imgs_compare = np.concatenate((l1_features_2d, l1_features_eggnet_2d), axis=2)
-    # plt.imshow(l1_features_eggnet_2d[0, :, :, 0], cmap='grey')
-    # plt.imshow(l1_features_2d[0, :, :, 0], cmap='grey')
 
     # TODO BUG The images are ordered differently
     # TODO UDPATE Maybe not the bug
@@ -298,7 +248,7 @@ def main():
     plt.show()
 
     plt.imshow(
-        l1_features_2d[0, :, :, 0]-l1_features_eggnet_2d[0, :, :, 0],
+        l1_features_2d[0, :, :, 0] - l1_features_eggnet_2d[0, :, :, 0],
         cmap='gray')
     plt.show()
 
@@ -307,74 +257,91 @@ def main():
     # %% Run test and compare output from conv2d0
 
     print("Compiling and running conv2d0 testbench...")
+    if platform.system() == 'Windows':
+        subprocess.call("run_conv2d_0.bat")
+    else:
+        subprocess.call(os.path.join(script_folder_path(), "run_conv2d_0.sh"), cwd=script_folder_path())
 
-    subprocess.call(
-        os.path.join(script_folder_path(), "run_conv2d_0.sh"),
-        cwd=script_folder_path()
-    )
-    # ghdl_console_output = subprocess.check_output([os.path.join(script_folder_path(), "run_conv2d_0.sh")], cwd=script_folder_path())
-    # print(ghdl_console_output)
-    # subprocess.call("run_conv2d_0.sh")
+    print("""
+    
+    GHDL compiling and running done.
+    
+    Checking output layer outputs
+    
+    """)
 
-    file_name_conv_channel_output_python = "tmp/conv2d_0_output{I}.txt"
-    file_name_conv_channel_output_vhdl = "tmp/feature_map_L1_c{I}.txt"
-
+    print(
+        """
+Checking Conv Layer 0
+---------------------
+    """)
     for i in range(0, CO_L1):
-        i_str = str(i)
-        if len(i_str) == 1:
-            i_str = "0" + i_str
-        file_name_conv_channel_output_python_current = file_name_conv_channel_output_python.replace("{I}", i_str)
-        file_name_conv_channel_output_vhdl_current = file_name_conv_channel_output_vhdl.replace("{I}", str(i))
+        file_name_conv_channel_output_python = f"tmp/conv2d_0_output{i:02d}.txt"
+        file_name_conv_channel_output_vhdl = f"tmp/feature_map_L1_c{i:d}.txt"
 
-        y_channel_python = np.loadtxt(file_name_conv_channel_output_python_current, dtype=np.int).reshape((3, 28 * 28, 1))
-        y_channel_vhdl = np.loadtxt(file_name_conv_channel_output_vhdl_current, dtype=np.int).reshape((3, 28 * 28, 1))
+        y_channel_python = np.loadtxt(file_name_conv_channel_output_python, dtype=np.int).reshape(
+            (NUMBER_OF_TEST_BLOCKS, IMG_HEIGHT * IMG_WIDTH, CI_L1))
+        y_channel_vhdl = np.loadtxt(file_name_conv_channel_output_vhdl, dtype=np.int).reshape(
+            (NUMBER_OF_TEST_BLOCKS, IMG_HEIGHT * IMG_WIDTH, CI_L1))
 
-        y_channel_python_2d = np.reshape(y_channel_python, (3,28,28,1))
+        y_channel_python_2d = np.reshape(y_channel_python, (3, 28, 28, 1))
         y_channel_vhdl_2d = np.reshape(y_channel_vhdl, (3, 28, 28, 1))
 
-        if True: # Change to true for debugging
-            plt.imshow(
-                np.concatenate((l1_features_2d[0, :, :, i], y_channel_vhdl_2d[0, :, :, 0]), axis=1),
-                cmap='gray')
-            plt.show()
+        # plot_image_debug(i, l1_features_2d, y_channel_vhdl_2d)
 
-            plt.imshow(
-                l1_features_2d[0, :, :, i] - y_channel_vhdl_2d[0, :, :, 0],
-                cmap='gray')
-            plt.show()
+        error = np.sum(np.abs(l1_features_2d[:, :, :, i] - y_channel_vhdl_2d[:, :, :, 0]))
 
         if not np.all(l1_features_2d[:, :, :, i] == y_channel_vhdl_2d[:, :, :, 0]):
-            print(f"Simulation and emulation output not the same for conv2d0, channel {i}")
-            print(f"Sum |Error|:    ", np.sum(np.abs(l1_features_2d[:,:,:,i]-y_channel_vhdl_2d[:, :, :, 0])))
+            print(f"[FAIL/ERROR] Channel {i:2d}: Sum |Error|:    {error:10d}")
+        else:
+            print(f"[SUCCESS]    Channel {i:2d}: Sum |Error|:    {error:10d}")
 
         # TODO The comparision below doesnt work because the other file is wrong
-        #if not filecmp.cmp(file_name_conv_channel_output_python_current, file_name_conv_channel_output_vhdl_current):
+        # if not filecmp.cmp(file_name_conv_channel_output_python_current, file_name_conv_channel_output_vhdl_current):
         #    print("Simulation and emulation output not the same for conv2d0, channel " + str(i))
         #    exit()
 
-    print("Simulation and emulation output the same for conv2d0")
+    print("Finished Checking Layer 0")
+    print()
+
     # %% Pooling after layer 1
 
-    pool(CO_L1, file_name_conv_channel_output_python, "tmp/pool_output{I}.txt", IMG_WIDTH)
+    # pool(CO_L1, file_name_conv_channel_output_python, "tmp/pool_output{I}.txt", IMG_WIDTH)
+    for i in range(CO_L1):
+        np.savetxt(fname=f"tmp/pool_output{i:02d}.txt", X=y_layers[3][:, :, :, i].flatten(), fmt="%d")
 
     # New parameters after pooling
     IMG_WIDTH //= 2
-    IMG_HEIGTH //= 2
-    BLOCK_SIZE = IMG_WIDTH * IMG_HEIGTH
+    IMG_HEIGHT //= 2
+    BLOCK_SIZE = IMG_WIDTH * IMG_HEIGHT
 
     # %% Run test and compare output foor pool0
-    file_name_conv_channel_output_python = "tmp/pool_output{I}.txt"
-    file_name_conv_channel_output_vhdl = "tmp/pooling_0_output{I}.txt"
-
+    print("""
+Checking Pool Layer 0
+---------------------
+        """)
     for i in range(0, CO_L1):
-        i_str = str(i)
-        if len(i_str) == 1:
-            i_str = "0" + i_str
-        file_name_conv_channel_output_python_current = file_name_conv_channel_output_python.replace("{I}", i_str)
-        file_name_conv_channel_output_vhdl_current = file_name_conv_channel_output_vhdl.replace("{I}", i_str)
-        if filecmp.cmp(file_name_conv_channel_output_python_current, file_name_conv_channel_output_vhdl_current) != True:
-            print("Simulation and emulation output not the same for pool0, channel " + str(i))
-            exit()
+        file_name_conv_channel_output_python = f"tmp/pool_output{i:02d}.txt"
+        file_name_conv_channel_output_vhdl = f"tmp/pooling_0_output{i:02d}.txt"
+
+        y_channel_python = np.loadtxt(file_name_conv_channel_output_python, dtype=np.int).reshape(
+            (NUMBER_OF_TEST_BLOCKS, -1, 1))
+        y_channel_vhdl = np.loadtxt(file_name_conv_channel_output_vhdl, dtype=np.int).reshape(
+            (NUMBER_OF_TEST_BLOCKS, -1, 1))
+        y_channel_vhdl_2d = np.reshape(y_channel_vhdl, newshape=(3, 14, 14, 1))
+
+        plot_image_debug(channel_index=i, img1_ac=y_layers[3], img2_one_channel=y_channel_vhdl_2d)
+
+        error = np.sum(np.abs(y_layers[3][:, :, :, i] - y_channel_vhdl_2d[:, :, :, 0]))
+
+        if not np.all(l1_features_2d[:, :, :, i] == y_channel_vhdl_2d[:, :, :, 0]):
+            print(f"[FAIL/ERROR] Channel {i:2d}: Sum |Error|:    {error:10d}")
+        else:
+            print(f"[SUCCESS]    Channel {i:2d}: Sum |Error|:    {error:10d}")
+
+        # if not filecmp.cmp(file_name_conv_channel_output_python, file_name_conv_channel_output_vhdl):
+        #         #     print("Simulation and emulation output not the same for pool0, channel " + str(i))
+        #         #     exit()
 
     print("Simulation and emulation output the same for pool0")
 
@@ -398,8 +365,8 @@ def main():
             for k in range(0, NUMBER_OF_TEST_BLOCKS):
                 test_array_reshaped[k][j][i] = test_array[i][k][j]
 
-    l2_test_kernels = np.ndarray((NUMBER_OF_TEST_BLOCKS, IMG_WIDTH * IMG_HEIGTH, 3, 3, CI_L2), dtype=np.uint8)
-    l2_test_vectors = tb.get_vectors_from_data(test_array_reshaped, IMG_WIDTH, IMG_HEIGTH, NUMBER_OF_TEST_BLOCKS)
+    l2_test_kernels = np.ndarray((NUMBER_OF_TEST_BLOCKS, IMG_WIDTH * IMG_HEIGHT, 3, 3, CI_L2), dtype=np.uint8)
+    l2_test_vectors = tb.get_vectors_from_data(test_array_reshaped, IMG_WIDTH, IMG_HEIGHT, NUMBER_OF_TEST_BLOCKS)
     l2_test_kernels = tb.get_Kernels(l2_test_vectors, IMG_WIDTH)
 
     # %% calculate Layer 2 output as new memory controller input
@@ -427,7 +394,7 @@ def main():
             conv2d1_input_files[i][j] = open("tmp/conv2d_1_c" + i_str + "input" + str(j) + ".txt", "w")
 
     for i in range(0, NUMBER_OF_TEST_BLOCKS):
-        for j in range(0, IMG_WIDTH * IMG_HEIGTH):
+        for j in range(0, IMG_WIDTH * IMG_HEIGHT):
             for c in range(0, CI_L2):
                 for x in range(0, KERNEL_SIZE):
                     for y in range(0, KERNEL_SIZE):
@@ -448,7 +415,6 @@ def main():
         cwd=script_folder_path()
     )
 
-
     file_name_conv_channel_output_python = "tmp/conv2d_1_output{I}.txt"
     file_name_conv_channel_output_vhdl = "tmp/feature_map_L2_c{I}.txt"
 
@@ -458,7 +424,8 @@ def main():
             i_str = "0" + i_str
         file_name_conv_channel_output_python_current = file_name_conv_channel_output_python.replace("{I}", i_str)
         file_name_conv_channel_output_vhdl_current = file_name_conv_channel_output_vhdl.replace("{I}", str(i))
-        if filecmp.cmp(file_name_conv_channel_output_python_current, file_name_conv_channel_output_vhdl_current) != True:
+        if not filecmp.cmp(file_name_conv_channel_output_python_current,
+                           file_name_conv_channel_output_vhdl_current):
             print("Simulation and emulation output not the same for conv2d1, channel " + str(i))
             exit()
 
@@ -470,8 +437,8 @@ def main():
 
     # New parameters after pooling
     IMG_WIDTH //= 2
-    IMG_HEIGTH //= 2
-    BLOCK_SIZE = IMG_WIDTH * IMG_HEIGTH
+    IMG_HEIGHT //= 2
+    BLOCK_SIZE = IMG_WIDTH * IMG_HEIGHT
 
     # %% Run test and compare output for pool1
     file_name_conv_channel_output_python = "tmp/dense_layer_input{I}.txt"
@@ -483,7 +450,8 @@ def main():
             i_str = "0" + i_str
         file_name_conv_channel_output_python_current = file_name_conv_channel_output_python.replace("{I}", i_str)
         file_name_conv_channel_output_vhdl_current = file_name_conv_channel_output_vhdl.replace("{I}", i_str)
-        if filecmp.cmp(file_name_conv_channel_output_python_current, file_name_conv_channel_output_vhdl_current) != True:
+        if not filecmp.cmp(file_name_conv_channel_output_python_current,
+                           file_name_conv_channel_output_vhdl_current):
             print("Simulation and emulation output not the same for pool1, channel " + str(i))
             exit()
 
@@ -517,7 +485,7 @@ def main():
     dl2_bias = np.loadtxt(dl2_bias_file, dtype=np.int16)
     dl2_bias_file.close()
 
-    DL1_INPUT_NEURONS = IMG_WIDTH * IMG_HEIGTH * CO_L2
+    DL1_INPUT_NEURONS = IMG_WIDTH * IMG_HEIGHT * CO_L2
     DL1_OUTPUT_NEURONS = 32
     DL2_INPUT_NEURONS = 32
     DL2_OUTPUT_NEURONS = 10
@@ -569,6 +537,92 @@ def main():
     # %% delete tmp folder
     if not KEEP_TEMPORARY_FILES:
         shutil.rmtree('tmp')
+
+
+def plot_image_debug(channel_index: int, img1_ac: np.ndarray, img2_one_channel: np.ndarray, batch_index=0):
+    """
+    Plots the images side by side for comparision
+    Args:
+        channel_index: Index of the channel
+        img1_ac: 4D image tensor of shape [B,H,W,C]
+        img2_one_channel: 4D image tensor fo shape [B,H,W,1] <- note here is a 1!
+        batch_index: Index of the batch image that should be used
+
+    Returns:
+
+    """
+    plt.imshow(
+        np.concatenate((img1_ac[batch_index, :, :, channel_index], img2_one_channel[batch_index, :, :, 0]), axis=1),
+        cmap='gray')
+    plt.show()
+    plt.imshow(
+        img1_ac[batch_index, :, :, channel_index] - img2_one_channel[batch_index, :, :, 0],
+        cmap='gray')
+    plt.show()
+
+
+def create_vhdl_test_kernel_files(IMG_HEIGHT, IMG_WIDTH, l1_test_kernels, path_prefix='tmp',
+                                  file_prefix='conv2d_0_input'):
+    prefix = os.path.join(path_prefix, file_prefix)
+    conv2d0_input_files = [open(prefix + str(i) + ".txt", "w") for i in range(KERNEL_SIZE * KERNEL_SIZE)]
+
+    # for i in range(0, NUMBER_OF_TEST_BLOCKS):
+    #     for j in range(0, IMG_WIDTH * IMG_HEIGHT):
+    #         for c in range(0, CI_L1):
+    #             for kh in range(0, KERNEL_SIZE):
+    #                 for kw in range(0, KERNEL_SIZE):
+    #                     num = kw + kh * KERNEL_SIZE
+    #                     conv2d0_input_files[num].write(str(l1_test_kernels[i][j][kh][kw][c]) + "\n")
+    # TODO BUG NUMBER 2!!!
+    for c in range(0, CI_L1):
+        for kh in range(0, KERNEL_SIZE):
+            for kw in range(0, KERNEL_SIZE):
+                for i in range(0, NUMBER_OF_TEST_BLOCKS):
+                    for j in range(0, IMG_WIDTH * IMG_HEIGHT):
+                        num = kw + kh * KERNEL_SIZE
+                        conv2d0_input_files[num].write(str(l1_test_kernels[i][j][kh][kw][c]) + "\n")
+
+    for opened_file in conv2d0_input_files:
+        opened_file.close()
+
+
+def get_test_vectors_and_kernels(IMG_HEIGHT, IMG_HEIGTH_PAD, IMG_WIDTH, IMG_WIDTH_PAD, x):
+    image_data = np.expand_dims(x, axis=3)
+    image_data_padded = np.pad(image_data, ((0, 0), (1, 1), (1, 1), (0, 0)), 'constant', constant_values=(0, 0))
+    image_data_flat = np.reshape(image_data, newshape=(NUMBER_OF_TEST_BLOCKS, -1, CI_L1))
+    l1_new_test_vectors = np.zeros((NUMBER_OF_TEST_BLOCKS, IMG_WIDTH_PAD * IMG_HEIGHT, KERNEL_SIZE, CI_L1),
+                                   dtype=np.int)
+    for h in range(1, IMG_HEIGTH_PAD - 1):
+        for w in range(0, IMG_WIDTH_PAD):
+            ix = w + (h - 1) * IMG_WIDTH_PAD
+            image_patch = image_data_padded[:, h - 1:h + 1 + 1, w, :]
+            # image_patch = np.expand_dims(image_patch, axis=1)
+            l1_new_test_vectors[:, ix, :, :] = image_patch
+    l1_new_test_kernels = np.zeros((NUMBER_OF_TEST_BLOCKS, IMG_HEIGHT, IMG_WIDTH, KERNEL_SIZE, KERNEL_SIZE, CI_L1),
+                                   dtype=np.int)
+    for h in range(IMG_HEIGHT):
+        for w in range(IMG_WIDTH):
+            hx, wx = h + 1, w + 1
+            l1_new_test_kernels[:, h, w, :, :, :] = image_data_padded[:, hx - 1:hx + 2, wx - 1:wx + 2, :]
+    l1_new_flat_test_kernels = np.reshape(l1_new_test_kernels,
+                                          newshape=(NUMBER_OF_TEST_BLOCKS, -1, KERNEL_SIZE, KERNEL_SIZE, CI_L1))
+    return image_data_flat, l1_new_flat_test_kernels
+
+
+def plot_input_images(imgs, random_i):
+    fig, axs = plt.subplots(ncols=NUMBER_OF_TEST_BLOCKS)
+    for j in range(0, NUMBER_OF_TEST_BLOCKS):
+        axs[j].imshow(imgs[random_i[j]], cmap='gray')
+    fig.show()
+
+
+def plot_conv0_output(y_layers):
+    fig, axes = plt.subplots(nrows=4, ncols=4)
+    for i in range(4):
+        for j in range(4):
+            ix = j + i * 4
+            axes[i, j].imshow(y_layers[2][0, :, :, ix], cmap='gray')
+    fig.show()
 
 
 def clean_up_workspace(tmp_dir):
