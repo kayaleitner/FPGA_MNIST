@@ -169,7 +169,7 @@ def main():
 
     pynet = EggNet.LeNet.init_npz(npz_path=npz_filepath)
     py_quant_net = EggNet.FpiLeNet.init_npz(npz_path=npz_filepath, config_path=config_path)
-
+    py_quant_net.cn1.bias = np.load(l1_bias_file_name)  # TODO BUG Looks like the bias values in the 'all.npz' file are wrong
     mnist = EggNet.Reader.MNIST(folder_path=TMP_DIR_MNIST)
     labels = mnist.test_labels()
     imgs = mnist.test_images()
