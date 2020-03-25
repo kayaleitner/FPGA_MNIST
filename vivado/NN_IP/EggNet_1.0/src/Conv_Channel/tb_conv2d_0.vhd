@@ -173,7 +173,8 @@ begin
 			K := 0;
             while not endfile(kernel_file) loop
                 readline(kernel_file, input_line);
-                read(input_line, input_int);
+				read(input_line, input_int);
+				-- Testbench: Reads first the pixels and then the weight terms
 				kernel_input(I)(K) := input_int;
 				K := K + 1;
             end loop;

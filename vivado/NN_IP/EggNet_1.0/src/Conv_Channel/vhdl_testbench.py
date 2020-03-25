@@ -52,11 +52,11 @@ def run_ghdl_linux(filenames,tb_entity,vcd_name="output.vcd"):
    print(command_e)
    print(command_r)
 
-    
-   with open("tmp/ghdl.log","a+") as f:           
+
+   with open("tmp/ghdl.log","a+") as f:
        subprocess.run(command_s,shell=True, stdout=f, text=True, check=True)
        subprocess.run(command_a,shell=True, stdout=f, text=True, check=True)
-       subprocess.run(command_e,shell=True, stdout=f, text=True, check=True)   
+       subprocess.run(command_e,shell=True, stdout=f, text=True, check=True)
        subprocess.run(command_r,shell=True, stdout=f, text=True, check=True)
 
 def run_ghdl_win(filenames,tb_entity,vcd_name="output.vcd"):
@@ -77,14 +77,14 @@ def run_ghdl_win(filenames,tb_entity,vcd_name="output.vcd"):
     None.
 
     """
-    if not os.path.isdir('tmp'):      
+    if not os.path.isdir('tmp'):
        try : os.mkdir('tmp')
        except : print("Error creating tmp folder!")
-    
-    command_s = "ghdl -s --workdir=tmp" 
-    command_a = "ghdl -a --workdir=tmp" 
+
+    command_s = "ghdl -s --workdir=tmp"
+    command_a = "ghdl -a --workdir=tmp"
     for i in filenames:
-       command_s = command_s + " " + i 
+       command_s = command_s + " " + i
        command_a = command_a + " " + i
 
     command_s = command_s + " > tmp\ghdl.log"
@@ -169,12 +169,12 @@ def run_vivado_sim_win():
         print(err)
     else:
         print("compile vhdl files done!")
-    
+
     #err_elaborate = subprocess.Popen(elaborate,shell=True,stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     # if err_elaborate.poll() == None: 
     #     print("Wait till process finished..")
     #     err_elaborate.wait(timeout=60.0)
-    
+
     # if err_elaborate.returncode != 0:
     #     out, err = err_elaborate.communicate()
     #     err_elaborate.kill()
@@ -182,8 +182,8 @@ def run_vivado_sim_win():
     #     print(err)
     # else:
     #     print("elaborate design done!")
-        
-    subprocess.call(elaborate,shell=True)  
+
+    subprocess.call(elaborate,shell=True)
     subprocess.call(simulate,shell=True) # For some reason simulation doesn't work with Popen
 
 
@@ -247,10 +247,13 @@ def write_features_to_file(features,filename="feature_map",layernumber=1):
     None.
 
     """
-    for i in range(features.shape[2]):
+    (nbatch, npixel, nchannels) = features.shape
+
+    # TODO The ordering of the values is too important to be left without a comment
+    for i in range(nchannels):
         with open("tmp/"+filename+"_L{}".format(layernumber) +"_c{}.txt".format(i),"a+") as f:
-            for j in range(features.shape[0]):
-                for k in range(features.shape[1]):
+            for j in range(nbatch):
+                for k in range(npixel):
                     f.write("{}\n".format(features[j,k,i]))
 
 
@@ -279,26 +282,27 @@ def get_vectors_from_data(test_data,img_width,img_hight,kernel_size=3,dtype=np.u
         Vector to compare with the output of the memory controller
 
     """
-    vectors = np.zeros((test_data.shape[0],test_data.shape[1],kernel_size,test_data.shape[2]),dtype=dtype)
-    for i in range(test_data.shape[0]):
+    nbatch, image_height_width, nchannels = test_data.shape
+    vectors = np.zeros((nbatch,image_height_width,kernel_size,nchannels), dtype=dtype)
+    for i in range(nbatch):
         vector_cnt = 0
-        for j in range(test_data.shape[1]):
-                    
-            if j < img_width:  
+        for j in range(image_height_width):
+
+            if j < img_width:  # Upper image border
                 vectors[i,vector_cnt,0,:] = 0
                 vectors[i,vector_cnt,1,:] = test_data[i,j,:]
                 vectors[i,vector_cnt,2,:] = test_data[i,j+img_width,:]
                 vector_cnt += 1
-            elif j >= (img_width*(img_hight-1)):
+            elif j >= (img_width*(img_hight-1)): # Lower Image Border
                 #print(j)
                 vectors[i,vector_cnt,0,:] = test_data[i,j-img_width,:]
                 vectors[i,vector_cnt,1,:] = test_data[i,j,:]
-                vectors[i,vector_cnt,2,:] = 0  
+                vectors[i,vector_cnt,2,:] = 0
                 vector_cnt += 1
-            else:  
+            else:
                 vectors[i,vector_cnt,0,:] = test_data[i,j-img_width,:]
                 vectors[i,vector_cnt,1,:] = test_data[i,j,:]
-                vectors[i,vector_cnt,2,:] = test_data[i,j+img_width,:]   
+                vectors[i,vector_cnt,2,:] = test_data[i,j+img_width,:]
                 vector_cnt += 1
 
     return vectors
@@ -325,23 +329,23 @@ def get_Kernels(test_vectors,img_width):
             if j%img_width == 0:
                 kernels[i,j,:,0,:] = 0
                 kernels[i,j,:,1,:] = test_vectors[i,j,:,:]
-                kernels[i,j,:,2,:] = test_vectors[i,j+1,:,:]                
-                
-            elif j%img_width == img_width-1:    
+                kernels[i,j,:,2,:] = test_vectors[i,j+1,:,:]
+
+            elif j%img_width == img_width-1:
                 kernels[i,j,:,0,:] = test_vectors[i,j-1,:,:]
                 kernels[i,j,:,1,:] = test_vectors[i,j,:,:]
-                kernels[i,j,:,2,:] = 0                  
-            else:    
+                kernels[i,j,:,2,:] = 0
+            else:
                 kernels[i,j,:,0,:] = test_vectors[i,j-1,:,:]
                 kernels[i,j,:,1,:] = test_vectors[i,j,:,:]
                 kernels[i,j,:,2,:] = test_vectors[i,j+1,:,:]
-       
+
     return kernels
 
 
 # %% convolutional layer
 
-def conv_2d(kernels,weights,msb,bias,data_width=8):
+def conv_2d(kernels,weights,msb,bias,data_width=8, shifts=None):
     """
     Emulates the operation carried out by the conv2d module in the FPGA
 
@@ -377,12 +381,12 @@ def conv_2d(kernels,weights,msb,bias,data_width=8):
     for i in range(kernels.shape[0]):
         for j in range(kernels.shape[1]):
             for k in range (weights.shape[0]):
-                features[i,j,k] = conv_channel(kernels[i,j,:,:,:],weights[k,:,:,:],msb[k],data_width, bias[k])
+                features[i,j,k] = conv_channel(kernels[i,j,:,:,:],weights[k,:,:,:],msb[k],data_width, bias[k], shifts=shifts)
     return features
 
 
 
-def conv_channel(kernels,weights,msb,data_width=8, bias = 0):
+def conv_channel(kernels,weights,msb,data_width=8, bias = 0, shifts=None):
     """
     Emulates the operation carried out by the conv_channel module in the FPGA
 
@@ -417,14 +421,15 @@ def conv_channel(kernels,weights,msb,data_width=8, bias = 0):
     weighted_sum += bias
 
     # Relu (Additional benefit np.int16(int("0x00FF",16)) & feature would not work for negative numbers because of 2's complement)
-    if weighted_sum < 0: 
-        weighted_sum = 0 
-    else: # Quantization 
-        weighted_sum >>= msb+1-data_width                   
-        if weighted_sum > int(2**data_width - 1): 
-            weighted_sum = int(2**data_width - 1) 
-             
-    return np.uint8(weighted_sum) 
+    if weighted_sum < 0:
+        weighted_sum = 0
+    else: # Quantization
+        # assert msb+1-data_width == shifts
+        weighted_sum >>= msb+1-data_width
+        if weighted_sum > int(2**data_width - 1):
+            weighted_sum = int(2**data_width - 1)
+
+    return np.uint8(weighted_sum)
 
 
 def kernel_3x3(kernel,weights):
@@ -447,10 +452,11 @@ def kernel_3x3(kernel,weights):
     weighted_sum: np.int16
         16 bit output Matrix
     """
+    # TODO I Think here is the bug: image has shape [H,W] but weights have [W,H]
     weighted_sum = np.int32(np.sum(kernel * weights))
     return weighted_sum
 
-# %% Result checks 
+# %% Result checks
 def check_bram(test_data,layernumber):
     """
     checks the 
@@ -491,7 +497,7 @@ def check_bram(test_data,layernumber):
                         if result_data[k] != test_data[i-1,j-BLOCK_SIZE,k]:
                              print("Error in block {}".format(i) + " channel {}".format(k) + " in line {} ,".format(j+block_select*BLOCK_SIZE) \
                                     + "{}".format(result_data[k]) + " != {}".format(test_data[i-1,j-BLOCK_SIZE,k]))
-                             error_count += 1           
+                             error_count += 1
                     elif block_select == 1 and j<BLOCK_SIZE:
                          if result_data[k] != test_data[i-1,j,k]:
                              print("Error in block {}".format(i) + " channel {}".format(k) + " in line {} ,".format(j+block_select*BLOCK_SIZE) \
@@ -501,15 +507,15 @@ def check_bram(test_data,layernumber):
                         if result_data[k] != test_data[i,j-BLOCK_SIZE,k]:
                              print("Error in block {}".format(i) + " channel {}".format(k) + " in line {} ,".format(j+block_select*BLOCK_SIZE) \
                                     + "{}".format(result_data[k]) + " != {}".format(test_data[i,j-BLOCK_SIZE,k]))
-                             error_count += 1   
+                             error_count += 1
                     else:
                             print("Error in porgram")
-        
+
     if error_count == 0:
         print("No errors in BRAM")
     else:
-        print("{} errors occured checking BRAM".format(error_count))     
-        
+        print("{} errors occured checking BRAM".format(error_count))
+
     return error_count
 
 def check_vectors(test_vectors,layernumber):
@@ -547,7 +553,7 @@ def check_vectors(test_vectors,layernumber):
                 if any(result_vectors[i,j,1,:] != test_vectors[i,j,1,:]):
                     print("Error in tmp/l{}".format(layernumber) + "_inVector_1_b{}.txt" + " in line {} ,".format(j) \
                                 + "{}".format(result_vectors[i,j,1,:]) + " != {}".format(test_vectors[i,j,1,:]))
-                    error_count_vectors += 1        
+                    error_count_vectors += 1
         with open("tmp/l{}".format(layernumber) + "_inVector_3_b{}.txt".format(i),"r") as f:
             for j in range(test_vectors.shape[1]):
                 read_data = f.readline().rstrip()
@@ -555,12 +561,12 @@ def check_vectors(test_vectors,layernumber):
                 if any(result_vectors[i,j,2,:] != test_vectors[i,j,2,:]):
                     print("Error in tmp/l{}".format(layernumber) + "_inVector_1_b{}.txt" + " in line {} ,".format(j) \
                                 + "{}".format(result_vectors[i,j,2,:]) + " != {}".format(test_vectors[i,j,2,:]))
-                    error_count_vectors += 1                
+                    error_count_vectors += 1
     if error_count_vectors == 0:
         print("Received Kernel vectors successfully!")
     else:
-        print("{} errors occured receiving image".format(error_count_vectors))   
-        
+        print("{} errors occured receiving image".format(error_count_vectors))
+
     return error_count_vectors
 
 def check_kernels(test_kernels,layernumber):
@@ -595,14 +601,14 @@ def check_kernels(test_kernels,layernumber):
                             print("Error in l{}".format(layernumber) + "_inKernel_{}".format(file_cnt) + "_b{}".format(i) + " in line {} ,".format(j) \
                                         + "{}".format(result_kernels[i,j,h,k,:]) + " != {}".format(test_kernels[i,j,h,k,:]))
                             error_count_kernels += 1
-        
+
     if error_count_kernels == 0:
         print("Received Kernel from shiftregister successfully!")
     else:
-        print("{} errors occured receiving image".format(error_count_kernels)) 
-        
+        print("{} errors occured receiving image".format(error_count_kernels))
+
     return error_count_kernels
-       
+
 # %% Mov average attemption 
 class FIFO:
     """
