@@ -1,9 +1,10 @@
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
-USE ieee.math_real.ceil;
-USE ieee.math_real.log2;
+--USE ieee.math_real.ceil;
+--USE ieee.math_real.log2;
 use work.kernel_pkg.all;
+use work.clogb2_Pkg.all;
 use work.Kernel3x3;
 
 entity ConvChannelTemplate is
@@ -31,7 +32,8 @@ end ConvChannelTemplate;
 
 architecture beh of ConvChannelTemplate is
 	
-	constant SUM_WIDTH : integer := KERNEL_WIDTH_OUT + integer(ceil(log2(real(N)))) + 1;
+	--constant SUM_WIDTH : integer := KERNEL_WIDTH_OUT + integer(ceil(log2(real(N)))) + 1;
+	constant SUM_WIDTH : integer := KERNEL_WIDTH_OUT + clogb2(N)+ 1;
 	
 	signal K_out : signed(N*KERNEL_WIDTH_OUT - 1 downto 0);
 	

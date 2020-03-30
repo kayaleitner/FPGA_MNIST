@@ -6,7 +6,6 @@ project(EggnetDriver C)
 ###### Setup ######
 # Doc:
 # https://cmake.org/cmake/help/latest/command/find_package.html
-
 # Find Pthreads
 #set(THREADS_PREFER_PTHREAD_FLAG ON)
 #find_package(Threads REQUIRED)
@@ -40,6 +39,8 @@ target_include_directories(
     PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
 
+# See: http://swig.org/Doc4.0/Python.html#Python_nn4
+#
 target_link_directories(
     EggnetDriver
         BEFORE

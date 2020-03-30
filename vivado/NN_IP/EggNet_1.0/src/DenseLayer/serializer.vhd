@@ -5,7 +5,7 @@ use ieee.numeric_std.all;
 entity Serializer is
 	generic(
 		VECTOR_WIDTH : integer := 8;
-		INPUT_CHANNELS : integer := 32
+		INPUT_CHANNELS : integer := 24
 	);
 	port(
 		Clk_i : in std_logic;

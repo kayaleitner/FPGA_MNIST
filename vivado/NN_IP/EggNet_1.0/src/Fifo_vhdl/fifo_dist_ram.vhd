@@ -5,7 +5,8 @@ USE IEEE.NUMERIC_STD.ALL;
 entity STD_FIFO is
 	Generic (
 		DATA_WIDTH      : integer := 8;
-		FIFO_DEPTH	    : integer := 256
+		FIFO_DEPTH	    : integer := 256;
+    FIFO_STYLE      : string := "distributed"
 	);
 	Port (
 		Clk_i		: in  STD_LOGIC;
@@ -28,7 +29,7 @@ begin
 		type FIFO_Memory is array (0 to FIFO_DEPTH - 1) of STD_LOGIC_VECTOR (DATA_WIDTH - 1 downto 0);
 		variable Memory : FIFO_Memory;
         attribute ram_style : string;
-        attribute ram_style of Memory : variable is "distributed";
+        attribute ram_style of Memory : variable is FIFO_STYLE;
 
 		variable Head : natural range 0 to FIFO_DEPTH - 1;
 		variable Tail : natural range 0 to FIFO_DEPTH - 1;

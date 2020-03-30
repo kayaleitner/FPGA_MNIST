@@ -27,7 +27,8 @@ KERNEL_SIZE = 3
 BLOCK_SIZE = IMG_WIDTH * IMG_HIGTH
 NUMBER_OF_TEST_BLOCKS = 3
 CI_L1 = 1
-CO_L1 = 16
+CI_L2 = 16
+CI_L3 = 32
 
 
 def main():
@@ -51,8 +52,8 @@ def main():
     # %% generate test kernels layer 1
     test_kernels_l1 = tb.get_Kernels(test_vectors_l1, IMG_WIDTH)
     # %% calculate Layer output as new memory controller input
-    weights_L1 = np.int8(np.random.normal(0, 0.3, size=(CO_L1, CI_L1, KERNEL_SIZE, KERNEL_SIZE)) * 128)
-    msb = np.ones(CO_L1, dtype=np.int32) * 15
+    weights_L1 = np.int8(np.random.normal(0, 0.3, size=(CI_L2, CI_L1, KERNEL_SIZE, KERNEL_SIZE)) * 128)
+    msb = np.ones(CI_L2, dtype=np.int32) * 15
     features_l2 = tb.conv_2d(test_kernels_l1, weights_L1, msb)
 
     tb.write_features_to_file(features_l2, layernumber=2)
@@ -62,12 +63,19 @@ def main():
     # %% generate test kernels layer 2
     test_kernels_l2 = tb.get_Kernels(test_vectors_l2, IMG_WIDTH)
 
+    # %% calculate Layer output as new memory controller input
+    weights_L2 = np.int8(np.random.normal(0, 0.3, size=(CI_L3, CI_L2, KERNEL_SIZE, KERNEL_SIZE)) * 128)
+    msb = np.ones(CI_L3, dtype=np.int32) * 15
+    features_l3 = tb.conv_2d(test_kernels_l2, weights_L2, msb)
+
+    tb.write_features_to_file(features_l3, layernumber=3)
+
     # %% run ghdl
     # Saving console ouput in log file is not working on windows
 
     filenames = ["tb_memctrl.vhd", "../../src/bram_vhdl/bram.vhd", "../../src/MemCtrl/MemCtrl.vhd",
                  "../../src/MemCtrl/Shiftregister_3x3.vhd", "../../src/Fifo_vhdl/fifo_dist_ram.vhd",
-                 "../../src/MemCtrl/MemCtrl_AXIS.vhd"]
+                 "../../src/MemCtrl/MemCtrl_AXIS.vhd" , "../../src/MemCtrl_Conv_to_Dense/MemCtrl_c2d.vhd"]
 
     tb_entity = "tb_memctrl"
 
@@ -83,22 +91,30 @@ def main():
     # %% check memory controller output layer 1
     error_count_vectors_l1 = tb.check_vectors(test_vectors_l1, 1)
 
-    # %% check memory shiftregister output
+    # %% check memory shiftregister output layer 1
     error_count_kernels_l1 = tb.check_kernels(test_kernels_l1, 1)
 
     error_count_l1 = error_count_bram_l1 + error_count_vectors_l1 + error_count_kernels_l1
     # %% check bram layer 2
     error_count_bram_l2 = tb.check_bram(features_l2, 2)
 
-    # %% check memory controller output layer 1
+    # %% check memory controller output layer 2
     error_count_vectors_l2 = tb.check_vectors(test_vectors_l2, 2)
 
-    # %% check memory shiftregister output
+    # %% check memory shiftregister output layer 2
     error_count_kernels_l2 = tb.check_kernels(test_kernels_l2, 2)
 
     error_count_l2 = error_count_bram_l2 + error_count_vectors_l2 + error_count_kernels_l2
+    
+    # %% check bram layer 3
+    error_count_bram_l3 = tb.check_bram(features_l3, 3)
+    
+    # %% check dense input layer 3
+    error_count_desne_l3 = tb.check_dense_in(features_l3, 3)
+    
+    error_count_l3 = error_count_bram_l3 + error_count_desne_l3
     # %% delete tmp folder
-    error_count = error_count_l1 + error_count_l2
+    error_count = error_count_l1 + error_count_l2 + error_count_l3
 
     if not KEEP_TEMPORARY_FILES and error_count == 0:
         shutil.rmtree('tmp')
@@ -124,7 +140,12 @@ Error BRAM L2:          {error_count_bram_l2}
 ------------------------------------
 Total:                  {error_count_l2}
 
-
+Layer 3
+----------------------------------
+Error BRAM L2:          {error_count_bram_l3}
+Error Dense in L2:      {error_count_desne_l3}
+------------------------------------
+Total:                  {error_count_l3}
         """
     print(msg)
     if error_count != 0:
@@ -142,6 +163,6 @@ def has_ghdl():
     # subprocess.check_output("ghdl --version")
     return 0 == subprocess.call(["ghdl", "--version"])
 
-
+# %%
 if __name__ == '__main__':
     main()

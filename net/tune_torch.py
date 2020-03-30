@@ -6,14 +6,15 @@ import torch.quantization
 import torch.nn as nn
 import torch.optim
 
-from util import read_np_torch, perform_fake_quant, init_network_from_weights, evaluate_network
-from train_torch import evaluate, prepare_datasets, train_network, LEARNING_RATE, evaluate_labels, load_torch
+from util import read_np_torch, evaluate_network
+from train_torch import evaluate, prepare_datasets, LEARNING_RATE, evaluate_labels, load_torch, \
+    save_torch_model_weights
 from train_torch import LinearRelu, Flatten
-from debug import _imshow
+from debug import LayerActivations
 
 # Import the own made network
-import NeuralNetwork
-import NeuralNetwork.Ext.NeuralNetworkExtension as nnext
+from EggNet import NeuralNetwork
+import EggNet.NeuralNetwork.Ext.NeuralNetworkExtension as nnext
 
 
 class FixedConvLayer(torch.nn.Module):
@@ -35,7 +36,14 @@ class FixedConvLayer(torch.nn.Module):
 
 
 def main():
+
+
     net = load_torch(filepath='torch/LeNet.pth')
+    weights = read_np_torch(ordering='BHWC', target_dtype=np.float32)
+
+    save_torch_model_weights(net)
+
+
     # qnet = load_torch(filepath='torch/QLeNet.pth')
     testloader, trainloader = prepare_datasets()
     criterion = nn.CrossEntropyLoss()
@@ -50,14 +58,14 @@ def main():
     weights_torch = read_np_torch(ordering='BCHW', target_dtype=np.float32)
 
     # Training in torch happens with np.float32
-    qweights = perform_fake_quant(weight_dict=weights, target_bits=5, frac_bits=3, target_dtype=np.float32)
-    qweights_torch = perform_fake_quant(weight_dict=weights_torch, target_bits=8, frac_bits=4, target_dtype=np.float32)
+    #qweights = perform_fake_quant(weight_dict=weights, target_bits=5, frac_bits=3, target_dtype=np.float32)
+    #qweights_torch = perform_fake_quant(weight_dict=weights_torch, target_bits=8, frac_bits=4, target_dtype=np.float32)
 
     # Compare with our net
     mnist = NeuralNetwork.Reader.MNIST(folder_path='/tmp/mnist/')
     test_images = mnist.test_images()
     test_labels = mnist.test_labels()
-    our_net = init_network_from_weights(qweights, from_torch=True)
+    # our_net = init_network_from_weights(qweights, from_torch=True)
 
     batch_size = 50
     accuracy = evaluate_network(batch_size, our_net, test_images, test_labels)
@@ -65,14 +73,16 @@ def main():
 
     net.eval()
     # Reshape images
-    img_bach_torch = np.reshape(img_batch, newshape=(-1, 1, 28, 28)).astype(np.float32)
-    _imshow(img_bach_torch, mode='torch')
-    lbl_torch = net(torch.from_numpy(img_bach_torch))
+    #img_bach_torch = np.reshape(img_batch, newshape=(-1, 1, 28, 28)).astype(np.float32)
+    #_imshow(img_bach_torch, mode='torch')
+    #lbl_torch = net(torch.from_numpy(img_bach_torch))
     lbl_torch = lbl_torch.topk(1)[1].numpy().flatten()  # ToDo: Maybe simplify this expression a bit
 
     # To check the output of the fully connected layers against our net
-    # LayerActivations(net, layer_num=7, validate_func=None)
-    # LayerActivations(net, layer_num=9, validate_func=None)
+    LayerActivations(net, layer_num=0, validate_func=LayerActivations)
+    LayerActivations(net, layer_num=4, validate_func=None)
+    LayerActivations(net, layer_num=7, validate_func=None)
+    LayerActivations(net, layer_num=9, validate_func=None)
 
     lbls = evaluate_labels(net, criterion, data_loader=testloader)
     (top1, top5) = evaluate(net, criterion, data_loader=testloader)
@@ -91,12 +101,12 @@ def main():
         nn.Softmax(dim=1)
     )
 
-    train_network(fixed_conv_model, 1, criterion=criterion, optimizer=optimizer, trainloader=trainloader)
-    fixed_conv_model.eval()
-    (top1, top5) = evaluate(fixed_conv_model, criterion, data_loader=testloader)
-    print(top1)
+    #train_network(fixed_conv_model, 1, criterion=criterion, optimizer=optimizer, trainloader=trainloader)
+    #fixed_conv_model.eval()
+    #(top1, top5) = evaluate(fixed_conv_model, criterion, data_loader=testloader)
+    #print(top1)
 
-    (top1, top5) = evaluate(net, criterion, testloader)
+    #(top1, top5) = evaluate(net, criterion, testloader)
 
 
 if __name__ == '__main__':

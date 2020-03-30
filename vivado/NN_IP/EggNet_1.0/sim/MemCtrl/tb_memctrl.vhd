@@ -6,7 +6,7 @@ use STD.textio.all;
 
 entity tb_memctrl is
 Generic (
-  -- PATH : string := "C:/Users/lukas/Documents/SoC_Lab/FPGA_MNIST/vivado/NN_IP/EggNet_1.0/sim/MemCtrl/"
+  --PATH : string := "C:/Users/lukas/Documents/SoC_Lab/FPGA_MNIST/vivado/NN_IP/EggNet_1.0/sim/MemCtrl/"
   -- Try relative path
   PATH : string := "./"
  );
@@ -16,6 +16,7 @@ architecture tb of tb_memctrl is
 
   constant BLOCK_LENGTH_L1 : integer := 784;
   constant BLOCK_LENGTH_L2 : integer := 784;
+  constant BLOCK_LENGTH_L3 : integer := 784;
   constant BLOCKS_TO_TEST : integer := 3;
 
   constant L1_BRAM_ADDR_WIDTH		    : integer := 11; -- maximum = 24
@@ -23,7 +24,10 @@ architecture tb of tb_memctrl is
   constant L1_IN_CHANNEL_NUMBER		  : integer := 1; -- number of input channels
   constant L2_BRAM_ADDR_WIDTH		    : integer := 11; -- maximum = 24
   constant L2_DATA_WIDTH		        : integer := 8; -- bit depth of one channel
-  constant L2_IN_CHANNEL_NUMBER		  : integer := 16; -- number of input channels
+  constant L2_IN_CHANNEL_NUMBER		  : integer := 16;   
+  constant L3_BRAM_ADDR_WIDTH		    : integer := 11; -- maximum = 24
+  constant L3_DATA_WIDTH		        : integer := 8; -- bit depth of one channel
+  constant L3_IN_CHANNEL_NUMBER		  : integer := 32; -- number of input channels
   constant LAYER_HIGHT            : integer := 28;
   constant LAYER_WIDTH            : integer := 28;
   constant AXI4_STREAM_INPUT        : integer := 1;
@@ -45,7 +49,6 @@ architecture tb of tb_memctrl is
         );
         port (
           clk_i     : IN  STD_LOGIC;
-          rst_i     : IN  STD_LOGIC;
           wea_i     : IN  STD_LOGIC_VECTOR((BRAM_DATA_WIDTH/8)-1 DOWNTO 0);
           pa_data_i : IN  STD_LOGIC_VECTOR((BRAM_DATA_WIDTH) - 1 DOWNTO 0);
           pb_data_o : OUT STD_LOGIC_VECTOR((BRAM_DATA_WIDTH) - 1 DOWNTO 0);
@@ -98,7 +101,6 @@ architecture tb of tb_memctrl is
       M_layer_tdata_1_o : out std_logic_vector;
       M_layer_tdata_2_o : out std_logic_vector;
       M_layer_tdata_3_o : out std_logic_vector;
-      M_layer_tkeep_o   : out std_logic_vector;
       M_layer_tnewrow_o : out std_logic;
       M_layer_tlast_o   : out std_logic;
       M_layer_tready_i  : in std_logic;
@@ -163,6 +165,44 @@ architecture tb of tb_memctrl is
       M_tready_i      : in  STD_LOGIC  -- indicates if next slave is ready to for new data
     );
   end component ShiftRegister_3x3;
+
+  component MemCtrl_c2d is
+    Generic(
+      BRAM_ADDR_WIDTH		        : integer range 1 to 24   := 10; -- maximum = 24 
+      DATA_WIDTH		            : integer := 8; -- channel number * bit depth maximum = 512    
+      IN_CHANNEL_NUMBER		      : integer range 1 to 256 := 1; 
+      LAYER_HIGHT               : integer range 1 to 4096 := 28; -- Layer hight of next layer 
+      LAYER_WIDTH               : integer range 1 to 4096 := 28; -- Layer width of next layer     
+      AXI4_STREAM_INPUT         : integer range 0 to 1 := 0; -- integer to calculate S_LAYER_DATA_WIDTH 
+      MEM_CTRL_ADDR             : integer := 255; 
+      C_S_AXIS_TDATA_WIDTH	    : integer	:= 32;
+      C_S00_AXI_DATA_WIDTH	    : integer	:= 32
+    );
+    Port (
+      Layer_clk_i		    : in std_logic;
+      Layer_aresetn_i   : in std_logic;
+      S_layer_tvalid_i	: in std_logic;
+      S_layer_tdata_i   : in std_logic_vector((DATA_WIDTH*IN_CHANNEL_NUMBER)-1 downto 0); -- if AXI4_STREAM_INPUT = 0 -> (DATA_WIDTH*IN_CHANNEL_NUMBER) else C_S_AXIS_TDATA_WIDTH
+      S_layer_tlast_i   : in std_logic;
+      S_layer_tready_o  : out std_logic;
+      M_layer_tvalid_o	: out std_logic;
+      M_layer_tdata_o   : out std_logic_vector((DATA_WIDTH)-1 downto 0); --  Output vector element 1 |Vector: trans(1,2,3)
+      M_layer_tlast_o   : out std_logic;
+      M_layer_tready_i  : in std_logic;
+      Bram_clk_o        : out std_logic;
+      Bram_pa_addr_o    : out std_logic_vector(BRAM_ADDR_WIDTH-1 downto 0);
+      Bram_pa_data_wr_o : out std_logic_vector((DATA_WIDTH*IN_CHANNEL_NUMBER)-1 downto 0);
+      Bram_pa_wea_o     : out std_logic_vector(((DATA_WIDTH*IN_CHANNEL_NUMBER)/8)-1  downto 0);
+      Bram_pb_addr_o    : out std_logic_vector(BRAM_ADDR_WIDTH-1 downto 0);
+      Bram_pb_data_rd_i : in std_logic_vector((DATA_WIDTH*IN_CHANNEL_NUMBER)-1 downto 0);
+      Dbg_bram_addr_i  : in std_logic_vector(C_S00_AXI_DATA_WIDTH-1 downto 0); -- BRAM address 
+      Dbg_bram_addr_o  : out std_logic_vector(C_S00_AXI_DATA_WIDTH-1 downto 0); -- BRAM address to double check if address fits to data 
+      Dbg_bram_data_o  : out std_logic_vector(C_S00_AXI_DATA_WIDTH-1 downto 0); -- 32 bit vector tile 
+      Dbg_32bit_select_i: in std_logic_vector(3 downto 0); 
+      Dbg_enable_i     : in std_logic;   
+      Layer_properties_o : out std_logic_vector(C_S00_AXI_DATA_WIDTH-1 downto 0);
+      Status_o : out std_logic_vector(C_S00_AXI_DATA_WIDTH-1 downto 0) );
+  end component MemCtrl_c2d;
 
   constant TbPeriod : time := 10 ns;
   signal TbClock : std_logic := '0';
@@ -308,7 +348,42 @@ architecture tb of tb_memctrl is
   signal block_done_sh_l2    : std_logic;
   signal img_length_sh_l2    : integer; 
   
+  signal s_l3_tvalid         : std_logic;
+  signal s_l3_tdata          : std_logic_vector((L3_DATA_WIDTH*L3_IN_CHANNEL_NUMBER)-1 downto 0);
+  signal s_l3_tkeep          : std_logic_vector(((L3_DATA_WIDTH*L3_IN_CHANNEL_NUMBER)/8)-1 downto 0);
+  signal s_l3_tlast          : std_logic;
+  signal s_l3_tready         : std_logic;
+  signal m_l3_tvalid         : std_logic;
+  signal m_l3_tdata          : std_logic_vector((L3_DATA_WIDTH)-1 downto 0);
+  signal m_l3_tlast          : std_logic;
+  signal m_l3_tnewrow        : std_logic;
+  signal m_l3_tready         : std_logic;
+  signal l3_bram_clk               : std_logic;
+  signal l3_bram_pa_addr           : std_logic_vector(L3_BRAM_ADDR_WIDTH-1 downto 0);
+  signal l3_bram_pa_data_wr        : std_logic_vector((L3_DATA_WIDTH*L3_IN_CHANNEL_NUMBER)-1 downto 0);
+  signal l3_bram_pa_wea            : std_logic_vector(((L3_DATA_WIDTH*L3_IN_CHANNEL_NUMBER)/8)-1  downto 0);
+  signal l3_bram_pb_addr           : std_logic_vector(L3_BRAM_ADDR_WIDTH-1 downto 0);
+  signal l3_bram_pb_data_rd        : std_logic_vector((L3_DATA_WIDTH*L3_IN_CHANNEL_NUMBER)-1 downto 0);
+  signal l3_bram_pb_rst            : std_logic; -- ACTIVE HIGH!
+  signal s_l3_invalid_block  : std_logic;
+  signal l3_bram_block_done     : std_logic;
 
+
+  signal start_package_l3    : std_logic;
+  signal block_done_vec_l3       : std_logic;
+  signal img_length_l3       : integer;
+
+  type   RAM_TYPE_L3 IS ARRAY(BLOCK_LENGTH_L3*BLOCKS_TO_TEST-1 downto 0) OF std_logic_vector((L3_DATA_WIDTH*L3_IN_CHANNEL_NUMBER)-1 downto 0);
+  signal s_data_buffer_l3      : RAM_TYPE_L3;
+  type   BRAM_L3_TYPE IS ARRAY(BLOCK_LENGTH_L3*2-1 downto 0) OF std_logic_vector((L3_DATA_WIDTH*L3_IN_CHANNEL_NUMBER)-1 downto 0);
+  signal l3_bram_data_buffer      : BRAM_L3_TYPE;
+  signal dbg_l3_bram_data_buffer      : BRAM_L3_TYPE;
+
+  type   SHREG_TYPE_L3 IS ARRAY(L3_IN_CHANNEL_NUMBER-1 downto 0) OF std_logic_vector(L3_DATA_WIDTH-1 downto 0);
+  type   M_l3_TYPE IS ARRAY(BLOCK_LENGTH_L3 downto 0) OF SHREG_TYPE_L3;
+  signal M_l3_buffer      : M_L3_TYPE;
+   
+  
   signal dbg_bram_addr_in       : std_logic_vector(C_S00_AXI_DATA_WIDTH-1 downto 0);
   signal dbg_bram_addr_check    : std_logic_vector(C_S00_AXI_DATA_WIDTH-1 downto 0);
   signal dbg_bram_data_out      : std_logic_vector(C_S00_AXI_DATA_WIDTH-1 downto 0);
@@ -362,7 +437,6 @@ begin
     M_layer_tdata_1_o       => m_l1_tdata_1      ,
     M_layer_tdata_2_o       => m_l1_tdata_2      ,
     M_layer_tdata_3_o       => m_l1_tdata_3      ,
-    M_layer_tkeep_o         => m_l1_tkeep        ,
     M_layer_tnewrow_o       => m_l1_tnewrow      ,
     M_layer_tlast_o         => m_l1_tlast        ,
     M_layer_tready_i        => m_l1_tready       ,
@@ -396,7 +470,6 @@ begin
             wea_i   => l1_bram_pa_wea,
             pa_addr_i => l1_bram_pa_addr,
             pa_data_i  => l1_bram_pa_data_wr,
-            rst_i => '0',
             pb_addr_i => l1_bram_pb_addr,
             pb_data_o => l1_bram_pb_data_rd
   );
@@ -473,7 +546,6 @@ begin
     M_layer_tdata_1_o       => m_l2_tdata_1      ,
     M_layer_tdata_2_o       => m_l2_tdata_2      ,
     M_layer_tdata_3_o       => m_l2_tdata_3      ,
-    M_layer_tkeep_o         => m_l2_tkeep        ,
     M_layer_tnewrow_o       => m_l2_tnewrow      ,
     M_layer_tlast_o         => m_l2_tlast        ,
     M_layer_tready_i        => m_l2_tready       ,
@@ -507,7 +579,6 @@ begin
             wea_i   => l2_bram_pa_wea,
             pa_addr_i => l2_bram_pa_addr,
             pa_data_i  => l2_bram_pa_data_wr,
-            rst_i => '0',
             pb_addr_i => l2_bram_pb_addr,
             pb_data_o => l2_bram_pb_data_rd
   );
@@ -562,6 +633,57 @@ begin
       );
   end generate;
 
+  MemCtrl_L3: MemCtrl_c2d
+  generic map(
+    BRAM_ADDR_WIDTH		      => L3_BRAM_ADDR_WIDTH		 ,
+    DATA_WIDTH		          => L3_DATA_WIDTH		    ,
+    IN_CHANNEL_NUMBER       => L3_IN_CHANNEL_NUMBER,
+    LAYER_HIGHT             => LAYER_HIGHT       ,
+    LAYER_WIDTH             => LAYER_WIDTH       ,
+    C_S_AXIS_TDATA_WIDTH    => C_S_AXIS_TDATA_WIDTH,
+    C_S00_AXI_DATA_WIDTH    => C_S00_AXI_DATA_WIDTH)       
+  port map(
+    Layer_clk_i		          => layer_clk		        ,
+    Layer_aresetn_i         => layer_aresetn        ,
+    S_layer_tvalid_i	      => s_l3_tvalid       ,
+    S_layer_tdata_i         => s_l3_tdata        ,
+    S_layer_tlast_i         => s_l3_tlast        ,
+    S_layer_tready_o        => s_l3_tready       ,
+    M_layer_tvalid_o	      => m_l3_tvalid       ,
+    M_layer_tdata_o         => m_l3_tdata,
+    M_layer_tlast_o         => m_l3_tlast        ,
+    M_layer_tready_i        => m_l3_tready       ,
+    Bram_clk_o              => l3_bram_clk             ,
+    Bram_pa_addr_o          => l3_bram_pa_addr         ,
+    Bram_pa_data_wr_o       => l3_bram_pa_data_wr      ,
+    Bram_pa_wea_o           => l3_bram_pa_wea          ,
+    Bram_pb_addr_o          => l3_bram_pb_addr         ,
+    Bram_pb_data_rd_i       => l3_bram_pb_data_rd      ,
+    Dbg_bram_addr_i         => dbg_bram_addr_in ,
+    Dbg_bram_addr_o         => dbg_bram_addr_check,
+    Dbg_bram_data_o         => dbg_bram_data_out,
+    Dbg_32bit_select_i      => dbg_32bit_select  ,
+    Dbg_enable_i            => dbg_enable(3),
+    Layer_properties_o      => layer_properties(3),
+    Status_o                => status(3));
+
+  -- ********************* Instantiation of Block RAM ************************************************
+  Bram_layer3 : bram
+  generic map (
+    BRAM_DATA_WIDTH => L3_DATA_WIDTH * L3_IN_CHANNEL_NUMBER,
+    BRAM_ADDR_WIDTH => L3_BRAM_ADDR_WIDTH,
+    BRAM_SIZE       => BLOCK_LENGTH_L3*2
+  )
+  port map (clk_i  => l3_bram_clk,
+            wea_i   => l3_bram_pa_wea,
+            pa_addr_i => l3_bram_pa_addr,
+            pa_data_i  => l3_bram_pa_data_wr,
+            pb_addr_i => l3_bram_pb_addr,
+            pb_data_o => l3_bram_pb_data_rd
+  );
+
+
+
   -- Clock generation
   TbClock <= not TbClock after TbPeriod/2 when TbSimEnded /= '1' else '0';
 
@@ -574,6 +696,7 @@ begin
       report "Init Simulation";
       start_package_l1 <= '0';
       start_package_l2 <= '0';
+      start_package_l3 <= '0';
       debug <= '0';
       axi_mem_ctrl_addr <= (others => '0');
       -- Reset generation
@@ -587,10 +710,12 @@ begin
       wait for 15 ns;
       start_package_l1 <= '1';
       start_package_l2 <= '1';
+      start_package_l3 <= '1';
       report "send package 1";
       wait for 10 ns;
       start_package_l1 <= '0';
       start_package_l2 <= '0';
+      start_package_l3 <= '0';
       wait for 40 us;
       -- axi_mem_ctrl_addr <= std_logic_vector(to_unsigned(1,axi_mem_ctrl_addr'length));
       -- debug <= '1';
@@ -606,19 +731,23 @@ begin
       report "send package 2"; 
       start_package_l1 <= '1';
       start_package_l2 <= '1';
+      start_package_l3 <= '1';
       wait for 10 ns;
       start_package_l1 <= '0';
       start_package_l2 <= '0';
+      start_package_l3 <= '0';
       wait for 40 us;
       report "send package 3";
       start_package_l1 <= '1';
       start_package_l2 <= '1';
+      start_package_l3 <= '1';
       wait for 10 ns;
       start_package_l1 <= '0';
       start_package_l2 <= '0';
+      start_package_l3 <= '0';
       wait for 100 us;
       -- EDIT Add stimuli here
-      wait for 200 * TbPeriod;
+      wait for 100000 * TbPeriod;
       report "End simulation";
       -- Stop the clock and hence terminate the simulation
       TbSimEnded <= '1';
@@ -1298,6 +1427,170 @@ begin
     block_cnt := block_cnt+1;
   end process;
 
+-- ****************** LAYER 3 **********************************************************************
+  L3_MemCtrl_in: process(layer_clk,layer_aresetn)
+    variable data_counter : integer;
+    variable block_counter : integer;
+    variable package_active : std_logic;
+  begin
+    if layer_aresetn = '0' then
+      s_l3_tdata <= (others => '0');
+      s_l3_tkeep <= (others => '0');
+      s_l3_tvalid <= '0';
+      s_l3_tlast <= '0';
 
+      package_active := '0';
+      data_counter := 0;
+      block_counter := 0;
+    elsif rising_edge(layer_clk) then
+      if package_active = '1' then
+        s_l3_tvalid <= '1';
+        s_l3_tkeep <= (others => '1');
+        if s_l3_tready = '1' and s_l3_tvalid = '1' then
+          data_counter := data_counter + 1;
+        end if;
+        s_l3_tdata <= s_data_buffer_l3(data_counter);
+      else
+        if s_l3_tready = '1' then
+          s_l3_tvalid <= '0';
+          s_l3_tkeep <= (others => '0');
+        end if;
+      end if;
+      if start_package_l3 = '1' then
+        package_active := '1';
+        data_counter := BLOCK_LENGTH_L3*block_counter;
+        s_l3_tlast <= '0';
+      elsif data_counter >= BLOCK_LENGTH_L3*(block_counter+1)-1 then 
+        package_active := '0';
+        block_counter := block_counter +1;
+        data_counter := 0;
+        s_l3_tlast <= '1';
+      else
+        s_l3_tlast <= '0';
+      end if;
+    end if;
+  end process;
+
+  BRAM_Rec_l3: process(layer_clk,layer_aresetn)
+  begin
+    if layer_aresetn = '0' then
+      l3_bram_block_done <= '0';
+    elsif rising_edge(layer_clk) then
+      if l3_bram_pa_wea = (l3_bram_pa_wea'range => '1') then
+        l3_bram_data_buffer(to_integer(unsigned(l3_bram_pa_addr))) <= l3_bram_pa_data_wr;
+      end if;  
+      if to_integer(unsigned(l3_bram_pa_addr)) = BLOCK_LENGTH_L3-1 or to_integer(unsigned(l3_bram_pa_addr)) = (BLOCK_LENGTH_L3*2)-1 then 
+        l3_bram_block_done <= '1'; 
+      else 
+        l3_bram_block_done <= '0';
+      end if;
+    end if;
+  end process;
+
+  M_LAYER_3_Rec: process(layer_clk,layer_aresetn)
+    variable data_counter : integer;
+    variable channel_cnt : integer;
+  begin
+    if layer_aresetn = '0' then
+      data_counter := 0;
+      block_done_vec_l3 <= '0';
+      channel_cnt := 0;
+      m_l3_tready <= '0';
+    elsif rising_edge(layer_clk) then
+      m_l3_tready <= '1';
+      if m_l3_tvalid = '1' and m_l3_tready = '1' then
+        M_l3_buffer(data_counter)(channel_cnt) <= m_l3_tdata;
+        if channel_cnt = L3_IN_CHANNEL_NUMBER-1 then 
+          channel_cnt := 0;
+          data_counter := data_counter +1;
+        else  
+          channel_cnt := channel_cnt+1;
+        end if;
+      end if;
+      if m_l3_tlast = '1' then
+        block_done_vec_l3 <= '1';
+        img_length_l3 <= data_counter;
+        data_counter := 0;
+      else
+        block_done_vec_l3 <= '0';
+      end if;
+    end if;
+  end process;
+   
+  read_testdata_l3: process
+    variable v_ILINE      : line;
+    variable read_data    : integer;
+  begin
+
+    for k in 0 to L3_IN_CHANNEL_NUMBER-1 loop
+      file_open(file_TEST_DATA, PATH & "tmp/feature_map_L3_c" & integer'image(k) & ".txt",  read_mode);
+      --report "feature map " & integer'image(k) & " opened successfully";
+      for i in 0 to BLOCKS_TO_TEST-1 loop
+        for j in 0 to BLOCK_LENGTH_L3-1 loop
+          readline(file_TEST_DATA, v_ILINE);
+          read(v_ILINE, read_data);
+          s_data_buffer_l3((i*BLOCK_LENGTH_L3)+j)(((k+1)*L3_DATA_WIDTH)-1 downto k*L3_DATA_WIDTH) <= std_logic_vector(to_unsigned(read_data,L3_DATA_WIDTH));
+          --report "read_data=" & integer'image(read_data)
+          --        & " i=" & integer'image(i) & " j=" & integer'image(j);
+          if endfile(file_TEST_DATA) = true then
+            file_close(file_TEST_DATA);
+            exit;
+          end if;
+        end loop;
+      end loop;
+      report "Close File";
+      file_close(file_TEST_DATA);
+    end loop;
+    report "Read data done";
+    wait;
+  end process;
+
+  write_bram_l3: process
+    variable v_OLINE      : line;
+    variable block_cnt : integer := 0;
+    variable write_data : integer := 0;
+  begin
+    wait until l3_bram_block_done'event and l3_bram_block_done='1';
+    file_open(file_RESULTS, PATH & "tmp/l3_bram" & integer'image(block_cnt) & ".txt", write_mode);
+    for i in 0 to 1 loop
+      for j in 0 to BLOCK_LENGTH_L3-1 loop
+        for k in 0 to L3_IN_CHANNEL_NUMBER-1 loop
+          write_data := to_integer(unsigned(l3_bram_data_buffer((i*BLOCK_LENGTH_L3)+j)((k+1)*L3_DATA_WIDTH-1 downto k*L3_DATA_WIDTH)));
+          write(v_OLINE, write_data);
+          write(v_OLINE, string'(" "));
+        end loop;
+        writeline(file_RESULTS, v_OLINE);
+      end loop;
+    end loop;
+    if s_l3_invalid_block = '1' then
+      write(v_OLINE, 1);
+      writeline(file_RESULTS, v_OLINE);
+    end if;
+    file_close(file_RESULTS);
+    report "Write bram" & integer'image(block_cnt) & "  done";
+    block_cnt := block_cnt+1;
+  end process;
+
+  write_output_l3: process
+    variable v_OLINE      : line;
+    variable block_cnt : integer := 0;
+    variable write_data : integer := 0;
+    variable out_vec    : std_logic_vector(L3_DATA_WIDTH-1 downto 0) := (others => '0');
+  begin  
+    wait until block_done_vec_l3'event and block_done_vec_l3='1';
+    file_open(file_RESULTS, PATH & "tmp/l3_inData_b" & integer'image(block_cnt) & ".txt", write_mode);
+    for j in 0 to img_length_l3-1 loop
+      for i in 0 to L3_IN_CHANNEL_NUMBER-1 loop 
+        out_vec := M_l3_buffer(j)(i);
+        write_data := to_integer(unsigned(out_vec));
+        write(v_OLINE, write_data);
+        write(v_OLINE, string'(" "));
+      end loop;
+      writeline(file_RESULTS, v_OLINE);  
+    end loop;  
+    file_close(file_RESULTS);
+    report "Write m layer 3 b" & integer'image(block_cnt) & " done";
+    block_cnt := block_cnt+1;
+  end process;
 
 end tb;

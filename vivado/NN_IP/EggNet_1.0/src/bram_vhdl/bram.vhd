@@ -11,7 +11,7 @@ ENTITY bram IS
 
   PORT (
     clk_i : IN STD_LOGIC;
-    rst_i : IN STD_LOGIC;
+    --rst_i : IN STD_LOGIC;
 
     wea_i        : IN STD_LOGIC_VECTOR(((BRAM_DATA_WIDTH)/8)-1 DOWNTO 0);
     pa_data_i    : IN STD_LOGIC_VECTOR((BRAM_DATA_WIDTH) - 1 DOWNTO 0);
@@ -37,15 +37,19 @@ ARCHITECTURE Behavioral of bram is
 
     constant BYTE_WIDTH : integer := 8;
 
+    attribute ram_style : string;
+    attribute ram_style of ram : signal is "block";
+
+
 begin
     bramming: process(clk_i)
     begin
 
     if rising_edge(clk_i) then
-        if (rst_i = '1') then
-            pa_addr <= (others => '0');
-            pb_addr <= (others => '0');
-        else
+        -- if (rst_i = '1') then
+            -- pa_addr <= (others => '0');
+            -- pb_addr <= (others => '0');
+        -- else
             pa_addr <= pa_addr_i;
             pa_data <= pa_data_i;
             write_enable <= wea_i;
@@ -61,6 +65,6 @@ begin
             pb_data_o <= ram(to_integer(unsigned(pb_addr)));
             --pb_data_o <= pb_data;
             end if;
-        end if;
+--        end if;
     END process;
 end Behavioral;

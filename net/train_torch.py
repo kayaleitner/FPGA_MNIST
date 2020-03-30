@@ -2,18 +2,20 @@ from __future__ import print_function, division
 
 import os
 import time
+
 import numpy as np
 import torch
-import torch.quantization
 import torch.nn as nn
 import torch.optim
+import torch.quantization
 import torchvision
 from torch.utils.data import DataLoader
 
-from extract_net_parameters import SCRIPT_PATH, EXPORT_DIR
+EXPORT_DIR = 'np'
+SCRIPT_PATH = os.path.dirname(os.path.abspath(__file__))
 
 try:
-    import NeuralNetwork.Ext as nnext
+    import EggNet.NeuralNetwork.Ext as nnext
 except ImportError as error:
     print("Unable to import NeuralNetwork.Ext. Is it installed?")
     print(error)
@@ -32,7 +34,6 @@ MODEL_CONFIG_SAVE_PATH = os.path.join(MODEL_SAVE_DIR, 'model_config.json')
 TORCH_SAVE_DIR = os.path.join(SCRIPT_PATH, 'torch')
 TORCH_SAVE_FILE = os.path.join(TORCH_SAVE_DIR, 'LeNet.pth')
 TORCH_STATES_SAVE_FILE = os.path.join(TORCH_SAVE_DIR, 'LeNetStates.pth')
-
 
 IMG_HEIGHT = 28
 IMG_WIDTH = 28
@@ -60,8 +61,17 @@ def main(nepochs=DEFAULT_EPOCHS, plot_history=False):
     net.to('cpu')
     criterion = nn.CrossEntropyLoss()
     optimizer = torch.optim.Adam(net.parameters(), lr=LEARNING_RATE)
-    history_accuracy = train_network(net, nepochs, criterion, optimizer, trainloader)
+    history_accuracy, history_loss = train_network(net, nepochs, criterion, optimizer, trainloader)
+
     print('Finished Training')
+
+    # Save history
+    history_accuracy = np.array(history_accuracy)
+    history_loss = np.array(history_loss)
+    np.save(file='runs/history_accuracy', arr=history_accuracy)
+    np.save(file='runs/history_loss', arr=history_loss)
+    np.savetxt(fname='runs/history_accuracy.txt', X=history_accuracy, header='Run Accuracy')
+    np.savetxt(fname='runs/history_loss.txt', X=history_loss, header='Run Loss')
 
     """
     Fuse Network
@@ -229,8 +239,9 @@ class ConvBN(nn.Sequential):
     def __init__(self, in_planes, out_planes, kernel_size=3, stride=1, groups=1):
         padding = (kernel_size - 1) // 2
         super(ConvBN, self).__init__(
-            nn.Conv2d(in_channels=in_planes, out_channels=out_planes, kernel_size=kernel_size, stride=stride, padding=padding, groups=groups, bias=True),
-            nn.BatchNorm2d(out_planes, momentum=0.1),
+            nn.Conv2d(in_channels=in_planes, out_channels=out_planes, kernel_size=kernel_size, stride=stride,
+                      padding=padding, groups=groups, bias=True),
+            nn.BatchNorm2d(out_planes),
         )
 
 
@@ -254,7 +265,7 @@ class LinearRelu(nn.Sequential):
     def __init__(self, in_features, out_features):
         super(LinearRelu, self).__init__(
             nn.Linear(in_features=in_features, out_features=out_features, bias=True),
-            nn.ReLU(inplace=False))
+            nn.ReLU6(inplace=False))
 
     @staticmethod
     def init_with_weights(w, b):
@@ -279,17 +290,22 @@ class LeNetV2(nn.Sequential):
 
     def __init__(self):
         super(LeNetV2, self).__init__(
+            # Ignore initial Bachnorm
+            # nn.BatchNorm2d(num_features=1),
             ConvBN(in_planes=1, out_planes=16, kernel_size=3, stride=1),
-            nn.Dropout(p=0.25),
+            nn.Dropout(p=0.5),
+            nn.ReLU6(),
             nn.MaxPool2d(kernel_size=2, stride=2),
             ConvBN(in_planes=16, out_planes=32, kernel_size=3, stride=1),
-            nn.Dropout(p=0.25),
+            nn.Dropout(p=0.5),
+            nn.ReLU6(),
             nn.MaxPool2d(kernel_size=2, stride=2),
             Flatten(),
             LinearRelu(in_features=32 * 7 * 7, out_features=32),
-            nn.Dropout(p=0.25),
-            LinearRelu(in_features=32, out_features=10),
-            nn.Softmax(dim=1)
+            nn.Dropout(p=0.5),
+            nn.Linear(in_features=32, out_features=10),
+            # No Softmax needed, combined in cross entropy loss function
+            # nn.Softmax(dim=1)
         )
 
     # COMPLEX_MODULES = (nn.Sequential,)  # Add any "recursable" modules in here
@@ -347,7 +363,6 @@ def save_weights_as_numpy(net):
     save_torch_model_weights(net)
 
 
-
 def prepare_datasets():
     # See: https://pytorch.org/tutorials/intermediate/tensorboard_tutorial.html
     transforms = torchvision.transforms.Compose([
@@ -389,10 +404,15 @@ def quantize_network(criterion, net, testloader, trainloader):
 
 
 def train_network(net, nepochs, criterion, optimizer, trainloader):
+    history_loss = []
     history_accuracy = []
     running_loss = 0.0
+
     for epoch in range(nepochs):  # loop over the dataset multiple times
         for i, data in enumerate(trainloader):
+
+            global_step = epoch * len(trainloader.dataset) + i * trainloader.batch_size
+
             inputs, labels = data  # get the inputs; data is a list of [inputs, labels]
             optimizer.zero_grad()  # zero the parameter gradients
             outputs = net(inputs)  # forward + backward + optimize
@@ -400,23 +420,31 @@ def train_network(net, nepochs, criterion, optimizer, trainloader):
             loss.backward()
             optimizer.step()
 
+            history_loss.append((global_step, float(loss)))
+
             pred = outputs.argmax(dim=1)  # get the index of the max log-probability
             running_loss += loss.item()
-            accurracy = (pred == labels).sum() / float(len(labels))
-            history_accuracy.append(float(accurracy))
+            accuracy = (pred == labels).sum() / float(len(labels))
 
-            if (i + 1) % LOG_MINI_BATCH_INTERVAL == 0:  # every 1000 mini-batches...
-                step = epoch * len(trainloader) + i
-                print("Epoch: {:3}   MB: {:5}   Acc [%]  {:3.4} %".format(epoch, i, 100 * float(accurracy)))
+            history_accuracy.append((global_step, float(accuracy)))
+
+            if (i + 1) % trainloader.batch_size == 0:  # every 1000 mini-batches...
+                # step = epoch * len(trainloader) + i
+                print("Epoch: {:3}   MB: {:5}   Acc [%]  {:3.4} %".format(epoch, i, 100 * float(accuracy)))
                 # ...log the running loss
-                # writer.add_scalar('Loss', running_loss / 1000, step)
-                # writer.add_scalar('Accuracy', scalar_value=accurracy * 100, global_step=step)
+                # writer.add_scalar('Loss', running_loss / LOG_MINI_BATCH_INTERVAL, global_step)
+                # writer.add_scalar('Accuracy', scalar_value=accuracy * 100, global_step=global_step)
+
+                # writer.add_figure('predictions vs. actuals',
+                #                  plot_classes_preds(net, inputs, labels),
+                #                  global_step=global_step)
+
                 running_loss = 0.0
 
                 if SKIP_TRAIN:
                     break
 
-    return history_accuracy
+    return history_accuracy, history_loss
 
 
 class Flatten(nn.Module):
@@ -428,16 +456,13 @@ class Flatten(nn.Module):
         return x.view(x.size()[0], -1)
 
 
-if __name__ == '__main__':
-    torch.manual_seed(0)
-    np.random.seed(0)
-    main()
-
-
 def save_torch_model_weights(tmodel):
     tmodel.eval()  # Put in eval mode
     for key, weights in tmodel.state_dict().items():
         weights = weights.numpy()
+        # Save Binary
+        np.save(file=os.path.join(EXPORT_DIR, 't_{}'.format(key)), arr=weights)
+        # Save as TXT
         vals = weights.flatten(order='C')
         np.savetxt(os.path.join(EXPORT_DIR, 't_{}.txt'.format(key)), vals,
                    header=str(weights.shape))
@@ -452,3 +477,9 @@ def load_torch(filepath=TORCH_SAVE_FILE):
     model = torch.load(filepath)
 
     return model
+
+
+if __name__ == '__main__':
+    torch.manual_seed(123456789)
+    np.random.seed(123456789)
+    main()

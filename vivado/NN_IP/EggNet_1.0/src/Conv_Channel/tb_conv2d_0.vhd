@@ -11,8 +11,8 @@ entity tb_conv2d_0 is
 end tb_conv2d_0;
 
 architecture beh of tb_conv2d_0 is
-	constant BIT_WIDTH_IN : integer := 8;
-	constant BIT_WIDTH_OUT : integer := 8;
+	constant BIT_WIDTH_IN : integer := 8; -- change this to 5 if running with int8
+	constant BIT_WIDTH_OUT : integer := 8; -- this too
 	constant INPUT_CHANNELS : integer := 1;
 	constant OUTPUT_CHANNELS : integer := 16;
 	constant CLK_PERIOD : time := 10 ns; -- 100MHz
@@ -188,6 +188,9 @@ begin
 		for J in 0 to INPUT_ARRAY_SIZE - 1 loop
 			wait until rising_edge(s_Clk_i);
 			while s_C0_Ready_o = '0' loop
+				s_C0_Last_i <= '0';
+				s_C0_X_i <= (others => '0');
+				s_C0_Valid_i <= '0';
 				wait until rising_edge(s_Clk_i);
 			end loop;
 			if (J mod IMG_WIDTH) = IMG_WIDTH - 1 then
@@ -207,7 +210,6 @@ begin
 		wait until rising_edge(s_Clk_i);
 		wait until rising_edge(s_Clk_i);
 		conv2d_done <= '1';
-		wait until rising_edge(s_Pool_Last_o);
 		wait until rising_edge(s_Clk_i);
 		wait until rising_edge(s_Clk_i);
 		wait until rising_edge(s_Clk_i);

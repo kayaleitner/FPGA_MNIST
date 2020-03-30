@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+
+{% block navbar %}
+
+{% endblock %}
+
+{% block content %}
+<b-container class="main-content">
+    <b-navbar type="dark" variant="info">
+        <b-navbar-brand>Navigation</b-navbar-brand>
+        <b-navbar-nav>
+        <b-nav-item href="#mnist" class="margin-auto">MNIST</b-nav-item>
+        <b-nav-item href="#interface" class="margin-auto">Interface</b-nav-item>
+        <b-nav-item href="#network" class="margin-auto">The Network</b-nav-item>
+        <b-nav-item href="https://github.com/marbleton/FPGA_MNIST/raw/master/tex/specification/specification.pdf" class="margin-auto">Documentation</b-nav-item>
+        <b-nav-item href="#benchmark" class="margin-auto">Benchmark</b-nav-item>
+        <b-nav-item href="#system-information" class="margin-auto">System Information</b-nav-item>
+        <b-nav-item href="#credits" class="margin-auto">Credits</b-nav-item>
+        </b-navbar-nav>
+        <b-navbar-nav class="ml-auto">
+        <b-nav-item href="https://github.com/marbleton/FPGA_MNIST" class="margin-auto" right>
+            <i class="fab fa-github"></i>
+            GitHub</b-nav-item>
+        </b-navbar-nav>
+    </b-navbar>
+
+    <b-row class="pad-15 bkg-gray">
+        <b-column class="pad-15 width-100 t-align-cent">
+            <b-row class="text-area">
+                <h1> Welcome to the EGGNET 1.0. </h1>
+            </b-row>
+
+            <b-row class="description text-area">
+                <p>This is a student project from TU Vienna in the course 384.157 SoC Design Laboratoy.
+                Goal was to develop a full system focusing on a specific topic.</p>
+            </b-row>
+            <hr/>
+            {% include "_mnist.html" %}
+            <hr/>
+            {% include "_network.html" %}
+            <hr/>
+            {% include '_uploadimage.html' %}
+            <hr/>
+            {% include "_benchmark.html" %}
+            <hr/>
+            {% include "_sysinfo.html" %}
+            <hr/>
+            {% include "_credits.html" %}
+            <hr/>
+        </b-column>
+    </b-row>
+
+</b-container>
+{% endblock %}

@@ -1,0 +1,6 @@
+numpy
+torch
+keras
+matplotlib
+seaborn
+prettytable

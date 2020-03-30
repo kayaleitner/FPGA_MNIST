@@ -1,0 +1,51 @@
+  <b-row>
+    <b-column class="text-area" style="padding-left: 3em; padding-right: 3em;">
+      <h2> Upload Image and Resize </h2>
+    </b-column>
+  </b-row>
+
+  <b-row class="pad-h-10em" style="padding: 0 4em;">
+    <b-col class="box">
+    <image-uploader
+      :preview="false"
+      :classname="['fileinput', { 'fileinput--loaded': hasImage }]"
+      :maxheight="28"
+      :maxwidth="28"
+      capture="environment"
+      :debug="1"
+      accept="'.png'"
+      @input="setImage">
+
+    <label for="fileInput" slot="upload-label">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="32"
+          height="32"
+          viewBox="0 0 32 32"
+        >
+          <path
+            class="path1"
+            d="M9.5 19c0 3.59 2.91 6.5 6.5 6.5s6.5-2.91 6.5-6.5-2.91-6.5-6.5-6.5-6.5 2.91-6.5 6.5zM30 8h-7c-0.5-2-1-4-3-4h-8c-2 0-2.5 2-3 4h-7c-1.1 0-2 0.9-2 2v18c0 1.1 0.9 2 2 2h28c1.1 0 2-0.9 2-2v-18c0-1.1-0.9-2-2-2zM16 27.875c-4.902 0-8.875-3.973-8.875-8.875s3.973-8.875 8.875-8.875c4.902 0 8.875 3.973 8.875 8.875s-3.973 8.875-8.875 8.875zM30 14h-4v-2h4v2z"
+          ></path>
+        </svg>
+    <span class="upload-caption">[[
+       "Click to upload"
+    ]]</span>
+    </label>
+    </image-uploader>
+    </b-col>
+  </b-row>
+
+
+  <b-row class="pad-top-1">
+      <b-column style="padding-left: 3em; padding-right: 3em; padding-top: 1.5rem;">
+        <h3> Downscaled / Numpy Array / Network Solution </h3>
+      </b-column>
+  </b-row>
+  <b-row align-h="center">
+      <b-column class="pad-1em-vert">
+        <img :src="image" v-if="hasImage" width="280">
+      </b-column>
+      <b-column id="bok-prev">  </b-column>
+      <b-column> <span style="font-size: 14rem;">[[ calcnumber ]]</span></b-column>
+  </b-row>

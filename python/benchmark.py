@@ -1,8 +1,8 @@
 from __future__ import print_function, division, absolute_import
 
 import numpy as np
-import NeuralNetwork.nn as nn
-import NeuralNetwork.Reader as reader
+import EggNet
+import EggNet.Reader
 
 if __name__ == '__main__':
     nn_save_dir = 'test/lenet'
@@ -11,12 +11,12 @@ if __name__ == '__main__':
     BATCH_SIZE = 1000
 
     # Prepare Reader
-    data_loader = reader.MnistDataDownloader(folder_path=mnist_data_dir)
-    path_img, path_lbl = data_loader.get_path(dataset_type=reader.DataSetType.TRAIN)
-    reader = reader.MnistDataReader(image_filename=path_img, label_filename=path_lbl)
+    data_loader = EggNet.Reader.MnistDataDownloader(folder_path=mnist_data_dir)
+    path_img, path_lbl = data_loader.get_path(dataset_type=EggNet.Reader.DataSetType.TRAIN)
+    reader = EggNet.Reader.MnistDataReader(image_filename=path_img, label_filename=path_lbl)
 
-    LeNet = nn.Network.LeNet.load_from_files(save_dir=nn_save_dir)
-    keras_lenet = nn.util.open_keras_model(save_dir=keras_save_dir)
+    LeNet = EggNet.Network.LeNet.load_from_files(save_dir=nn_save_dir)
+    keras_lenet = EggNet.util.open_keras_model(save_dir=keras_save_dir)
 
     n_correct_samples = 0
     n_correct_samples_keras = 0
@@ -31,7 +31,7 @@ if __name__ == '__main__':
         lbls_pred = lbls_pred.argmax(-1)
 
         if not np.all(lbls_keras == lbls_pred):
-            false_indices = nn.util.indices(lbls_pred == lbls_keras, lambda x: x == False)
+            false_indices = NeuralNetwork.util.indices(lbls_pred == lbls_keras, lambda x: x == False)
             print("{:3} Errors at indices: {}".format(len(false_indices), false_indices))
 
         n_samples += len(lbls)

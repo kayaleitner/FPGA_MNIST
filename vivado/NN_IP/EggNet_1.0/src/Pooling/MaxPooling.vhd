@@ -58,6 +58,9 @@ begin
 
   linebuffer: for i in 0 to CHANNEL_NUMBER-1 generate
     channelbuffer: entity work.STD_FIFO 
+      generic map (
+      DATA_WIDTH => DATA_WIDTH,
+      FIFO_DEPTH => LAYER_WIDTH+2)
       port map (
         Clk_i   => Layer_clk_i,
         Rst_i  => fifo_srst,
@@ -91,6 +94,7 @@ begin
       m_tvalid <= '0';
 	  state_next <= state;
 	  col_cnt_next <= col_cnt;
+	  fifo_srst <= '0';
       case(state) is 
         when INIT => 
 		  s_st <= 0;
