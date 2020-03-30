@@ -1,4 +1,4 @@
-.pad-15{
+.pad-15 {
     padding: 1em;
 }
 
@@ -6,6 +6,7 @@
     display: inline-flex;
     padding: 1em 5em;
 }
+
 .width-100 {
     width: 100%;
 }
@@ -53,9 +54,9 @@
 }
 
 .scrolling-wrapper {
-  overflow-x: hidden;
-  overflow-y: hidden;
-  white-space: nowrap;
+    overflow-x: hidden;
+    overflow-y: hidden;
+    white-space: nowrap;
 }
 
 .scrolling-wrapper .card {
@@ -67,7 +68,7 @@
 }
 
 .scrolling-wrapper {
-  -webkit-overflow-scrolling: touch;
+    -webkit-overflow-scrolling: touch;
 }
 
 .mnist-image {
@@ -92,14 +93,17 @@
 body {
     counter-reset: h2counter;
 }
+
 h1 {
     counter-reset: h2counter;
 }
+
 h2:before {
     content: counter(h2counter) ".\0000a0\0000a0";
     counter-increment: h2counter;
     counter-reset: h3counter;
 }
+
 h3:before {
     content: counter(h2counter) "." counter(h3counter) ".\0000a0\0000a0";
     counter-increment: h3counter;
@@ -115,21 +119,21 @@ hr {
 }
 
 .box {
-  font-size: 1.25rem; /* 20 */
-  background-color: #c8dadf;
-  padding: 30px 150px;
+    font-size: 1.25rem; /* 20 */
+    background-color: #c8dadf;
+    padding: 30px 150px;
 
-  outline: 2px dashed #92b0b3;
-  outline-offset: -10px;
+    outline: 2px dashed #92b0b3;
+    outline-offset: -10px;
 
-  -webkit-transition: outline-offset .15s ease-in-out, background-color .15s linear;
-  transition: outline-offset .15s ease-in-out, background-color .15s linear;
+    -webkit-transition: outline-offset .15s ease-in-out, background-color .15s linear;
+    transition: outline-offset .15s ease-in-out, background-color .15s linear;
 }
 
 .box .box__icon {
-  width: 100%;
-  height: 80px;
-  fill: black;
-  display: block;
-  margin-bottom: 40px;
+    width: 100%;
+    height: 80px;
+    fill: black;
+    display: block;
+    margin-bottom: 40px;
 }

@@ -1,18 +1,23 @@
+// import Vue from 'vue';
 // import axios from 'axios';
+// import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
 
-var eggnet = new Vue({
+
+let eggnet = new Vue({
 
     el: '#app',
+
+    // Add the fontawesome component. Taken from here: https://github.com/FortAwesome/vue-fontawesome
+    // components: {},
 
     data: {
         fields: ['Images Sent', 'Correct Guesses', 'Percent', 'Time Passed'],
         items: {},
 
         mnist_results: [
-            // ToDo: Load this dynamically?
             {index: 0, data_set: 'Train Set', n_batches: 1, network: 'CPU', accuracy: '0.999', time: '0.01'},
-
         ],
+        mnist_in_progress: false,
         mnist_fields: [
             {
                 key: 'index',
@@ -42,9 +47,9 @@ var eggnet = new Vue({
             }
         ],
 
-        quant_4_data : [],
-        quant_4_fields : [
-             {
+        quant_4_data: [],
+        quant_4_fields: [
+            {
                 key: 'id',
                 label: 'Type',
                 sortable: false
@@ -88,6 +93,7 @@ var eggnet = new Vue({
 
         onRunBenchmark: function (evt) {
             // console.log(JSON.stringify(this.form));
+            this.mnist_in_progress = true;
             const path = '/api/v1/run_benchmark';
             axios.post(path, this.benchmark_form)
                 .then((res) => {
@@ -95,11 +101,12 @@ var eggnet = new Vue({
                 })
                 .then((data => {
                     console.log(data);
-                    this.mnist_results.push(data)
+                    this.mnist_results.push(data);
+                    this.mnist_in_progress = false;
                 }));
         },
 
-        fetch_quantization: function() {
+        fetch_quantization: function () {
             let path = '/api/v1/system/quant';
             axios.get(path)
                 .then((data => {
@@ -190,6 +197,10 @@ function setup_chats() {
             ]
         },
         options: {
+            animation: {
+                duration: 0 // general animation time
+            },
+            lineTension: 0,
             scales: {
                 yAxes: [
                     {
@@ -267,7 +278,7 @@ function setup_chats() {
 }
 
 /**
- * Adds random mnist images
+ * Adds random MNIST images
  */
 function add_random_mnist_images() {
     let keys = [];

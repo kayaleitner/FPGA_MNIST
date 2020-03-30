@@ -112,6 +112,18 @@ int maxPool2D(const float* data_in,
               int*         out_ch);
 
 
+int max_pool_2x2(const int*  data_in,
+              int                   batch,
+              int                   in_h,
+              int                   in_w,
+              int                   in_ch,
+              int**                 pdata_out,
+              int*                  pbatch_out,
+              int*                  pout_h,
+              int*                  pout_w,
+              int*                  pout_ch);
+
+
 int relu1D(float* x, int d1);
 int relu2D(float* x2, int d1, int d2);
 int relu3D(float* x3, int d1, int d2, int d3);
