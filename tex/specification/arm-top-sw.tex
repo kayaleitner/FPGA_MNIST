@@ -1,9 +1,8 @@
 \subsection{ARM Top-Level Software}
 The ARM top-level software receives the image data from a remote device and sends the results back to this device. Control of the hardware.
 
-\subsubsection{Requirements}
-\todo{Add more information and specify the requirements}
-Requirements of the ARM Top-Level Software:
+\subsubsection{Requirements}
+Requirements of the ARM Top-Level Software can be summarized as
 \begin{itemize} 
 	\item Receive image data
 	\item Also use image data set already stored on device
@@ -14,7 +13,11 @@ Requirements of the ARM Top-Level Software:
 	\item Run at start-up 
 \end{itemize}
 
+Because the 
+
 \subsubsection{Dynamic Updating of the Bitstream}
+
+This was initially planned but would required more time to finish.
 
 Optional feature: Update Bitstream file using \texttt{/dev/xdevcfg}.
 
@@ -24,5 +27,5 @@ Update: For newer versions it looks like \texttt{/dev/xdevcfg} doesn't exist any
 See Section \ref{subsec:InterfaceRemoteZed}.  
 \subsubsection{Interface to kernel layer}
 Python wrapper are used for the interface between the top level software which is programmed in python and the hardware drivers which are programmed in C. For usability a high level interface to the underlying C wrapper is made. 
-This header interface can then be wrapped to multiple target languages using \cite{Swig2020}. In our case this was done for Python and Numpy. 
+This header interface can then be wrapped to multiple target languages using \cite{Beazley:1996aa}. In our case this was done for Python and Numpy. 
 

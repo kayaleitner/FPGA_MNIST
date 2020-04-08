@@ -100,10 +100,17 @@ Using the distribution histograms we then defined derived the necessary bitwidth
 \end{enumerate}
 It is noteworthy that the values for $m$ do not need to be stored in the final network, because those are only used to determine the amount of shifts between the layers. Also the values need to be clipped to their maximum and minimum values. The complete configuration of the network is summarized in Table~\ref{tab:quantization-linear-params}.
 
-Ad 4 and 5: The transition from a layer to the next often changes the exponent $m$ and the available bitwidth. To account for this the values need to accordingly shifted. Also the decreased bitwidth needs clipping.
+Ad 4 and 5: The transition from a layer to the next often changes the exponent $m$ and the available bitwidth. To account for this the values need to accordingly shifted. Also the decreased bitwidth needs clipping to maximum available values for the target bitwidth. This directly alters the behaviour of the network which should be accounted for during training, which is done via a saturated version of ReLU, defined as:
+\begin{equation}
+    \text{ReLU}_{\text{sat}}: ~ f(x;p) = \begin{cases}
+		0 	\quad \text{if} \quad x < 0 \\
+		p 	\quad \text{if} \quad x > p \\
+		x	\quad \text{else}
+	\end{cases}
+\end{equation}
 
 For our network only linear quantization has been used but also non-linear quantization, e.g. in a $\log_2$ way which is proposed in \cite{Lee:2017aa}. Experiments showed that using this technique even further down to \SI{3}{\bit} weights in our case.
-Another optimization technique that could be explored is the systematically removing of weights (connections) of the network and reduce the amount of operations needed to be performed, a process refered to as ''pruning'' \cite{Zhu:2017aa}. This was not explicitly performed but is implicitly done by low bit quantization.
+Another optimization technique that could be explored is the systematically removing of weights (connections) of the network and reduce the amount of operations needed to be performed, a process referred to as ''pruning'' \cite{Zhu:2017aa}. This was not explicitly performed but is implicitly done by low bit quantization.
 
 \begin{table}[hbt]
   \centering
