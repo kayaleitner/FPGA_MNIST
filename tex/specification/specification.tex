@@ -20,7 +20,8 @@
 \usepackage{listings}
 \usepackage{enumitem}
 \usepackage{graphicx,color,psfrag}
-\usepackage{subfigure}
+% \usepackage{subfigure}
+\usepackage{subcaption}
 \usepackage{wrapfig}
 \usepackage{svg}
 \usepackage{svg-extract}
@@ -36,11 +37,14 @@
 \newacronym{acr:FPGA}{FPGA}{field programmable gate array}
 \newacronym{acr:IP}{IP}{intellectual property}
 \newacronym{acr:ILA}{ILA}{integrated logic analyzer}
-\newacronym{acr:CNN}{CNN}{convolutional neural network}
+\newacronym{acr:CNN}{CNN}{convolutional Neural Network}
 \newacronym{acr:DMA}{DMA}{direct memory access}
 \newacronym{acr:PS}{PS}{processing system}
 \newacronym{acr:PL}{PL}{programmable logic}
 \newacronym{acr:BRAM}{BRAM}{block-RAM}
+\newacronym{acr:LUT}{LUT}{Look Up Table}
+\newacronym{acr:NN}{NN}{neural network}
+\newacronym{acr:DL}{DL}{deep learning}
 
 \begin{document}
 % This is used to limit the number of authors
@@ -84,8 +88,22 @@
 	\acro{FIFO}{First In, First Out}
 	\acro{CNN}{Convolutional Neural Network}
 \end{acronym}
+
+
+\tableofcontents
+\clearpage
+
 \section{Introduction}
 
+\subsection*{Notation}
+\begin{center}
+\begin{tabular}{lp{3.5in}}
+	Weights 	& the parameter of the neural network		\\
+	Activations	& the input and output values of the layers	\\
+	$Q$			& The significand of a fix point integer 	\\
+	$m$			& the exponenent of a fix point integer
+\end{tabular}
+\end{center}
 
 \input{concept.tex}
 
@@ -99,16 +117,17 @@
 
 
 \section{Hardware}
-\input{mem-controller-hw.tex}
-\input{conv2d-hw.tex}
-\input{conv-channel-hw.tex}
-\input{kernel-3x3-hw.tex}
-\input{nn.tex}
-\input{dense-hw.tex}
+%\input{mem-controller-hw.tex}
+%\input{conv2d-hw.tex}
+%\input{conv-channel-hw.tex}
+%\input{kernel-3x3-hw.tex}
+%\input{nn.tex}
+%\input{dense-hw.tex}
 
 
 
-\section*{Appendix}
+\section{Appendix}
+\input{build}
 \input{nnmath}
 \input{matrixcalculus}
 \input{source}
@@ -116,5 +135,8 @@
 
 \bibliographystyle{apalike}
 \bibliography{bibhelper,references}
+\listoffigures
+\listoftables
+\listoftodos
 
 \end{document}

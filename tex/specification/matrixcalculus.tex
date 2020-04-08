@@ -1,4 +1,4 @@
-\subsection*{Matrix Calculus}
+\subsection{Matrix Calculus}
 
 The chain rule for a vectors is similar to the chain rule for scalars. Except the order is important. For $\mathbf{z} = f(\mathbf{y})$ and $\mathbf{y} = g(\mathbf{x}) $ the chain rule is:
 \begin{equation}
@@ -22,3 +22,17 @@ The chain rule for a vectors is similar to the chain rule for scalars. Except th
     \end{tabular}
     \caption{Useful derivatives equations}
 \end{table}
+
+
+\subsection{Fix-Point Arithmetic}
+
+Multiplication of two fix point values yields 
+\begin{equation}
+	v_1 v_2 = \text{right-shift}\left( Q_1 Q_2 \cdot 2^{-(m+m)} ; m\right)
+\end{equation}
+Note that for multiplication the exponent $m$ for the values can be different.
+
+Addition of two fix point values
+\begin{equation}
+	v_1 + v_2 = \left( Q_1 + Q_2 \right) \cdot 2^{-m}
+\end{equation}

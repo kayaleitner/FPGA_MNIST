@@ -39,34 +39,85 @@ The final output of the network over the training is evaluated in Figure~\ref{fi
 values and in Figure~\ref{fig:network-test-qcm} for fake quantized values.
 
 \begin{figure}[htbp]
-	\centering
+\centering
+\begin{subfigure}[t]{0.5\textwidth}
 	\includegraphics[width=0.8\textwidth]{../../net/images/training_loss}
-	\caption{Training Loss}
+	\caption{Training Loss}		
 	\label{fig:network-train-loss}
-\end{figure}
-
-\begin{figure}[htbp]
-	\centering
+\end{subfigure}%
+~
+\begin{subfigure}[t]{0.5\textwidth}
 	\includegraphics[width=0.8\textwidth]{../../net/images/training_accuracy}
 	\caption{Training Accuracy}
-	\label{fig:network-train-acc}
+	\label{fig:network-train-acc}		
+\end{subfigure}
+\caption{Network loss and accuracy over the training iterations}
+\label{fig:network-training-graphs}
 \end{figure}
 
-\begin{figure}[htbp]
-	\centering
-	\includegraphics[width=0.8\textwidth]{../../net/images/cm}
-	\caption{Confusion Matrix (real)}
+\begin{figure}
+\centering
+\begin{subfigure}[t]{0.5\textwidth}
+	\includegraphics[width=0.9\textwidth]{../../net/images/cm}
+	\caption{Floating Point}
 	\label{fig:network-test-cm}
-\end{figure}
-
-\begin{figure}[htbp]
-	\centering
-	\includegraphics[width=0.8\textwidth]{../../net/images/qcm}
-	\caption{Confusion Matrix with quantized values}
+\end{subfigure}%
+~
+\begin{subfigure}[t]{0.5\textwidth}
+	\includegraphics[width=0.9\textwidth]{../../net/images/qcm}
+	\caption{Quantized Values}
 	\label{fig:network-test-qcm}
+\end{subfigure}
+\caption{Confusion matrix for the floating point and quantized version of the netowork.}
+\label{fig:network-confusion-matrix}
 \end{figure}
 
 \subsection{Quantization}
+
+The network is trained and created using 32bit floating point values in Python. Directly porting this all the weights and biases to the FPGA is due to the limited amount of available resources not feasible. The goal is therefore to reduce the amount of required hardware cells by switching from floating point arithmetic to the less expensive integer arithmetic. Then a floating point value $v$ can be approximately represented as 
+\begin{equation}
+	v \approx Q \cdot 2 ^{-m}
+\end{equation}
+where $Q$ and $m$ are integers. In our case all input values of the first layer are guaranteed to lie in the interval $[0,1]$ and all layer weights are known from training. It is therefore possible to precompute the expected range where the output values will be. Depending on this range it is then possible to select a suitable bit width for both $Q$ and $m$.
+
+This is a cost-accuracy trade-off where higher bit widths would improve accuracy as well as increase the amount of hardware resources needed.
+In \cite{Wu:2018aa} different strategies of choosing bit widhts for $Q$ and $m$ are compared and they observed three main configurations, which are (from simple to advanced):
+\begin{enumerate}
+	\item Use a $(Q,m)$ configuration for the whole network
+	\item Use a $(Q,m)$ configuration for each layer
+	\item Use a $(Q,m)$ configuration for each output channel 
+\end{enumerate}
+In the third configuration the authors could reduce the bit widths the most without sacrificing accuracy this increases the complexity in transferring the weights from layer to layer because the additional shift operations are necessary in order to adjust for the different values of $m$.
+In \cite{Wu:2018aa} the authors also deduced from their experiments that the accuracy of the weights can be reduced the most, followed by the activations. By analysing the weights of out network (see Figure~\ref{fig:network-weight-distributions}) a per channel quantization is not necessary, because all weights in a Convolutional Layer are equally distributed among the output channels.
+
+\begin{figure}[htbp]
+    \centering
+    \begin{subfigure}[t]{0.5\textwidth}
+        \centering
+        \includegraphics[height=1.6in]{../../net/images/hist_cn1_k}
+        \caption{Convolutional Layer 1}
+    \end{subfigure}%
+    ~ 
+    \begin{subfigure}[t]{0.5\textwidth}
+        \centering
+         \includegraphics[height=1.6in]{../../net/images/hist_cn2_k}
+        \caption{Convolutional Layer 2}
+    \end{subfigure}%
+    \\
+    \begin{subfigure}[t]{0.5\textwidth}
+        \centering
+        \includegraphics[height=1.6in]{../../net/images/hist_fc1_w}
+        \caption{Fully Connected Layer 1}
+    \end{subfigure}%
+    ~ 
+    \begin{subfigure}[t]{0.5\textwidth}
+        \centering
+         \includegraphics[height=1.6in]{../../net/images/hist_fc2_w}
+        \caption{Fully Connected Layer 2}
+    \end{subfigure}
+    \caption{Distribution of the network weights for the different layers}
+    \label{fig:network-weight-distributions}
+\end{figure}
 
 The network was reduced to fixed point integers defined by the equation
 \begin{equation}
