@@ -1,5 +1,5 @@
 MNIST on FPGA
-===================
+==============
 
 ![GitHub](https://img.shields.io/github/license/marbleton/FPGA_MNIST)
 
@@ -9,7 +9,7 @@ MNIST on FPGA
 This is a university project at TU Vienna to create a neural network hardware accelerator with an FPGA.
 The network is designed and trained using _Pytorch_ and _Keras_ in Python. 
 Using _Xilinx Vivado_ the Neural Network is implemented on _Digilent Zedboard_ featuring a Zynq-7000 ARM/FPGA SoC.
-For easy using of the webapp a the FPGA can be controlled via a Webinterface based on Python Flask.  
+The FPGA-Net can be controlled via a Webinterface based on Python Flask.  
 For more details see the [Specification Document](tex/specification/specification.pdf)
 
 Authors

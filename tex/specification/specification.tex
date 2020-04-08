@@ -32,6 +32,7 @@
 \usepackage{pgf-umlsd}
 \usepackage{ifthen}
 \usepackage{hyperref}
+\usepackage[binary-units]{siunitx}
 
 
 \newacronym{acr:FPGA}{FPGA}{field programmable gate array}
@@ -100,14 +101,19 @@
 \begin{tabular}{lp{3.5in}}
 	Weights 	& the parameter of the neural network		\\
 	Activations	& the input and output values of the layers	\\
+	Activation Function & Function that is applied at the output of a layer \\
+	ReLU		& Rectified Linear Unit, defined as  $f(x) = \begin{cases}
+		x \quad \text{if} \quad x > 0 \\
+		0 \quad \text{else}
+	\end{cases}$						\\
+	Mini-Batch	& A small fraction of the input data \\
 	$Q$			& The significand of a fix point integer 	\\
-	$m$			& the exponenent of a fix point integer
+	$m$			& the exponenent of a fix point integer		
 \end{tabular}
 \end{center}
 
 \input{concept.tex}
 
-\section{Software}
 
 \input{nntraining}
 \input{host-sw.tex}
@@ -117,13 +123,12 @@
 
 
 \section{Hardware}
-%\input{mem-controller-hw.tex}
-%\input{conv2d-hw.tex}
-%\input{conv-channel-hw.tex}
-%\input{kernel-3x3-hw.tex}
-%\input{nn.tex}
-%\input{dense-hw.tex}
-
+\input{mem-controller-hw.tex}
+\input{conv2d-hw.tex}
+\input{conv-channel-hw.tex}
+\input{kernel-3x3-hw.tex}
+\input{nn.tex}
+\input{dense-hw.tex}
 
 
 \section{Appendix}

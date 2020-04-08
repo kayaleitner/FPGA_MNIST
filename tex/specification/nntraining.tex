@@ -1,4 +1,4 @@
-\subsection{Neural Network Design and Training}
+\section{Neural Network Design and Training}
 \label{subsec:nntraining}
 
 %\begin{wrapfigure}{r}{0.5\textwidth}
@@ -51,7 +51,7 @@ values and in Figure~\ref{fig:network-test-qcm} for fake quantized values.
 	\caption{Training Accuracy}
 	\label{fig:network-train-acc}		
 \end{subfigure}
-\caption{Network loss and accuracy over the training iterations}
+\caption[Network loss and accuracy over the training iterations]{Network loss and accuracy over the training iterations. The blue lines show spikes which occur because of the randomly selected mini batches.}
 \label{fig:network-training-graphs}
 \end{figure}
 
@@ -72,7 +72,7 @@ values and in Figure~\ref{fig:network-test-qcm} for fake quantized values.
 \label{fig:network-confusion-matrix}
 \end{figure}
 
-\subsection{Quantization}
+\section{Quantization}
 
 The network is trained and created using 32bit floating point values in Python. Directly porting this all the weights and biases to the FPGA is due to the limited amount of available resources not feasible. The goal is therefore to reduce the amount of required hardware cells by switching from floating point arithmetic to the less expensive integer arithmetic. Then a floating point value $v$ can be approximately represented as 
 \begin{equation}
@@ -81,15 +81,69 @@ The network is trained and created using 32bit floating point values in Python. 
 where $Q$ and $m$ are integers. In our case all input values of the first layer are guaranteed to lie in the interval $[0,1]$ and all layer weights are known from training. It is therefore possible to precompute the expected range where the output values will be. Depending on this range it is then possible to select a suitable bit width for both $Q$ and $m$.
 
 This is a cost-accuracy trade-off where higher bit widths would improve accuracy as well as increase the amount of hardware resources needed.
-In \cite{Wu:2018aa} different strategies of choosing bit widhts for $Q$ and $m$ are compared and they observed three main configurations, which are (from simple to advanced):
+In \cite{Wu:2018aa} different strategies of choosing bit widths for $Q$ and $m$ are compared and they observed three main configurations, which are (from simple to advanced):
 \begin{enumerate}
 	\item Use a $(Q,m)$ configuration for the whole network
 	\item Use a $(Q,m)$ configuration for each layer
 	\item Use a $(Q,m)$ configuration for each output channel 
 \end{enumerate}
 In the third configuration the authors could reduce the bit widths the most without sacrificing accuracy this increases the complexity in transferring the weights from layer to layer because the additional shift operations are necessary in order to adjust for the different values of $m$.
-In \cite{Wu:2018aa} the authors also deduced from their experiments that the accuracy of the weights can be reduced the most, followed by the activations. By analysing the weights of out network (see Figure~\ref{fig:network-weight-distributions}) a per channel quantization is not necessary, because all weights in a Convolutional Layer are equally distributed among the output channels.
+In \cite{Wu:2018aa} the authors also deduced from their experiments that the accuracy of the weights can be reduced the most, followed by the activations. By analysing the weights of out network (see Figure~\ref{fig:network-weight-distributions}) a per channel quantization is not necessary, because all weights in a Convolutional Layer are equally distributed among the output channels. Another important property that can be noted is the that the weights do have zero mean and most of the values lie very close to zero. Because of the usage of ReLU layer the situation is different for the activations where unsigned integers can be used, the distributions are shown in Figure~\ref{fig:network-activations-distributions}.
 
+Using the distribution histograms we then defined derived the necessary bitwidths for $Q$ and $m$. In our experiments we were able to reduce them to \SI{8}{\bit}, if we used a single configuration for the whole network and also reducing them down to 4bit if the bitwidth configuration is selected for each layer independently with an accuracy drop from around \SI{98.35}{\percent} to \SI{97.37}{\percent}. The strategy to the select the values for $(Q,m)$ was
+\begin{enumerate}
+	\item Find the value range of the weights and output activations of each layer
+	\item Select suitable $(Q,m)$ values that most activations fall in that range
+	\item Calculate the bit widths and exponents of the multiplication operation
+	\item Add $\lceil \log_2(n) \rceil$ extra bits to account for the accumulation of $n$ values
+	\item Compare the accumulated exponents and with the exponents of the successive layers input exponents. The difference is the amount of shift required
+\end{enumerate}
+It is noteworthy that the values for $m$ do not need to be stored in the final network, because those are only used to determine the amount of shifts between the layers. Also the values need to be clipped to their maximum and minimum values. The complete configuration of the network is summarized in Table~\ref{tab:quantization-linear-params}.
+
+Ad 4 and 5: The transition from a layer to the next often changes the exponent $m$ and the available bitwidth. To account for this the values need to accordingly shifted. Also the decreased bitwidth needs clipping.
+
+For our network only linear quantization has been used but also non-linear quantization, e.g. in a $\log_2$ way which is proposed in \cite{Lee:2017aa}. Experiments showed that using this technique even further down to \SI{3}{\bit} weights in our case.
+Another optimization technique that could be explored is the systematically removing of weights (connections) of the network and reduce the amount of operations needed to be performed, a process refered to as ''pruning'' \cite{Zhu:2017aa}. This was not explicitly performed but is implicitly done by low bit quantization.
+
+\begin{table}[hbt]
+  \centering
+  \begin{tabular}{lcccc}
+	\toprule
+    Network Part 	  & $|Q|$ & $m$ & $\pm$ & $v$ (real value range) \\
+	\midrule
+    Input 		 	  &  8    & 8  & $+$   & $[0,1]  $ \\
+    L1: Weights 	  &  4    & 2  & $\pm$ & $[-2,2] $ \\
+    L1: Intermediates & 12    & 10 & $\pm$ & $[-2,2] $ \\
+    L1: Accumulated   & 16    & 10 & $\pm$ & 		   \\
+    \midrule
+    L1 $\to$ L2 	  & \multicolumn{4}{c}{Rshift by $10-2$ and clip values in range $[0,15]$} \\
+    \midrule
+    L2: Input 		  &  4    & 2  & $+$   & $[-2,2] $ 	   \\
+    L2: Weights 	  &  4    & 5  & $\pm$ & $[-0.5,0.5] $ \\
+    L2: Intermediates &  8    & 7  & $\pm$ & $[-1,1] $ \\
+    L2: Accumulated   & 16    & 7  & $\pm$ &  			   \\
+    \midrule
+    L2 $\to$ L3 	  & \multicolumn{4}{c}{Rshift by $7-0$ and clip values in range $[0,15]$} \\
+    \midrule
+    L3: Input 		  &  4    & 0  & $+$   & $[0,15] $     \\
+    L3: Weights 	  &  4    & 5  & $\pm$ & $[-0.5,0.5] $ \\
+    L3: Intermediates &  8    & 5  & $\pm$ & $[-7.5,7.5] $ \\
+    L3: Accumulated   & 19    & 5  & $\pm$ &               \\
+    \midrule
+    L3 $\to$ L4 	  & \multicolumn{4}{c}{Rshift by $5-0$ and clip values in range $[0,15]$} \\
+    \midrule
+    L4: Input 		  &  4    & 0  & $+$   & $[0,15] $ \\
+    L4: Weights 	  &  4    & 5  & $\pm$ & $[-0.5,0.5] $ \\
+    L4: Intermediates &  8    & 5  & $\pm$ & $[-7.5,7.5] $ \\
+    L4: Accumulated   & 14    & 5  & $\pm$ & $[0,1] $ \\
+    \bottomrule
+  \end{tabular}
+  \caption[Quantization parameters for the 4bit network]{Quantization parameters for the 4bit network. The intermediate terms are the values after the multiplication operation and the accumulated term denotes values after summing up of weighted inputs including bias in a channel.}
+  \label{tab:quantization-linear-params}
+\end{table}
+
+
+%% WEIGHT DISTTRIBUTIONS
 \begin{figure}[htbp]
     \centering
     \begin{subfigure}[t]{0.5\textwidth}
@@ -119,18 +173,34 @@ In \cite{Wu:2018aa} the authors also deduced from their experiments that the acc
     \label{fig:network-weight-distributions}
 \end{figure}
 
-The network was reduced to fixed point integers defined by the equation
-\begin{equation}
-	v = Q \cdot 2 ^{-m}
-\end{equation}
-where both $Q$ and $m$ are integers and $v$ is the real value representation of the fixed point number. 
-For our network implementation we chose a vairable fraction length for each layer and a total bitlength for $Q$ of $8$. 
-This quantization can further be adjusted for each convolutional channel separately but optimization in this way were beyond the scope of this project.
-The multiplication of two fixed point integers is trivial, because the product for two real values $v_1$ and $v_2$ is 
-\begin{equation}
-	v_1 v_2 = \text{right-shift}\left( Q_1 Q_2 \cdot 2^{-(m+m)} ; m\right)
-\end{equation}
-In our tests a quantization with $8$ bit fixedpoint integers and even $4$ bit integers showed only a small drop in accuracy of around $1 \%$.
-\todo{Add Histogram}
 
+%% ACTIVATIONS DISTTRIBUTIONS
+\begin{figure}[htbp]
+    \centering
+    \begin{subfigure}[t]{0.5\textwidth}
+        \centering
+        \includegraphics[height=1.6in]{../../net/images/hist_ao1}
+        \caption{Convolutional Layer 1}
+    \end{subfigure}%
+    ~ 
+    \begin{subfigure}[t]{0.5\textwidth}
+        \centering
+         \includegraphics[height=1.6in]{../../net/images/hist_ao2}
+        \caption{Convolutional Layer 2}
+    \end{subfigure}%
+    \\
+    \begin{subfigure}[t]{0.5\textwidth}
+        \centering
+        \includegraphics[height=1.6in]{../../net/images/hist_ao3}
+        \caption{Fully Connected Layer 1}
+    \end{subfigure}%
+    ~ 
+    \begin{subfigure}[t]{0.5\textwidth}
+        \centering
+         \includegraphics[height=1.6in]{../../net/images/hist_ao4}
+        \caption{Fully Connected Layer 2}
+    \end{subfigure}
+    \caption{Distribution of the activations for a randomly selected batch of the input data}
+    \label{fig:network-activations-distributions}
+\end{figure}
 
