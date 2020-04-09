@@ -1,12 +1,13 @@
 \subsection{kernel-3x3}
-This modules performs a multiplication of 9 values of length BIT\_WIDTH\_IN with their respective weights which are defined in an
-array that can be set with a generic. The multiplication results are then added up, after which a ReLu step is performed where outputs
-above 255 are clipped to 255 and outputs below 0 are clipped to 0.
+
+This modules performs the convolution of a single kernel with a single input image patch. This is a multiplication of - in our case - 9 values of length BIT\_WIDTH\_IN with their respective weights which are defined in an array that can be set with a generic. The multiplication results are then added up in an adder tree.
+
 \subsubsection{Interface}
 \begin{itemize}
 	\item Input interface, a vector of 9 values of length BIT\_WIDTH\_IN.
 	\item Output interface, same as conv\_channel.
 \end{itemize}
+
 \subsubsection{Parameter}
 \begin{itemize}
 	\item BIT\_WIDTH\_IN: integer

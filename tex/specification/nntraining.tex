@@ -1,4 +1,4 @@
-\section{Neural Network Design and Training}
+\subsection{Neural Network Design and Training}
 \label{subsec:nntraining}
 
 %\begin{wrapfigure}{r}{0.5\textwidth}
@@ -72,7 +72,8 @@ values and in Figure~\ref{fig:network-test-qcm} for fake quantized values.
 \label{fig:network-confusion-matrix}
 \end{figure}
 
-\section{Quantization}
+
+\subsection{Quantization}
 
 The network is trained and created using 32bit floating point values in Python. Directly porting this all the weights and biases to the FPGA is due to the limited amount of available resources not feasible. The goal is therefore to reduce the amount of required hardware cells by switching from floating point arithmetic to the less expensive integer arithmetic. Then a floating point value $v$ can be approximately represented as 
 \begin{equation}

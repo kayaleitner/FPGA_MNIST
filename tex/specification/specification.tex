@@ -47,6 +47,9 @@
 \newacronym{acr:NN}{NN}{neural network}
 \newacronym{acr:DL}{DL}{deep learning}
 
+
+\newcommand{\stdlogic}{\texttt{std\_logic}}
+
 \begin{document}
 % This is used to limit the number of authors
 % Unfortunatly only working on IEEE
@@ -78,7 +81,7 @@
 
 		
 		{\Huge MNIST-FPGA\\[.5em]
-		\huge Specification}\\[10em]
+		\huge Documentation}\\[10em]
 	\end{center}
 
 \end{titlepage}
@@ -121,6 +124,7 @@
 
 
 \section{Hardware}
+\input{hw-basic}
 \input{mem-controller-hw.tex}
 \input{conv2d-hw.tex}
 \input{conv-channel-hw.tex}
@@ -128,6 +132,7 @@
 \input{nn.tex}
 \input{dense-hw.tex}
 
+\input{conclusion}
 
 \section{Appendix}
 \input{build}
