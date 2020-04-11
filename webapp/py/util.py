@@ -1,6 +1,7 @@
 """
 This is a helper file and is not intended to be used by the webserver directly
 """
+import numpy as np
 
 
 def main():
@@ -34,3 +35,21 @@ def create_some_test_images(some_number=10):
 
 if __name__ == '__main__':
     main()
+
+
+def rgb2gray(rgb: np.ndarray):
+    """
+    Converts an RGB image to greyscale
+    Args:
+        rgb: the rgb image
+
+    Returns:
+        A grayscaled image
+    """
+    w = np.array([0.2989, 0.5870, 0.1140])
+    return np.dot(rgb, w)
+    # r, g, b = rgb[:, :, 0], rgb[:, :, 1], rgb[:, :, 2]
+    # gray = 0.2989 * r + 0.5870 * g + 0.1140 * b
+    # return gray
+
+

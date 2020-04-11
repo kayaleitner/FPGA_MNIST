@@ -1,0 +1,21 @@
+<section id="documentation">
+    <b-row class="text-area">
+        <h2>Documentation</h2>
+        <p>
+            The full documentation in tex format as well as the source code of this project is available on Github.
+            A precompiled PDF document can be downloaded here.
+        </p>
+    </b-row>
+    <b-row>
+        <!-- Place empty columns so button is centered -->
+        <!-- ToDo: Maybe this is more efficient with CSS -->
+        <b-col></b-col>
+        <b-col>
+            <b-button class="btn" href="{{ url_for('static', filename='data/documentation.pdf') }}">
+                <b-icon icon="download"></b-icon>
+                Documentation
+            </b-button>
+        </b-col>
+        <b-col></b-col>
+    </b-row>
+</section>
