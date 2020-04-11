@@ -1,6 +1,6 @@
 \subsection{User Layer Driver Software}
 The user layer driver software implements an interface between the ARM Top-Level software and the driver for the programmable logic. It is implemented in C. It is supposed to handle the entire communication with the driver so that the hardware is only abstractly visible for the ARM Top-Level software.\\
-For example the ARM top-level software sees the network as a class in python which has a methode\_load\_new\_image data with a numpy array as input and a finish signal as a output. This method should call the user layer driver software which handles the communication between user space and kernel space. In a similar way each IP should be a class in python. \\
+The ARM top-level software sees the network as a class in python which has methods to load a new image data with a numpy array as input and a finish signal as a output. This method should call the user layer driver software which handles the communication between user space and kernel space. In a similar way each IP should be a class in python. \\
 Requirements of the User Layer Driver Software:
 \begin{itemize} 
 	\item Communication with the kernel space drivers 

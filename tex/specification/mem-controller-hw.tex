@@ -1,6 +1,5 @@
 \subsection{Memory Controller}
-The task of the memory controller is to provide valid data for the NN-layers. It communicates with the Block-Ram. The memory controller is responsible for ensuring that the next layer has valid data at all times. The second task of the memory controller is to save the data of the previous data in a free memory address in the Block-RAM. 
-\todo{Is it better to have the shiftregister, we discussed last time in the memory controller, because in this case the layer don't have to know anything about the data it gets}
+The task of the memory controller is to provide valid data for the NN-layers in every cycle. It receives data from the previous layer of from the DMA and stores it in a Block-RAM. If a full image or feature map is received. The memory controller starts sending the data to the next layer. Receiving and sending data is performed in parallel, which therefore doesn't lead to additional delay time.  In order to read the $3\times3$ kernel in every clock cycle a linebuffer is used to store 2 lines. This enables the memory controller to provide a $3\times1$ vector in every cycle. To get a $3\times3$ kernel additionally a shiftregister is used.  
 
 \subsubsection{Interfaces}
 \begin{itemize}
@@ -8,49 +7,18 @@ The task of the memory controller is to provide valid data for the NN-layers. It
 	\item M\_LAYER: interface to next layer 
 	\item AXI\_lite: interface to AXI lite bus, is used to read BRAM data directly from processor (slow)
 \end{itemize}
-\begin{tabular}{|l|l|l|l|l|}
-	
-	signal & direction & type & width & description\\
-	
-\end{tabular}
-
-\begin{itemize}
-	\item M\_LAYER: interface to next layer
-\end{itemize}
-\begin{tabular}{|l|l|l|l|l|}
-	
-	signal & direction & type & width & description\\
-	
-\end{tabular}
-
-\begin{itemize}
-	\item BRAM\_PORTA: write interface to BRAM
-\end{itemize}
-\begin{tabular}{|l|l|l|l|l|}
-	
-	signal & direction & type & width & description\\
-	
-\end{tabular}
-
-\begin{itemize}
-	\item BRAM\_PORTB: read interface to BRAM
-\end{itemize}
-\begin{tabular}{|l|l|l|l|l|}
-	
-	signal & direction & type & width & description\\
-	
-\end{tabular}
 
 \subsubsection{Parameter}
 \begin{itemize}
-	\item PREVIOUS\_LAYER\_TYPE boolean: {TRUE: conv2d, FALSE: dense} % maybe some additional -> integer type
-	\item PREVIOUS\_LAYER\_WIDTH integer: {Row length of input matrix} \todo{use extra parameter for dense or simply use width or height, discuss!}
-	\item PREVIOUS\_LAYER\_HEIGTH integer: {Column length of input matrix}
-	\item PREVIOUS\_LAYER\_CHANNEL integer: {Row length of input matrix}
-	\item NEXT\_LAYER\_TYPE boolean: {TRUE: conv2d, FALSE: dense} % maybe some additional -> integer type
-	\item NEXT\_LAYER\_WIDTH integer: {Row length of input matrix} \todo{use extra parameter for dense or simply use width or height, discuss!}
-	\item NEXT\_LAYER\_HEIGTH integer: {Column length of input matrix}
-	\item NEXT\_LAYER\_CHANNEL integer: {Row length of input matrix}
+	\item BRAM\_ADDR\_WIDTH: integer: Address width of the connected Block-RAM
+	\item DATA\_WIDTH: integer: Data width of activations
+	\item IN\_CHANNEL\_NUMBER: integer: Number of input channels 
+	\item LAYER\_HEIGTH: integer: Height of input matrix 
+	\item LAYER\_WIDTH: integer: WIDTH of input matrix 
+	\item AXI4\_STREAM\_INPUT: integer: 1 for input layer else 0 
+	\item MEM\_CTRL\_ADDR: integer: Layer number of memory controller (used for AXI-lite interface)
+	\item C\_S\_AXIS\_TDATA\_WIDTH: integer: AXI-stream data width (required for input layer)
+	\item C\_S00\_AXI\_DATA\_WIDTH: integer: AXI-lite data width 
 \end{itemize}
 
 \subsection{AXI lite interface}

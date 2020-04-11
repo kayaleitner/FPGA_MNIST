@@ -1,6 +1,6 @@
-\subsection{Host software}
+\subsection{Remote software}
 
-The remote software is either implemented on a PC or on a server. It is used for performing the training of the network and for generating a FPGA-bitstream based on the computed weights. Additionally the remote software is used to send the image data to the Zedboard and receive the results of the network for each image. 
+It is used for performing the training of the network and for generating a FPGA-bitstream based on the computed weights. Additionally the remote software is used to send the image data to the Zedboard and receive the results of the network for each image. 
 
 Therefore the Host software can be separated in two parts:
 \begin{itemize}
@@ -24,16 +24,11 @@ Requirements of the Trainings Software:
 \end{itemize}
 
 \subsubsection{Interface to Zedboard} \label{subsec:InterfaceRemoteZed}
-Ethernet is used for the communication of the remote host system and the embedded Linux which is running on the Zedboard. 
-The embedded Linux distribution running on the board should automatically receive an IP address when connected to a network. When in doubt the address can be found out with the \texttt{ifconfig} command. 
-The software has a client-server model with the embedded system acting as a server and the host as a client. Once running, the server software is listening for new outside connections. Different types of data need to be transmitted:
+As interface to the zedboard a flask application is running on the zedboard which allows to upload a new image of a digit, test the hardware accelerate using the MNIST-dataset, gives useful information and allows to update the FPGA bitstream. 
 
 \begin{itemize}
-	\item The 28x28 input images showing digits between 0 and 9 is transferred from host to Zedboard.
-	\item The probability of resulting numbers between 0 and 9 is transmitted from Zedboard to host.
-	\item control and status signals in both directions 
-	\item Optional: Bitstream file for dynamically update the bitstream at the Zedboard
+	\item The uploaded images are resized to $28 \times 28$ automatically
+	\item The MNIST-dataset can be used
+	\item Status information about the inference time and CPU utilization are shown
+	\item Bitstream file for update the hardware accelerator can be uploaded. 
 \end{itemize}
-
-\subsubsection{Notes}
-On Windows host systems, \emph{Network Discovery} needs to be enabled and in some cases a Firewall exception for the used ports needs to be set for a connection to be established. \\
