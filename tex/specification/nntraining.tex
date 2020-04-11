@@ -8,12 +8,6 @@
 %	\label{fig:network-layers}
 %\end{wrapfigure}
 
-\begin{figure}
-	\includegraphics[width=0.8\textwidth]{../../net/images/network}
-	\caption{Network overview}
-	\label{fig:network-structure}
-\end{figure}
-
 
 The network was implemented in PyTorch \cite{Paszke:2019aa} as well as Tensorflow \cite{MartinAbadi:2015aa}. The backend was later exclusively switched to PyTorch (which is also the most common deep learning framework in Science) due to its better support of qunatization. The layers of the neural network can be seen in Figure~\ref{fig:network-structure}. 
 For training of the network the \emph{ADAM} optimization algorithm \cite{Kingma:2014aa} was used to minimize the cross-entropy-loss function which is defined as

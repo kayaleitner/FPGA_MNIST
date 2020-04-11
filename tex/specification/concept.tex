@@ -3,7 +3,7 @@
 \subsection{Neural Network}
 
 For the neural network we base the architecture of our network on the well known \emph{LeNet} architecture from \cite{LeCun:1998aa} is chosen due to its simplicity and ease to implement. Additionally the performance is improved by using modern, established techniques like batch normalization \cite{Ioffe:2015aa} and dropout \cite{Srivastava:2014aa} layers. 
-The training of network is done using PyTorch \cite{Paszke:2019aa} on a regular PC and the trained network parameters are then used to create a hardware VHDL model of the network. An overview of the structure can be seen in Figure~\ref{fig:eggnet}. For verification all neural network operations are checked in separate programmed programs for correctness. See the Section~\ref{subsec:nntraining} for details how the network is implemented in Software.
+The training of network is done using PyTorch \cite{Paszke:2019aa} on a regular PC and the trained network parameters are then used to create a hardware VHDL model of the network. An overview of the structure can be seen in Figure~\ref{fig:eggnet}. For verification all neural network operations are checked in separate programmed programs for correctness. See the Section~\ref{subsec:nntraining} for details how the network is implemented in Software.x
 An excellent overview in deep learning can be found in \cite{Schmidhuber:2015aa} and also in \cite{Goodfellow:2016aa}.
 To train and test the network we chose the MNIST dataset \cite{LeCun:1998ab}. It consists of 50.000 training images and 10.000 test images of handwritten digits, where each is 28-by-28 pixel.
 
@@ -18,7 +18,7 @@ To train and test the network we chose the MNIST dataset \cite{LeCun:1998ab}. It
 \subsection{Hardware Concept}
 \begin{figure}[h]
 	\centering
-	\includesvg[width=\textwidth]{img/inkscape/NN-concept.svg}
+	\includesvg[width=0.6\textwidth]{img/inkscape/NN-concept.svg}
 	\caption[Top-Level concept.]{Top-Level concept}
 	\label{FIG:concept}
 \end{figure}
