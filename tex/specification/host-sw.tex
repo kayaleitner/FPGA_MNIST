@@ -1,3 +1,4 @@
+\section{Version Luki}
 \subsection{Remote software}
 
 It is used for performing the training of the network and for generating a FPGA-bitstream based on the computed weights. Additionally the remote software is used to send the image data to the Zedboard and receive the results of the network for each image. 
@@ -32,3 +33,43 @@ As interface to the zedboard a flask application is running on the zedboard whic
 	\item Status information about the inference time and CPU utilization are shown
 	\item Bitstream file for update the hardware accelerator can be uploaded. 
 \end{itemize}
+
+\section{Version Benni}
+\section{Software}
+
+To ease the usage of the network when it is implemented in the FPGA a suitable user driver software is needed. Here it should be possible to send a single or multiple images to the FPGA and collect the estimated results. 
+
+Also because the major development in Machine Learning is done in Python and the Zedboard is able to run Linux it would be beneficial to control the network via Python and embed it in an existing Machine Learning Framework like Keras \cite{Gulli:2017aa} or Torch \cite{Paszke:2019aa}. Additionally the Zedboard needs additional resources of the FPGA if a graphical user interface should be outputted via the HDMI port. Due to the already sparse available resources the GUI was deactivated and the whole communication was done over Ethernet (or for the initial setup a serial connection). 
+
+\begin{itemize}
+	\item Write a low level driver in C to communicate with the FPGA
+	\item Provide a Python Interface to the driver
+	\item Provide a Web control interface
+\end{itemize}
+
+
+\subsection{FPGA Driver}
+
+The user layer driver software implements an interface between the ARM Top-Level software and the driver for the programmable logic. It is implemented in C. It is supposed to handle the entire communication with the driver so that the hardware is only abstractly visible for the ARM Top-Level software.
+
+For example the ARM top-level software sees the network as a class in python which has a methode\_load\_new\_image data with a numpy array as input and a finish signal as a output. This method should call the user layer driver software which handles the communication between user space and kernel space. In a similar way each IP should be a class in python. 
+
+Requirements of the User Layer Driver Software:
+\begin{itemize} 
+	\item Communication with the kernel space drivers 
+	\item Use python wrapper to communicate with ARM Top-Level software
+	\item Easy to use interface from Top-Level 
+	\item No knowledge of the hardware should be necessary to use the interface
+	\item Data encapsulation to avoid the Top-Level Software from corrupting the memory 
+\end{itemize}
+
+\subsection{Python Driver Interface}
+
+\subsection{Web Interface}
+
+The webapp should provide an easy yet good interface to control the network and check its functionality. Because most of the networks software logic is done in python, also the backend of the webapp was done with Python Flask \cite{Pallets:2020aa}. This enabled us the quick interfacing between web components and our python code and also made the communication of multiple threads easier.
+
+
+
+
+

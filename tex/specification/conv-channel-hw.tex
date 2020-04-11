@@ -1,11 +1,5 @@
 \subsection{conv\_channel}
 
-\begin{figure}[h]
-	\centering
-	\includesvg[width=0.7\textwidth]{img/inkscape/conv-channel.svg}
-	\caption[conv\_channel block diagram.]{conv\_channel block diagram. For each input channel a kernel\_3x3 module is used. $n$ indicates the number of input channels.}
-	\label{FIG:conv-channel}
-\end{figure}
 Figure \ref{FIG:conv-channel} shows the block diagram of a conv\_channel module. It uses $n$ kernel\_3x3 modules to realise $n$ input channels. 
 All kernel\_3x3 modules get a different input vector $X_{c_{i1}}$ to $X_{c_{in}}$ which are $3 \times 3$ input matrices. All kernel outputs are summed up
 to one final value of length BIT\_WIDTH\_OUT.
