@@ -1,10 +1,8 @@
 ### Eggnet Specification Specific Files to ignore
 
-# Ignore the resulting pdfs
+# Ignore the resulting and intermediate pdfs
 svg-extract/
 specification.pdf
-
-
 
 
 # Created by https://www.gitignore.io/api/tex,latex

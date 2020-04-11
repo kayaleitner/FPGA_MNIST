@@ -1,40 +1,3 @@
-\section{Version Luki}
-\subsection{Remote software}
-
-It is used for performing the training of the network and for generating a FPGA-bitstream based on the computed weights. Additionally the remote software is used to send the image data to the Zedboard and receive the results of the network for each image. 
-
-Therefore the Host software can be separated in two parts:
-\begin{itemize}
-	\item Trainings software
-	\item Communication software
-\end{itemize} 
-
-Requirements of the Trainings Software:
-\begin{itemize} 
-	\item Training of the network considering bit resolution of implemented hardware
-	\item Create VHDL code based on the network hyper-parameter and on the computed weights
-	\item Create a bitstream with the generated VHDL code
-\end{itemize}
-
-Requirements of the Trainings Software:
-\begin{itemize}
-	\item Sends image data to Zedboard
-	\item Receives results from Zedboard
-	\item Create a figure of accuracy and performance   
-	\item Optional: Send bitstream to hardware which updates the bitstream 
-\end{itemize}
-
-\subsubsection{Interface to Zedboard} \label{subsec:InterfaceRemoteZed}
-As interface to the zedboard a flask application is running on the zedboard which allows to upload a new image of a digit, test the hardware accelerate using the MNIST-dataset, gives useful information and allows to update the FPGA bitstream. 
-
-\begin{itemize}
-	\item The uploaded images are resized to $28 \times 28$ automatically
-	\item The MNIST-dataset can be used
-	\item Status information about the inference time and CPU utilization are shown
-	\item Bitstream file for update the hardware accelerator can be uploaded. 
-\end{itemize}
-
-\section{Version Benni}
 \section{Software}
 
 To ease the usage of the network when it is implemented in the FPGA a suitable user driver software is needed. Here it should be possible to send a single or multiple images to the FPGA and collect the estimated results. 
@@ -71,5 +34,39 @@ The webapp should provide an easy yet good interface to control the network and 
 
 
 
+\subsection{Remote software}
+
+It is used for performing the training of the network and for generating a FPGA-bitstream based on the computed weights. Additionally the remote software is used to send the image data to the Zedboard and receive the results of the network for each image. 
+
+Therefore the Host software can be separated in two parts:
+\begin{itemize}
+	\item Trainings software
+	\item Communication software
+\end{itemize} 
+
+Requirements of the Trainings Software:
+\begin{itemize} 
+	\item Training of the network considering bit resolution of implemented hardware
+	\item Create VHDL code based on the network hyper-parameter and on the computed weights
+	\item Create a bitstream with the generated VHDL code
+\end{itemize}
+
+Requirements of the Trainings Software:
+\begin{itemize}
+	\item Sends image data to Zedboard
+	\item Receives results from Zedboard
+	\item Create a figure of accuracy and performance   
+	\item Optional: Send bitstream to hardware which updates the bitstream 
+\end{itemize}
+
+\subsubsection{Interface to Zedboard} \label{subsec:InterfaceRemoteZed}
+As interface to the zedboard a flask application is running on the zedboard which allows to upload a new image of a digit, test the hardware accelerate using the MNIST-dataset, gives useful information and allows to update the FPGA bitstream. 
+
+\begin{itemize}
+	\item The uploaded images are resized to $28 \times 28$ automatically
+	\item The MNIST-dataset can be used
+	\item Status information about the inference time and CPU utilization are shown
+	\item Bitstream file for update the hardware accelerator can be uploaded. 
+\end{itemize}
 
 
