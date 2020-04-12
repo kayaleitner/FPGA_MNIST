@@ -31,15 +31,11 @@ For controlling the ADAM algorithm the recommended values, listed in Table~\ref{
 \end{table}
 
 
-A useful guide for implementing convolutions can be found in \cite{dumoulin2016guide}. The training 
-of the network yielded very high accuracy rates - which is typical for the MNIST dataset, which is for
-Machine Learning an easy challenge. Even though the network performance could be improved, e.g. by 
-hyperparameter tuning the results were acceptable for our case. The progress of the training in terms
-of accuracy and loss can be seen in Figure~\ref{fig:network-train-acc} respectively in Figure~\ref{fig:network-train-loss}.
-The final output of the network over the training is evaluated in Figure~\ref{fig:network-test-cm} for real
-values and in Figure~\ref{fig:network-test-qcm} for fake quantized values.
+A useful guide for implementing convolutions can be found in \cite{dumoulin2016guide}. The training of the network yielded very high accuracy rates - which is typical for the MNIST dataset, which is forMachine Learning an easy challenge. Even though the network performance could be improved, e.g. by hyperparameter tuning the results were acceptable for our case. The progress of the training in terms of accuracy and loss can be seen in Figure~\ref{fig:network-train-acc} respectively in Figure~\ref{fig:network-train-loss}. The final output of the network over the training is evaluated in Figure~\ref{fig:network-test-cm} for real values and in Figure~\ref{fig:network-test-qcm} for fake quantized values.
 
-\begin{figure}[htbp]
+Both, PyTorch and Tensorflow/Keras are Python libraries but most \gls{acr:NN} operations are due to performance reasons not implemented in Python directly. This makes debugging more difficult which is why we reimplemented the operations we needed again in Python. This was done using NumPy and SWIG, which will be discussed more extensively in Section~\ref{sec:sw-python}, and enabled us to verify the correct ordering of parameters, weights and activations.
+
+\begin{figure}[hbtp]
 \centering
 \begin{subfigure}[t]{0.5\textwidth}
 	\includegraphics[width=0.8\textwidth]{../../net/images/training_loss}
@@ -56,7 +52,7 @@ values and in Figure~\ref{fig:network-test-qcm} for fake quantized values.
 \label{fig:network-training-graphs}
 \end{figure}
 
-\begin{figure}
+\begin{figure}[hbtp]
 \centering
 \begin{subfigure}[t]{0.5\textwidth}
 	\includegraphics[width=0.9\textwidth]{../../net/images/cm}

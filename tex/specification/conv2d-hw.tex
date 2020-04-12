@@ -6,18 +6,19 @@ The convolutional layer - referred to as conv2d - receives an input data tensor 
 	\centering
 	\begin{subfigure}[t]{0.5\textwidth}
 		\centering
-		\includesvg[height=2.4in]{img/inkscape/conv2d.svg}
+		% Constrain the height instead of the widht so the images are equally aligned at the top
+		\includesvg[height=2.5in]{img/inkscape/conv2d.svg}
 		\caption[Conv2d block diagram.]{Conv2d block diagram. For each output channel a conv\_channel module is used. $k$ indicates the number of output channels.}
 		\label{fig:conv2d}
 	\end{subfigure}%
 	~
 	\begin{subfigure}[t]{0.5\textwidth}
 		\centering
-		\includesvg[height=2.4in]{img/inkscape/conv-channel.svg}
+		\includesvg[height=2.5in]{img/inkscape/conv-channel.svg}
 		\caption[conv\_channel block diagram.]{conv\_channel block diagram. For each input channel a kernel\_3x3 module is used. $n$ indicates the number of input channels.}
 		\label{fig:conv-channel}		
 	\end{subfigure}
-	\caption{}
+	\caption{Block diagram of the Convolutional Layer}
 	\label{fig:hw-layer-conv}
 \end{figure}
 
