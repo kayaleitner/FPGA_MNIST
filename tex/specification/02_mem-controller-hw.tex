@@ -22,19 +22,33 @@ The task of the memory controller is to provide valid data for the NN-layers in 
 \end{itemize}
 
 \subsection{AXI lite interface}
-It is used to read the BRAM data directly from the processor. This can be used for debug purposes. \\
-Each memory controller gets an unique address via generics. 
-One 32 bit register of the AXI lite bus is used for all memory controller. 
-If the processor writes all 0 to the register, debugging mode is deactivated. 
-Therefore the memory controller address start with 1 and not with 0.
-the 32 bit are separated as follows: \\
+It is used to read the BRAM data directly from the processor which can be used for debug purposes. Each memory controller is assigned a unique address via generics in VHDL. One \SI{32}{\bit} register of the AXI lite bus is used for all memory controller. If the processor writes all 0 to the register, debugging mode is deactivated.  Therefore the memory controller address start with 1 and not with 0.
+the \SI{32}{\bit} are separated as follows: \\
 \begin{itemize}
 	\item 23 downto 0: BRAM address
-	\item 27 downto 24: 32 bit vector address 
+	\item 27 downto 24: \SI{32}{\bit} vector address 
 	\item 31 downto 28 : Memory controller address 
 \end{itemize}  
+
+\begin{table}[hbt]
+  \centering
+  \begin{tabular}{l|lp{3in}}
+    \toprule
+    				              & Bit Address & Comment\\
+    \midrule
+    BRAM 				  & 23 downto 0  & Address of the block RAM \\
+    \SI{32}{\bit} vector  & 27 downto 24 & If the width of one BRAM register is higher than \SI{32}{\bit}, the \SI{32}{\bit} vector address can be used to select the required part of the vector.\\
+    Memory controller  	  & 31 downto 28 & Address of the memory controller used in the network starting with 1. If the address of the memory controller is selected debug mode is active. \\
+    \bottomrule
+  \end{tabular}
+  \caption{AXI Lite component Address}
+\end{table}
+
+
+
+
 BRAM address: address of the block ram \\
-32 bit vector address: If the width of one BRAM register is higher than 32 bit, the 32 bit vector address can be used to select the required part of the vector. \\
+\SI{32}{\bit} vector address: If the width of one BRAM register is higher than \SI{32}{\bit}, the \SI{32}{\bit} vector address can be used to select the required part of the vector. \\
 Memory controller address: address of the memory controller used in the network starting with 1. If the address of the memory controller is selected debug mode is active. \\
 
  

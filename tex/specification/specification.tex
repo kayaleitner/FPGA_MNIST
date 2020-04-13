@@ -33,7 +33,10 @@
 \usepackage{ifthen}
 \usepackage{hyperref}
 \usepackage[binary-units]{siunitx}
+\usepackage{bytefield}
 
+
+%% List of Acronyms
 
 \newacronym{acr:FPGA}{FPGA}{field programmable gate array}
 \newacronym{acr:IP}{IP}{intellectual property}
@@ -49,6 +52,7 @@
 \newacronym{acr:ML}{ML}{machine learning}
 \newacronym{acr:GUI}{GUI}{graphical user interface}
 \newacronym{acr:API}{API}{application programmable interface}
+
 
 \newcommand{\stdlogic}{\texttt{std\_logic}}
 
@@ -112,8 +116,8 @@
 		0 \quad \text{else}
 	\end{cases}$						\\
 	Mini-Batch	& A small fraction of the input data \\
-	$Q$			& The significand of a fix point integer 	\\
-	$m$			& the exponenent of a fix point integer		
+	$Q$			& The significant of a fix point integer 	\\
+	$m$			& the exponent of a fix point integer		
 \end{tabular}
 \end{center}
 
@@ -126,22 +130,22 @@
 
 
 \section{Hardware}
-\input{hw-basic}
-\input{mem-controller-hw.tex}
-\input{conv2d-hw.tex}
-\input{conv-channel-hw.tex}
-\input{kernel-3x3-hw.tex}
-\input{nn.tex}
-\input{dense-hw.tex}
+\input{02_hw-basic}
+\input{02_mem-controller-hw.tex}
+\input{02_conv2d-hw.tex}
+\input{02_conv-channel-hw.tex}
+\input{02_kernel-3x3-hw.tex}
+\input{02_nn.tex}
+\input{02_dense-hw.tex}
 
 \input{conclusion}
 
 \section{Appendix}
-\input{build}
-\input{nnmath}
-\input{matrixcalculus}
-\input{source}
-\input{other}
+\input{09_build}
+\input{09_nnmath}
+\input{09_matrixcalculus}
+\input{09_source}
+\input{09_other}
 
 \bibliographystyle{apalike}
 \bibliography{bibhelper,references}

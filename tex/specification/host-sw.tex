@@ -39,7 +39,7 @@ Requirements of the User Layer Driver Software:
 	\item Easy to use interface from Top-Level 
 	\item No knowledge of the hardware should be necessary to use the interface
 	\item Data encapsulation to avoid the Top-Level Software from corrupting the memory 
-	\item Ability to debug the network, e.g. recieve data from the intermediate layers
+	\item Ability to debug the network, e.g. receive data from the intermediate layers
 \end{itemize}
 
 \subsection{Python Driver Interface}
@@ -48,7 +48,7 @@ Requirements of the User Layer Driver Software:
 The Python driver interface is build on top of the \gls{acr:FPGA} driver and should ease the usage of the driver functions for the python interface. A very common library and part of the scientific python package is \emph{NumPy} \cite{Virtanen:2020aa}. It's basic element is the \emph{NumPy Array} \cite{Walt:2011aa} which is a very useful abstraction and interface to high dimensional data used in \gls{acr:ML} contexts and a basic building block in most numeric scientific python programs. The Python driver should therefore receive NumPy arrays on the Python side and translate them for the C driver interface. 
 This translation process can be automated by tools like e.g. \emph{SWIG} \cite{Beazley:2003aa}.	The (simplified) build process is depicted in Figure~\ref{fig:sw-python-eggdriver-build} which on its basis requires two files: 
 First, a header file which contains the C function declearations that should be wrapped, which is the public interface of our driver and second, a special \emph{SWIG} interface files, which contains further rules how the code in the header file should be wrapped. It is often beneficial to create the function declarations in the header files with Python and SWIG in mind. 
-SWIG translates the function declarations to the Python domain and creates a \texttt{.py} file with convenience function definitions and a \texttt{.c} file which handles the communication between the C library and (C-)Python. The compilation of this file requires linking against platform specific libraries of the driver, the C library and Python.
+SWIG translates the function declarations to the Python domain and creates a \texttt{.py} file with convenience function definitions and a \texttt{.c} file which handles the communication between the C library and (C-)Python. The compilation of this file requires linking against platform specific libraries of the driver, the C library and Python. The whole process is done most conveniently via the Python Setuptools.
 
 \begin{figure}[hbt]
   \centering

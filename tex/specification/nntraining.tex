@@ -48,7 +48,7 @@ Both, PyTorch and Tensorflow/Keras are Python libraries but most \gls{acr:NN} op
 	\caption{Training Accuracy}
 	\label{fig:network-train-acc}		
 \end{subfigure}
-\caption[Network loss and accuracy over the training iterations]{Network loss and accuracy over the training iterations. The blue lines show spikes which occur because of the randomly selected mini batches.}
+\caption[Network loss and accuracy over the training iterations]{Network loss and accuracy over the training iterations. The blue lines show spikes which occur because of the randomly selected mini batches. The orange line shows the smoothed version over 50 periods}
 \label{fig:network-training-graphs}
 \end{figure}
 
@@ -65,14 +65,14 @@ Both, PyTorch and Tensorflow/Keras are Python libraries but most \gls{acr:NN} op
 	\caption{Quantized Values}
 	\label{fig:network-test-qcm}
 \end{subfigure}
-\caption{Confusion matrix for the floating point and quantized version of the netowork.}
+\caption{Confusion matrix for the floating point and quantized version of the network.}
 \label{fig:network-confusion-matrix}
 \end{figure}
 
 
 \subsection{Quantization}
 
-The network is trained and created using 32bit floating point values in Python. Directly porting this all the weights and biases to the FPGA is due to the limited amount of available resources not feasible. The goal is therefore to reduce the amount of required hardware cells by switching from floating point arithmetic to the less expensive integer arithmetic. Then a floating point value $v$ can be approximately represented as 
+The network is trained and created using \SI{32}{\bit} floating point values in Python. Directly porting this all the weights and biases to the FPGA is due to the limited amount of available resources not feasible. The goal is therefore to reduce the amount of required hardware cells by switching from floating point arithmetic to the less expensive integer arithmetic. Then a floating point value $v$ can be approximately represented as 
 \begin{equation}
 	v \approx Q \cdot 2 ^{-m}
 \end{equation}
@@ -88,7 +88,7 @@ In \cite{Wu:2018aa} different strategies of choosing bit widths for $Q$ and $m$ 
 In the third configuration the authors could reduce the bit widths the most without sacrificing accuracy this increases the complexity in transferring the weights from layer to layer because the additional shift operations are necessary in order to adjust for the different values of $m$.
 In \cite{Wu:2018aa} the authors also deduced from their experiments that the accuracy of the weights can be reduced the most, followed by the activations. By analysing the weights of out network (see Figure~\ref{fig:network-weight-distributions}) a per channel quantization is not necessary, because all weights in a Convolutional Layer are equally distributed among the output channels. Another important property that can be noted is the that the weights do have zero mean and most of the values lie very close to zero. Because of the usage of ReLU layer the situation is different for the activations where unsigned integers can be used, the distributions are shown in Figure~\ref{fig:network-activations-distributions}.
 
-Using the distribution histograms we then defined derived the necessary bitwidths for $Q$ and $m$. In our experiments we were able to reduce them to \SI{8}{\bit}, if we used a single configuration for the whole network and also reducing them down to 4bit if the bitwidth configuration is selected for each layer independently with an accuracy drop from around \SI{98.35}{\percent} to \SI{97.37}{\percent}. The strategy to the select the values for $(Q,m)$ was
+Using the distribution histograms we then defined derived the necessary bitwidths for $Q$ and $m$. In our experiments we were able to reduce them to \SI{8}{\bit}, if we used a single configuration for the whole network and also reducing them down to \SI{4}{\bit} if the bitwidth configuration is selected for each layer independently with an accuracy drop from around \SI{98.35}{\percent} to \SI{97.37}{\percent}. The strategy to the select the values for $(Q,m)$ was
 \begin{enumerate}
 	\item Find the value range of the weights and output activations of each layer
 	\item Select suitable $(Q,m)$ values that most activations fall in that range
@@ -143,7 +143,7 @@ Another optimization technique that could be explored is the systematically remo
     L4: Accumulated   & 14    & 5  & $\pm$ & $[0,1] $ \\
     \bottomrule
   \end{tabular}
-  \caption[Quantization parameters for the 4bit network]{Quantization parameters for the 4bit network. The intermediate terms are the values after the multiplication operation and the accumulated term denotes values after summing up of weighted inputs including bias in a channel.}
+  \caption[Quantization parameters for the \SI{4}{\bit} network]{Quantization parameters for the \SI{4}{\bit} network. The intermediate terms are the values after the multiplication operation and the accumulated term denotes values after summing up of weighted inputs including bias in a channel.}
   \label{tab:quantization-linear-params}
 \end{table}
 
@@ -174,7 +174,7 @@ Another optimization technique that could be explored is the systematically remo
          \includegraphics[height=1.6in]{../../net/images/hist_fc2_w}
         \caption{Fully Connected Layer 2}
     \end{subfigure}
-    \caption{Distribution of the network weights for the different layers}
+    \caption[Distribution of the network weights for the different layers]{Distribution of the network weights for the different layers. It can be seen that the weights are distrib}
     \label{fig:network-weight-distributions}
 \end{figure}
 
@@ -205,7 +205,7 @@ Another optimization technique that could be explored is the systematically remo
          \includegraphics[height=1.6in]{../../net/images/hist_ao4}
         \caption{Fully Connected Layer 2}
     \end{subfigure}
-    \caption{Distribution of the activations for a randomly selected batch of the input data}
+    \caption[Distribution of the activations for a randomly selected batch of the input data]{Distribution of the activations for a randomly selected batch of the input data. The occurring minimum and maximum values were used to define the quantization bit width.}
     \label{fig:network-activations-distributions}
 \end{figure}
 
