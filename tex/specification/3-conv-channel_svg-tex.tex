@@ -22,7 +22,7 @@
 \usepackage {listings}
 \usepackage {enumitem}
 \usepackage {graphicx,color,psfrag}
-\usepackage {subfigure}
+\usepackage {subcaption}
 \usepackage {wrapfig}
 \usepackage {svg}
 \usepackage {svg-extract}
@@ -33,17 +33,26 @@
 \usepackage {pgf-umlsd}
 \usepackage {ifthen}
 \usepackage {hyperref}
+\usepackage [binary-units]{siunitx}
+\usepackage {bytefield}
 \newacronym {acr:FPGA}{FPGA}{field programmable gate array}
 \newacronym {acr:IP}{IP}{intellectual property}
 \newacronym {acr:ILA}{ILA}{integrated logic analyzer}
-\newacronym {acr:CNN}{CNN}{convolutional neural network}
+\newacronym {acr:CNN}{CNN}{convolutional Neural Network}
 \newacronym {acr:DMA}{DMA}{direct memory access}
 \newacronym {acr:PS}{PS}{processing system}
 \newacronym {acr:PL}{PL}{programmable logic}
 \newacronym {acr:BRAM}{BRAM}{block-RAM}
+\newacronym {acr:LUT}{LUT}{Look Up Table}
+\newacronym {acr:NN}{NN}{neural network}
+\newacronym {acr:DL}{DL}{deep learning}
+\newacronym {acr:ML}{ML}{machine learning}
+\newacronym {acr:GUI}{GUI}{graphical user interface}
+\newacronym {acr:API}{API}{application programmable interface}
+\newcommand {\stdlogic }{\texttt {std\_logic}}
 
 \usepackage{svg-extract}
-\svgsetup{width=298.75264pt}
+\svgsetup{height=180.67499pt}
 \svgxsetbox[lastpage=1]{./svg-inkscape/conv-channel_svg-tex.pdf}
 \usepackage{xr}
 \externaldocument{specification}
