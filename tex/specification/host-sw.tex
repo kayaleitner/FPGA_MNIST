@@ -20,7 +20,7 @@ The overall goals of the software layer therefore can be summarized as:
 
 The user layer driver software implements an interface between the ARM Top-Level software and the driver for the programmable logic. It directly uses the Linux driver \gls{acr:API} and and is implemented in C. It is supposed to handle the entire communication with the driver so that the hardware is only abstractly visible for the ARM Top-Level software. It is build on top of the Xilinx FPGA driver. \\
 \noindent
-An important task that needs to handled by the driver is the synchronization of the FPGA and Linux. We use the POSIX standard \emph{pthread} library which provides routines for mutual exclusion to ensure that the FPGA is not accessed from multiple threads at the same time. The driver communicates with the low-level Xilinx driver using function \texttt{ioctl()} which blocks the thread until the releasing hardware interrupt occurs. In our case the blocking of the thread is acceptable because multithreading is handled on a higher abstraction level. Coping of the data from user space to the FPGA is done via the C function \footnote{Note: Still the driver need to check that not multiple threads access it at the same time.}. \\
+An important task that needs to handled by the driver is the synchronization of the FPGA and Linux. We use the POSIX standard \emph{pthread} library which provides routines for mutual exclusion to ensure that the FPGA is not accessed from multiple threads at the same time. Further the driver communicates with the low-level Xilinx driver using the function \texttt{ioctl()} which blocks the thread until the releasing hardware interrupt occurs. In our case the blocking of the thread is acceptable because multithreading is handled on a higher abstraction level. Coping of the data from user space to the FPGA is done via the C function\footnote{Note: Still the driver need to check that not multiple threads access it at the same time.}. \\
 Control and debug data is transferred via AXI-lite bus using UIO-device driver. It maps the corresponding AXI-lite bus address width a virtual memory address. This address can be used to read or write from the AXI-lite device. 
 
 
@@ -52,7 +52,7 @@ SWIG translates the function declarations to the Python domain and creates a \te
 \begin{figure}[hbt]
   \centering
   \includegraphics[width=0.8\textwidth]{img/pydriver}
-  \caption{Build Process of the Python Driver Interface}
+  \caption{Build process of the Python Driver Interface (simplified)}
   \label{fig:sw-python-eggdriver-build}
 \end{figure}
 

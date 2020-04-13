@@ -2,6 +2,16 @@
 
 The convolutional layer - referred to as conv2d - receives an input data tensor $X_{ci} $ of size $[H, W, C_{in}]$ and outputs a data tensor of size $[H,W,C_{out}]$. Here $H$ and $W$ is the height and width of the convolutional kernel. So every input tensor is transferred to each single convolutional computation channel, which is responsible for computing a \emph{single} output channel. Each convolutional channel parameterized for with its own set of values. Those values are implemented as constants in VHDL, which has the advantages of greater optimization options by the compiler as well as reduced data movement. Therefore template entities are created where the weights are then populated via a Python script.
 
+\begin{figure}[hb]
+	\centering
+	\includegraphics[width=0.6\textwidth]{img/convolution}
+	\caption[Convolution Operation]{Convolution Operation. The convolutional kernel (red-dashed-square) is shifted over the input data. The currently processed data is shown in blue and the only three pixels (violett) need to be loaded for the next convolution because of data reuse. Note that for the convolution operation the image must be padded (in our case by zeros) to sustain image dimensions. Depth channels omitted for illustration purposes.}
+	\label{fig:hw-conv-operation}
+\end{figure}
+
+The principal operation can be shown in Figure~\ref{fig:hw-conv-operation}. Here the convolutional kernel slides over the input data from left to right, top to bottom. It can be seen that most of the $6$ of $9$ input pixels (of each input channel) can be reused. This is done via shift registers and because all weights of the kernel remain unchanged for the operation this results in minimum data movement. Note that for the convolutional operations the input data must be padded in order to sustain the image dimensions.
+
+
 \begin{figure}[h]
 	\centering
 	\begin{subfigure}[t]{0.5\textwidth}

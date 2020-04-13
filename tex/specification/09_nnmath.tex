@@ -1,5 +1,6 @@
 \subsection{Network Operations}
-\subsubsection*{Convolutional Operations}
+
+\subsubsection*{Convolutional Layer}
 
 The output of an convolutional layer is defined by
 \begin{equation}
@@ -7,6 +8,10 @@ The output of an convolutional layer is defined by
 \end{equation}
 
 It is explained in more detail here: \cite{dumoulin2016guide}
+
+\subsubsection*{Pooling Layer}
+
+
 
 \subsubsection*{Fully Connected Layer}
 
@@ -27,3 +32,8 @@ where $x \in \mathbb{R}^{b,m}$,  $W \in \mathbb{R}^{m,n}$ and $b \in \mathbb{R}^
 
 
 \subsubsection*{Softmax}
+
+For a vector $x \in \mathbb{R}^{n}$ the softmax function is defined as
+\begin{equation}
+	f_{\text{Softmax}}: f(x) = \frac{\exp{x_i}}{\sum_i^n \exp{x_i}}
+\end{equation}

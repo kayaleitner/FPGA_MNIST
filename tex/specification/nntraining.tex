@@ -9,15 +9,39 @@
 %\end{wrapfigure}
 
 
-The network was implemented in PyTorch \cite{Paszke:2019aa} as well as Tensorflow \cite{MartinAbadi:2015aa}. The backend was later exclusively switched to PyTorch (which is also the most common deep learning framework in Science) due to its better support of qunatization. The layers of the neural network can be seen in Figure~\ref{fig:network-structure}. 
-For training of the network the \emph{ADAM} optimization algorithm \cite{Kingma:2014aa} was used to minimize the cross-entropy-loss function which is defined as
+The network was implemented in PyTorch \cite{Paszke:2019aa} as well as Tensorflow \cite{MartinAbadi:2015aa}. The backend was later exclusively switched to PyTorch (which is also the most common deep learning framework in Science) due to its better support of quantization. The layers of the neural network are depicted in Figure~\ref{fig:eggnet}. 
+The network was trained on the \emph{MNIST} dataset which consists of 60.000 images of handwritten digits. Those where split up in 50.000 images used for training and 10.000 used for evaluation. The network maps mathematically an $28 \times 28$ input image $x \in \mathbb{R}^{28,28}$ to an output of vector of probabilities $y \in \mathbb{R}^{10}$ where each value corresponds how likely the input image belongs to that class. The layers of the network are listed in Table~\ref{tab:eggnet-layers}.
+
+\begin{table}[h]
+	\centering
+	\begin{tabular}{clcl}
+		\toprule
+		Layer & Type	& 	Data Size (output)	& Purpose \\
+		\midrule
+		 1 & Conv01		&	$[28,28,16]$	& Extract features ($[3,3]$ kernels)		  \\
+		 2 & ReLU		&	$[28,28,16]$	& Introduce nonlinearity  \\
+		 3 & Pool01		&	$[14,14,16]$	& Introduce nonlinearity, reduce dimensions  \\
+		 4 & Conv02 	&	$[14,14,32]$	& Extract features 	($[3,3]$ kernels)	  \\
+		 5 & ReLU		&	$[14,14,32]$	& Introduce nonlinearity  \\
+		 6 & Pool02		&	$[7,7,32]$	& Introduce nonlinearity, reduce dimensions  \\
+		 7 & Dense01	&	$[32]$		& Combine features  \\
+		 8 & ReLU		&	$[32]$		& Introduce nonlinearity  \\
+		 9 & Dense02	&	$[10]$		& Combine features  \\
+		10 & Softmax 	&	$[10]$		& Normalize output  \\
+		\bottomrule
+	\end{tabular}
+	\label{tab:eggnet-layers}
+	\caption{Eggnet Layers}
+\end{table}
+
+Further for training of the network the \emph{ADAM} optimization algorithm \cite{Kingma:2014aa} was used to minimize the cross-entropy-loss function which is defined as
 \begin{equation}
     J = - y  \log(h) + (1-y)  \log(1-h)
 \end{equation}
-For controlling the ADAM algorithm the recommended values, listed in Table~\ref{tab:train-params}, by \cite{Kingma:2014aa} was used.
+This loss function is standard for classification problems where each sample belongs to exactly one class. 
+The ADAM algorithm can be adjusted by parameters, which control the speed of convergence. The recommended values, listed in Table~\ref{tab:train-params}, by \cite{Kingma:2014aa} were used.
 \begin{table}[ht]
 	\centering
-    \caption{Network Training Parameters}
     \begin{tabular}{cc}
         \toprule
             Parameter & Value \\
@@ -27,6 +51,7 @@ For controlling the ADAM algorithm the recommended values, listed in Table~\ref{
             $\beta_2$  & $0.999$  \\          
         \bottomrule
     \end{tabular}
+    \caption{Network Training Parameters}
     \label{tab:train-params}
 \end{table}
 

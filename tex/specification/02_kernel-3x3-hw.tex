@@ -1,6 +1,6 @@
 \subsection{kernel-3x3}
 
-This modules performs the convolution of a single kernel with a single input image patch. This is a multiplication of - in our case - 9 values of length BIT\_WIDTH\_IN with their respective weights which are defined in an array that can be set with a generic. The multiplication results are then added up in an adder tree.
+This modules performs the convolution of a single kernel with a single input image patch. This is a multiplication of - in our case - 9 values of length BIT\_WIDTH\_IN with their respective weights which are defined in an array that can be set with a generic. The multiplication results are then added up in an adder tree. The weights are specified in a single generic constant array in row-major notation.
 
 \subsubsection{Interface}
 \begin{itemize}
