@@ -27,7 +27,7 @@ Control and debug data is transferred via AXI-lite bus using UIO-device driver. 
 
 \begin{figure}[hbt]
   \centering
-  \includegraphics[width=0.8\textwidth]{img/eggdriver}
+  \includegraphics[width=0.8\textwidth]{img/eggdriver.pdf}
   \caption{The network driver}
   \label{fig:sw-python-eggdriver-build}
 \end{figure}
@@ -51,13 +51,13 @@ SWIG translates the function declarations to the Python domain and creates a \te
 
 \begin{figure}[hbt]
   \centering
-  \includegraphics[width=0.8\textwidth]{img/pydriver}
+  \includegraphics[width=0.8\textwidth]{img/pydriver.pdf}
   \caption{Build process of the Python Driver Interface (simplified)}
   \label{fig:sw-python-eggdriver-build}
 \end{figure}
 
 
-\subsection{Web Interface}
+\subsection{Web Interface}x
 
 The Webapp should provide an easy yet good interface to control the network and check its functionality. Because most of the networks software logic is done in Python, also the backend of the Webapp was done with \emph{Python Flask} \cite{Pallets:2020aa}. This enabled us the quick interfacing between web components and our python code and also made the communication of multiple threads easier.
 

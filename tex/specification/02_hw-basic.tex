@@ -1,19 +1,20 @@
-\subsection{Hardware Notation}
+%% General Hardware Intro
 
+Neural Networks consist of distributed memory and computational elements which is in stark contrast to common von-Neumann architectures. Implementing \gls{acr:NN} in von-Neumann architectural style is therefore not practical and the overall efficiency can be increased if the circuits resemble the structure of the network. This can be seen in the top level schematic in Figure~\ref{fig:hw-concept}.
 
-Generic Layer Interface
+In general the implementation of the network was followed the same structure as in Table~\ref{tab:eggnet-layers}. Directly implementing an extra layer for ReLU is not practical and it is therefore implicitly implemented in their preceding layer as part of the quantization clipping (see Section~\ref{sec:nn-quant}). Also in contrast to the evaluation in software the hardware layer do not receive the whole data at once, instead it is streamed through the network in small chunks (with the exception of the Fully-Connected layer, see Section~\ref{sec:hw-fully-connected}). Further to control the streaming of data through the network a common interface for each layer is defined, which coordinates the operation. This is defined in Table~\ref{tab:hw-layer-interface}. \todo{Is this the case?}
 
 \begin{table}[h!]
 \centering	
-\begin{tabular}{l|cl}
+\begin{tabular}{l|ccl}
 	\toprule
-	Parameter Name 		   	   & VHDL Type  & Description 								\\
+	Parameter Name 		   	   & VHDL Type  & Direction & Description 								\\
 	\midrule
-	\texttt{s\_Clk\_i} 	       & \stdlogic  & Clock input								\\
-	\texttt{s\_n\_Res\_i}.     & \stdlogic  & Reset input (active low)					\\
-	\texttt{s\_Valid\_i} 	   & \stdlogic  & Flag, if the input is valid				\\
-	\texttt{s\_Ready\_i} 	   & \stdlogic  & Flag, if the 								\\
-	\texttt{s\_Last\_i} 	   & \stdlogic  & the parameter of the neural network		\\
+	\texttt{s\_Clk\_i} 	       & \stdlogic  & Input 	    & Clock input								\\
+	\texttt{s\_n\_Res\_i}.     & \stdlogic  & Input 	    & Reset input (active low)					\\
+	\texttt{s\_Valid\_i} 	   & \stdlogic  & Input 	    & Flag, if the input is valid				\\
+	\texttt{s\_Ready\_i} 	   & \stdlogic  & Input 	    & Flag, if the 								\\
+	\texttt{s\_Last\_i} 	   & \stdlogic  & Input 	    & the parameter of the neural network		\\
 	\bottomrule
 \end{tabular}
 \caption{Neural Network Layer Interface for VHDL Entities}

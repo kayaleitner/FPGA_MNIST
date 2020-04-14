@@ -30,8 +30,8 @@ The network was trained on the \emph{MNIST} dataset which consists of 60.000 ima
 		10 & Softmax 	&	$[10]$		& Normalize output  \\
 		\bottomrule
 	\end{tabular}
-	\label{tab:eggnet-layers}
 	\caption{Eggnet Layers}
+	\label{tab:eggnet-layers}
 \end{table}
 
 Further for training of the network the \emph{ADAM} optimization algorithm \cite{Kingma:2014aa} was used to minimize the cross-entropy-loss function which is defined as
@@ -96,6 +96,7 @@ Both, PyTorch and Tensorflow/Keras are Python libraries but most \gls{acr:NN} op
 
 
 \subsection{Quantization}
+\label{sec:nn-quant}
 
 The network is trained and created using \SI{32}{\bit} floating point values in Python. Directly porting this all the weights and biases to the FPGA is due to the limited amount of available resources not feasible. The goal is therefore to reduce the amount of required hardware cells by switching from floating point arithmetic to the less expensive integer arithmetic. Then a floating point value $v$ can be approximately represented as 
 \begin{equation}
