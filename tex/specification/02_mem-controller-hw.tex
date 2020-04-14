@@ -1,5 +1,5 @@
 \subsection{Memory Controller}
-The task of the memory controller is to provide valid data for the NN-layers in every cycle. It receives data from the previous layer of from the DMA and stores it in a Block-RAM. If a full image or feature map is received. The memory controller starts sending the data to the next layer. Receiving and sending data is performed in parallel, which therefore doesn't lead to additional delay time.  In order to read the $3\times3$ kernel in every clock cycle a linebuffer is used to store 2 lines. This enables the memory controller to provide a $3\times1$ vector in every cycle. To get a $3\times3$ kernel additionally a shiftregister is used.  
+The task of the memory controller is to provide valid data for the NN-layers in every cycle. It receives data from the previous layer of from the DMA and stores it in a Block-RAM. If a full image or feature map is received, the memory controller starts sending the data to the next layer. Receiving and sending data is performed in parallel, which therefore doesn't lead to additional delay time.  In order to read the $3\times3$ kernel in every clock cycle a linebuffer is used to store 2 lines. This enables the memory controller to provide a $3\times1$ vector in every cycle. To get a $3\times3$ kernel additionally a shiftregister is used.  
 
 \subsubsection{Interfaces}
 \begin{itemize}

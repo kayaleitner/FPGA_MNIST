@@ -56,9 +56,9 @@ The ADAM algorithm can be adjusted by parameters, which control the speed of con
 \end{table}
 
 
-A useful guide for implementing convolutions can be found in \cite{dumoulin2016guide}. The training of the network yielded very high accuracy rates - which is typical for the MNIST dataset, which is forMachine Learning an easy challenge. Even though the network performance could be improved, e.g. by hyperparameter tuning the results were acceptable for our case. The progress of the training in terms of accuracy and loss can be seen in Figure~\ref{fig:network-train-acc} respectively in Figure~\ref{fig:network-train-loss}. The final output of the network over the training is evaluated in Figure~\ref{fig:network-test-cm} for real values and in Figure~\ref{fig:network-test-qcm} for fake quantized values.
+A useful guide for implementing convolutions can be found in \cite{dumoulin2016guide}. The training of the network yielded very high accuracy rates that are typical for the MNIST dataset, which is an easy challenge for machine learning. Even though the network performance could be improved, e.g. by hyperparameter tuning the results were acceptable for our case. The progress of the training in terms of accuracy and loss can be seen in Figure~\ref{fig:network-train-acc} respectively in Figure~\ref{fig:network-train-loss}. The final output of the network over the training is evaluated in Figure~\ref{fig:network-test-cm} for real values and in Figure~\ref{fig:network-test-qcm} for fake quantized values.
 
-Both, PyTorch and Tensorflow/Keras are Python libraries but most \gls{acr:NN} operations are due to performance reasons not implemented in Python directly. This makes debugging more difficult which is why we reimplemented the operations we needed again in Python. This was done using NumPy and SWIG, which will be discussed more extensively in Section~\ref{sec:sw-python}, and enabled us to verify the correct ordering of parameters, weights and activations.
+Both, PyTorch and Tensorflow/Keras are Python libraries but most \gls{acr:NN} operations are not implemented in Python directly because of performance reasons. This makes debugging more difficult which is why we reimplemented the operations we needed in Python. This was done using NumPy and SWIG, which will be discussed more extensively in Section~\ref{sec:sw-python}, and enabled us to verify the correct ordering of parameters, weights and activations.
 
 \begin{figure}[hbtp]
 \centering
@@ -112,9 +112,9 @@ In \cite{Wu:2018aa} different strategies of choosing bit widths for $Q$ and $m$ 
 	\item Use a $(Q,m)$ configuration for each output channel 
 \end{enumerate}
 In the third configuration the authors could reduce the bit widths the most without sacrificing accuracy this increases the complexity in transferring the weights from layer to layer because the additional shift operations are necessary in order to adjust for the different values of $m$.
-In \cite{Wu:2018aa} the authors also deduced from their experiments that the accuracy of the weights can be reduced the most, followed by the activations. By analysing the weights of out network (see Figure~\ref{fig:network-weight-distributions}) a per channel quantization is not necessary, because all weights in a Convolutional Layer are equally distributed among the output channels. Another important property that can be noted is the that the weights do have zero mean and most of the values lie very close to zero. Because of the usage of ReLU layer the situation is different for the activations where unsigned integers can be used, the distributions are shown in Figure~\ref{fig:network-activations-distributions}.
+In \cite{Wu:2018aa} the authors also deduced from their experiments that the accuracy of the weights can be reduced the most, followed by the activations. By analysing the weights of our network (see Figure~\ref{fig:network-weight-distributions}) a per channel quantization is not necessary, because all weights in a Convolutional Layer are equally distributed among the output channels. Another important property that can be noted is the that the weights do have zero mean and most of the values lie very close to zero. Because of the usage of ReLU layer the situation is different for the activations where unsigned integers can be used, the distributions are shown in Figure~\ref{fig:network-activations-distributions}.
 
-Using the distribution histograms we then defined derived the necessary bitwidths for $Q$ and $m$. In our experiments we were able to reduce them to \SI{8}{\bit}, if we used a single configuration for the whole network and also reducing them down to \SI{4}{\bit} if the bitwidth configuration is selected for each layer independently with an accuracy drop from around \SI{98.35}{\percent} to \SI{97.37}{\percent}. The strategy to the select the values for $(Q,m)$ was
+Using the distribution histograms we then derived the necessary bitwidths for $Q$ and $m$. In our experiments we were able to reduce them to \SI{8}{\bit}, if we used a single configuration for the whole network and also reducing them down to \SI{4}{\bit} if the bitwidth configuration is selected for each layer independently with an accuracy drop from around \SI{98.35}{\percent} to \SI{97.37}{\percent}. The strategy to the select the values for $(Q,m)$ was
 \begin{enumerate}
 	\item Find the value range of the weights and output activations of each layer
 	\item Select suitable $(Q,m)$ values that most activations fall in that range
@@ -200,7 +200,7 @@ Another optimization technique that could be explored is the systematically remo
          \includegraphics[height=1.6in]{../../net/images/hist_fc2_w}
         \caption{Fully Connected Layer 2}
     \end{subfigure}
-    \caption[Distribution of the network weights for the different layers]{Distribution of the network weights for the different layers. It can be seen that the weights are distrib}
+    \caption[Distribution of the network weights for the different layers]{Distribution of the network weights for the different layers. It can be seen that the weights are distributed close to zero.}
     \label{fig:network-weight-distributions}
 \end{figure}
 
