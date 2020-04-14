@@ -9,7 +9,7 @@ The convolutional layer - referred to as conv2d - receives an input data tensor 
 	\label{fig:hw-conv-operation}
 \end{figure}
 
-The principal operation can be shown in Figure~\ref{fig:hw-conv-operation}. Here the convolutional kernel slides over the input data from left to right, top to bottom. It can be seen that most of the $6$ of $9$ input pixels (of each input channel) can be reused. This is done via shift registers and because all weights of the kernel remain unchanged for the operation this results in minimum data movement. Note that for the convolutional operations the input data must be padded in order to sustain the image dimensions.
+The principal operation can be shown in Figure~\ref{fig:hw-conv-operation}. Here the convolutional kernel slides over the input data from left to right, top to bottom. It can be seen that most of the $6$ of $9$ input pixels (of each input channel) can be reused. This is done via shift registers and because all weights of the kernel remain unchanged for the operation this results in minimum data movement. Note that for the convolutional operations the input data must be padded in order to sustain the image dimensions. If a new line occurs, two cycles are required to load a new 3x3 kernel instead of one as an additional 3x1 vector needs to be loaded from memory. 
 
 
 \begin{figure}[h]
@@ -60,10 +60,7 @@ Both input and output interfaces have ready, last and valid signals to control t
 	\end{tabular}
 \end{table}
 
-
-
-
-\subsubsection*{conv\_channel}
+\subsubsection*{Convolution Channel}
 
 
 \textbf{Interface}
@@ -80,4 +77,22 @@ Both input and output interfaces have ready, last and valid signals to control t
  	\item N: integer, number of kernels
  	\item OUTPUT\_MSB: integer, defines which of the $n$=BIT\_WIDTH\_OUT bits is the most significant bit
  	\item BIAS: integer, currently unused as bias seems to not be very important in the convolutional layers
+\end{itemize}
+
+\subsubsection*{Kernel-3x3}
+
+This modules performs the convolution of a single kernel with a single input image patch. This is a multiplication of - in our case - 9 values of length BIT\_WIDTH\_IN with their respective weights which are defined in an array that can be set with a generic. The multiplication results are then added up in an adder tree. The weights are specified in a single generic constant array in row-major notation.
+
+\subsubsection{Interface}
+\begin{itemize}
+	\item Input interface, a vector of 9 values of length BIT\_WIDTH\_IN.
+	\item Output interface, same as conv\_channel.
+\end{itemize}
+
+\subsubsection{Parameter}
+\begin{itemize}
+	\item BIT\_WIDTH\_IN: integer
+	\item BIT\_WIDTH\_OUT: integer
+	\item WEIGHT: array of 9 integers
+	\item WEIGHT\_WIDTH: integer
 \end{itemize}

@@ -9,7 +9,7 @@
 	\label{fig:denseLayerBlockDiagram}
 \end{figure}
 
-Figure~\ref{fig:denseLayerBlockDiagram} depicts the dense or fully connected layer of the network. This block contains a finite state machine. When the Start\_i input port goes high, input neurons are read from an external FIFO one by one. Each of the input neurons is multiplied by appropriate weight for each of the output neurons. These product are then fed to accumulators, which make a sum of all products of all neurons. When all of the incoming neurons are processed, the calculation is finished and a Finished\_o output port is raised high to signal that data is available. Result data can be addressed by Rd\_addr\_i port and read out at the Data\_o port.
+Figure~\ref{fig:denseLayerBlockDiagram} depicts the dense or fully connected layer of the network. This block contains a finite state machine. When the Start\_i input port goes high, input neurons are read from an external ROM one by one. Each of the input neurons is multiplied by appropriate weight for each of the output neurons. These product are then fed to accumulators, which make a sum of all products of all neurons. When all of the incoming neurons are processed, the calculation is finished and a Finished\_o output port is raised high to signal that data is available. Result data can be addressed by Rd\_addr\_i port and read out at the Data\_o port.
 
 Number of input neurons, output neurons and data width are generic.
 
