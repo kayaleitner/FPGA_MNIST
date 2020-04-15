@@ -10,24 +10,25 @@ Because of the processing of the convolutional layer (see Figure~\ref{fig:hw-con
 	\label{fig:hw-conv-operation}
 \end{figure}
 
-\begin{table}[hb]
-	\centering
-	\begin{tabular}{lcc}
-		\toprule
-		Parameter & VHDL Datatype & Type \\
-		\midrule
-		 BIT\_WIDTH\_IN & integer & Generic	 	\\
-		 BIT\_WIDTH\_OUT & integer & Generic 	\\
-		 INPUT\_CHANNELS & integer & Generic 	\\
- 	 	 OUTPUT\_CHANNELS & integer & Generic 	\\
- 	 	 \midrule
- 	 	 valid\_i & \stdlogic & input \\
- 	 	 data\_i & \stdlogic[INPUT\_CHANNELS][DATA\_WIDTH] & input \\
- 	 	 \midrule
- 	 	 valid\_o & \stdlogic & output \\
- 	 	 data\_o & \stdlogic[INPUT\_CHANNELS][DATA\_WIDTH] & output \\
-   		\bottomrule
-	\end{tabular}
-	\caption{}
-	\label{tab:hw-pool-layer-parameter}
-\end{table}
+% TODO Finish table or dont use it at all
+%\begin{table}[hb]
+%	\centering
+%	\begin{tabular}{lcc}
+%		\toprule
+%		Parameter & VHDL Datatype & Type \\
+%		\midrule
+%		 BIT\_WIDTH\_IN & integer & Generic	 	\\
+%		 BIT\_WIDTH\_OUT & integer & Generic 	\\
+%		 INPUT\_CHANNELS & integer & Generic 	\\
+% 	 	 OUTPUT\_CHANNELS & integer & Generic 	\\
+% 	 	 \midrule
+% 	 	 valid\_i & \stdlogic & input \\
+% 	 	 data\_i & \stdlogic[INPUT\_CHANNELS][DATA\_WIDTH] & input \\
+% 	 	 \midrule
+% 	 	 valid\_o & \stdlogic & output \\
+% 	 	 data\_o & \stdlogic[INPUT\_CHANNELS][DATA\_WIDTH] & output \\
+%   		\bottomrule
+%	\end{tabular}
+%	\caption{}
+%	\label{tab:hw-pool-layer-parameter}
+%\end{table}

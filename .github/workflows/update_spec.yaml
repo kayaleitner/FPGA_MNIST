@@ -13,11 +13,11 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tex_path: "tex/specification/specification.tex"
+          tex_path: "tex/documentation/documentation.tex"
           push: "no"
-
+          
       - name: Upload Specification
         uses: actions/upload-artifact@v1
         with:
-          name: Specification.pdf
-          path: tex/specification/specification.pdf
+          name: documentation.pdf
+          path: tex/documentation/documentation.pdf
