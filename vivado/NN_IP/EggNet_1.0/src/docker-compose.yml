@@ -1,0 +1,15 @@
+version: '3'
+
+services:
+  
+  ghdl:
+    image: ghdl/ext:latest
+    command: sh -c "pip install -r requirements.txt && python -m server"
+    environment:
+      - PORT=9000
+      - FLASK_ENV=development
+    ports:
+      - '9000:9000'
+    working_dir: /root/py1
+    volumes:
+      - .:/root/vivado:cached # <--- This will map ./py1 to /root/py1 inside the container.

@@ -9,8 +9,16 @@
 #########
 #Exclude all
 *
+
+## Do Not Exclude custom files
 !*.py
+!*.md
+!*.yml
 !*/
+!Dockerfile
+!.dockerignore
+!*.json
+
 !.gitignore
 ###########################################################################
 ##	VIVADO
