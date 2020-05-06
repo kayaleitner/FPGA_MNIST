@@ -9,6 +9,7 @@ import sys
 import json
 import logging
 import pathlib
+import itertools
 
 import numpy as np
 import vunit
@@ -128,6 +129,23 @@ def numpy2mif(output_filepath, array, bitwidth=None):
 
 def setup_mif_files():
     pass
+
+
+def generate_tests(obj, signs, data_widths):
+    """
+    Generate test by varying the data_width and sign generics
+    """
+
+    for sign, data_width in itertools.product(signs, data_widths):
+        # This configuration name is added as a suffix to the test bench name
+        config_name = "data_width=%i,sign=%s" % (data_width, sign)
+
+        # Add the configuration with a post check function to verify the output
+        obj.add_config(
+            name=config_name,
+            generics=dict(data_width=data_width, sign=sign),
+            post_check=make_post_check(data_width, sign),
+        )
 
 
 if __name__ == "__main__":

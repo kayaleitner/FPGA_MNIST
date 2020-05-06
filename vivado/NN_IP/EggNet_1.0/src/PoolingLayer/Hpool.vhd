@@ -26,7 +26,7 @@ architecture rtl of HPool is
     type buffer_state_t is (EMPTY, FULL);
     -- Constants
     constant ZERO_BUFFER      : std_logic_vector(ACTIVATION_WIDTH_BITS - 1 downto 0) := (others => '0');
-    constant UNDEFINED_OUTPUT : std_logic_vector(ACTIVATION_WIDTH_BITS - 1 downto 0) := (others => '0');
+    constant UNDEFINED_OUTPUT : std_logic_vector(ACTIVATION_WIDTH_BITS - 1 downto 0) := (others => 'X');
     -- Signals
     signal buffer_state : buffer_state_t                                       := EMPTY;
     signal buffer_value : std_logic_vector(ACTIVATION_WIDTH_BITS - 1 downto 0) := (others => '0');
