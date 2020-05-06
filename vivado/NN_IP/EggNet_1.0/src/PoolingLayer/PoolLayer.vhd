@@ -28,7 +28,7 @@ begin
 
     PoolFilters : for i in 0 to ACTIVATION_N_CHANNELS generate
 
-        PoolFilter_0 : entity work.PoolFilter
+        PoolFilter_i : entity work.PoolFilter
             generic map(
                 IMAGE_WIDTH           => IMAGE_WIDTH,          -- Width of the image
                 ACTIVATION_WIDTH_BITS => ACTIVATION_WIDTH_BITS -- bit width of the input

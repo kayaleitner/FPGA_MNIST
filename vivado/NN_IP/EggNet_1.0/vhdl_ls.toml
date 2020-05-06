@@ -1,0 +1,10 @@
+# File names are either absolute or relative to the parent folder of the
+# vhdl_ls.toml file and supports glob-style patterns.
+#
+# Taken from: https://github.com/Bochlin/rust_hdl_vscode
+
+[libraries]
+lib.files = [
+  'src/**/*.vhd',
+  'sim/**/*.vhd'
+]

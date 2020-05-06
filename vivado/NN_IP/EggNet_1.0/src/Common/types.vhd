@@ -11,14 +11,13 @@ package EggNetCommon is
     subtype UINT_4 is integer range 0 to 15;
     subtype INT_8 is integer range -128 to 127;
     subtype UINT_8 is integer range 0 to 255;
-
-
     ----------------------------------------
     -- ARRAY TYPES: Convolutional Layer
     ----------------------------------------
     type CHANNEL_ARRAY is array (natural range <>) of signed;
     type U_CHANNEL_ARRAY is array (natural range <>) of unsigned;
 
+    type channel_vector_t is array (natural range <>) of std_logic_vector;
 end package;
 
 package body EggNetCommon is
