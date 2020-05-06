@@ -4,8 +4,9 @@
     "vhdl.formatter.align.generic": true,
     "vhdl.formatter.align.procedure": true,
     "vhdl.formatter.align.port": true,
-    "vhdl.formatter.newline.port": "NewLine",
-    "vhdl.formatter.newline.generic": "NewLine",
+    "vhdl.formatter.newline.port": "NoNewLine",
+    "vhdl.formatter.newline.generic": "NoNewLine",
+    "vhdl.formatter.align.mode": "Local",
     "vhdl.formatter.case.typename": "LowerCase",
     "vhdl.formatter.case.keyword": "LowerCase",
     "python.pythonPath": "/Users/benjaminkulnik/.pyenv/versions/linaro/bin/python"
