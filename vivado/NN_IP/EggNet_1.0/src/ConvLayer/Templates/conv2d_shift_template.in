@@ -1,0 +1,68 @@
+library ieee;
+use ieee.std_logic_1164.all;
+use ieee.numeric_std.all;
+use work.kernel_pkg.all;
+use work.clogb2_Pkg.all;
+
+-- Section: Conv Channels
+{! for channel in list_of_channels !}
+use work.{{ conv_channel }};
+{! endfor !}
+
+
+entity {{ conv_entity_name }} is
+  generic
+  (
+    BIT_WIDTH_IN : INTEGER := {{ input_bits }};
+    BIT_WIDTH_OUT : INTEGER := {{ output_bits }};
+    INPUT_CHANNELS : INTEGER := {{ n_input_channels }};
+    OUTPUT_CHANNELS : INTEGER := {{ n_output_channels }}
+  );
+  port
+  (
+    Clk_i : in std_logic;
+    n_Res_i : in std_logic;
+    Valid_i : in std_logic;
+    Valid_o : out std_logic;
+    Last_i : in std_logic;
+    Last_o : out std_logic;
+    Ready_i : in std_logic;
+    Ready_o : out std_logic;
+    X_i : in std_logic_vector(INPUT_CHANNELS * BIT_WIDTH_IN * KERNEL_SIZE - 1 downto 0);
+    Y_o : out unsigned(OUTPUT_CHANNELS * BIT_WIDTH_OUT - 1 downto 0)
+  );
+end {{ conv_entity_name }};
+
+architecture beh of {{ conv_entity_name }} is
+  
+  signal ready_out : std_logic_vector(OUTPUT_CHANNELS - 1 downto 0);
+  signal valid_out : std_logic_vector(OUTPUT_CHANNELS - 1 downto 0);
+  signal last_out : std_logic_vector(OUTPUT_CHANNELS - 1 downto 0);
+
+begin
+  Ready_o <= ready_out(0);
+  Valid_o <= valid_out(0);
+  Last_o <= last_out(0);
+
+
+  -- Instantiating Channels
+
+  {! for channel in list_of_channels !}
+
+  convchan0 : entity ConvChannel0
+    generic
+    map(
+      BIT_WIDTH_IN => BIT_WIDTH_IN,
+      BIT_WIDTH_OUT => BIT_WIDTH_OUT
+    )
+    port map
+    (
+      Clk_i, n_Res_i,
+      Valid_i, valid_out(0), Last_i, last_out(0), Ready_i, ready_out(0),
+      X_i,
+      Y_o(1 * BIT_WIDTH_OUT - 1 downto 0 * BIT_WIDTH_OUT)
+    );
+
+  {! endfor !}
+
+end beh;

@@ -37,10 +37,10 @@ begin
 		Clk_i => s_Clk_i, 
 		n_Res_i => s_n_Res_i, 
 		Valid_i => s_Valid_i, 
-		Last_i => s_Last_i, 
+		-- Last_i => s_Last_i,
 		Ready_i => s_Ready_i, 
 		Valid_o => s_Valid_o, 
-		Last_o => s_Last_o, 
+		-- Last_o => s_Last_o,
 		Ready_o => s_Ready_o, 
 		Data_i => s_Data_i, 
 		Data_o => s_Data_o

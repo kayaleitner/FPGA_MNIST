@@ -1,8 +1,0 @@
-conv2d_0.vhd
-conv2d_1.vhd
-*.o
-channels/
-channels_shift/
-channels_ben/
-tmp/
-pooling_test.py

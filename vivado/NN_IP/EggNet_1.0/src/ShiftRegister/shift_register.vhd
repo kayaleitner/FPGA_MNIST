@@ -1,80 +1,82 @@
-LIBRARY ieee;
-USE ieee.std_logic_1164.ALL;
+library ieee;
+use ieee.std_logic_1164.all;
 
-ENTITY shift_register IS
-    GENERIC (
-        DATA_WIDTH : INTEGER := 8
+entity shift_register is
+    generic
+    (
+        DATA_WIDTH : integer := 8
     );
-    PORT (
-        Clk_i : IN STD_LOGIC;
-        Reset_i : IN STD_LOGIC;
+    port
+    (
+        Clk_i   : in STD_LOGIC;
+        Reset_i : in STD_LOGIC;
 
-        Direction_i : IN STD_LOGIC_VECTOR(1 DOWNTO 0);
-        Data_1_i : IN STD_LOGIC_VECTOR((DATA_WIDTH - 1) DOWNTO 0);
-        Data_2_i : IN STD_LOGIC_VECTOR((DATA_WIDTH - 1) DOWNTO 0);
-        Data_3_i : IN STD_LOGIC_VECTOR((DATA_WIDTH - 1) DOWNTO 0);
+        Direction_i : in STD_LOGIC_VECTOR(1 downto 0);
+        Data_1_i    : in STD_LOGIC_VECTOR((DATA_WIDTH - 1) downto 0);
+        Data_2_i    : in STD_LOGIC_VECTOR((DATA_WIDTH - 1) downto 0);
+        Data_3_i    : in STD_LOGIC_VECTOR((DATA_WIDTH - 1) downto 0);
 
-        Data_1_o : OUT STD_LOGIC_VECTOR((DATA_WIDTH - 1) DOWNTO 0);
-        Data_2_o : OUT STD_LOGIC_VECTOR((DATA_WIDTH - 1) DOWNTO 0);
-        Data_3_o : OUT STD_LOGIC_VECTOR((DATA_WIDTH - 1) DOWNTO 0);
-        Data_4_o : OUT STD_LOGIC_VECTOR((DATA_WIDTH - 1) DOWNTO 0);
-        Data_5_o : OUT STD_LOGIC_VECTOR((DATA_WIDTH - 1) DOWNTO 0);
-        Data_6_o : OUT STD_LOGIC_VECTOR((DATA_WIDTH - 1) DOWNTO 0);
-        Data_7_o : OUT STD_LOGIC_VECTOR((DATA_WIDTH - 1) DOWNTO 0);
-        Data_8_o : OUT STD_LOGIC_VECTOR((DATA_WIDTH - 1) DOWNTO 0);
-        Data_9_o : OUT STD_LOGIC_VECTOR((DATA_WIDTH - 1) DOWNTO 0);
-
-        err_o : OUT STD_LOGIC
+        Data_1_o : out STD_LOGIC_VECTOR((DATA_WIDTH - 1) downto 0);
+        Data_2_o : out STD_LOGIC_VECTOR((DATA_WIDTH - 1) downto 0);
+        Data_3_o : out STD_LOGIC_VECTOR((DATA_WIDTH - 1) downto 0);
+        Data_4_o : out STD_LOGIC_VECTOR((DATA_WIDTH - 1) downto 0);
+        Data_5_o : out STD_LOGIC_VECTOR((DATA_WIDTH - 1) downto 0);
+        Data_6_o : out STD_LOGIC_VECTOR((DATA_WIDTH - 1) downto 0);
+        Data_7_o : out STD_LOGIC_VECTOR((DATA_WIDTH - 1) downto 0);
+        Data_8_o : out STD_LOGIC_VECTOR((DATA_WIDTH - 1) downto 0);
+        Data_9_o : out STD_LOGIC_VECTOR((DATA_WIDTH - 1) downto 0);
+        
+        err_o : out STD_LOGIC
     );
-END shift_register;
+end shift_register;
 
-ARCHITECTURE Behavioral OF shift_register IS
+architecture Behavioral of shift_register is
 
-    SIGNAL data_1 : STD_LOGIC_VECTOR((DATA_WIDTH - 1) DOWNTO 0);
-    SIGNAL data_2 : STD_LOGIC_VECTOR((DATA_WIDTH - 1) DOWNTO 0);
-    SIGNAL data_3 : STD_LOGIC_VECTOR((DATA_WIDTH - 1) DOWNTO 0);
-    SIGNAL data_4 : STD_LOGIC_VECTOR((DATA_WIDTH - 1) DOWNTO 0);
-    SIGNAL data_5 : STD_LOGIC_VECTOR((DATA_WIDTH - 1) DOWNTO 0);
-    SIGNAL data_6 : STD_LOGIC_VECTOR((DATA_WIDTH - 1) DOWNTO 0);
-    SIGNAL data_7 : STD_LOGIC_VECTOR((DATA_WIDTH - 1) DOWNTO 0);
-    SIGNAL data_8 : STD_LOGIC_VECTOR((DATA_WIDTH - 1) DOWNTO 0);
-    SIGNAL data_9 : STD_LOGIC_VECTOR((DATA_WIDTH - 1) DOWNTO 0);
+    signal data_1 : STD_LOGIC_VECTOR((DATA_WIDTH - 1) downto 0);
+    signal data_2 : STD_LOGIC_VECTOR((DATA_WIDTH - 1) downto 0);
+    signal data_3 : STD_LOGIC_VECTOR((DATA_WIDTH - 1) downto 0);
+    signal data_4 : STD_LOGIC_VECTOR((DATA_WIDTH - 1) downto 0);
+    signal data_5 : STD_LOGIC_VECTOR((DATA_WIDTH - 1) downto 0);
+    signal data_6 : STD_LOGIC_VECTOR((DATA_WIDTH - 1) downto 0);
+    signal data_7 : STD_LOGIC_VECTOR((DATA_WIDTH - 1) downto 0);
+    signal data_8 : STD_LOGIC_VECTOR((DATA_WIDTH - 1) downto 0);
+    signal data_9 : STD_LOGIC_VECTOR((DATA_WIDTH - 1) downto 0);
 
-    SIGNAL init : STD_LOGIC_VECTOR(1 DOWNTO 0);
+    signal init : STD_LOGIC_VECTOR(1 downto 0);
 
-BEGIN
+begin
 
-    shifting : PROCESS (Clk_i, Reset_i)
-    BEGIN
-        IF (Reset_i = '') THEN
-            Data_1_o <= (OTHERS => '0');
-            Data_2_o <= (OTHERS => '0');
-            Data_3_o <= (OTHERS => '0');
-            Data_4_o <= (OTHERS => '0');
-            Data_5_o <= (OTHERS => '0');
-            Data_6_o <= (OTHERS => '0');
-            Data_7_o <= (OTHERS => '0');
-            Data_8_o <= (OTHERS => '0');
-            Data_9_o <= (OTHERS => '0');
-            err_o <= '1';
-            init <= "00";
+    shifting : process (Clk_i, Reset_i)
+    begin
+        if (Reset_i = '1') then
+            Data_1_o <= (others => '0');
+            Data_2_o <= (others => '0');
+            Data_3_o <= (others => '0');
+            Data_4_o <= (others => '0');
+            Data_5_o <= (others => '0');
+            Data_6_o <= (others => '0');
+            Data_7_o <= (others => '0');
+            Data_8_o <= (others => '0');
+            Data_9_o <= (others => '0');
+            err_o    <= '1';
+            init     <= "00";
 
-        ELSIF rising_edge(Clk_i) THEN
+        elsif rising_edge(Clk_i) then
 
-            CASE init IS
-                WHEN "00" =>
+            case init is
+                when "00" =>
                     data_3 <= Data_1_i;
                     data_6 <= Data_2_i;
                     data_9 <= Data_3_i;
-                    init <= "01";
-                WHEN "01" =>
+                    init   <= "01";
+                when "01" =>
                     data_2 <= Data_1_i;
                     data_5 <= Data_2_i;
                     data_8 <= Data_3_i;
-                    init <= "11";
-                WHEN "11" =>
-                    CASE Direction_i IS
-                        WHEN "01" =>
+                    init   <= "11";
+                when "11" =>
+                    case Direction_i is
+                        when "01" =>
                             Data_1_o <= data_2;
                             Data_2_o <= data_3;
                             Data_3_o <= Data_1_i;
@@ -95,7 +97,7 @@ BEGIN
                             data_8 <= data_9;
                             data_9 <= Data_3_i;
 
-                        WHEN "10" =>
+                        when "10" =>
                             Data_1_o <= Data_1_i;
                             Data_2_o <= data_1;
                             Data_3_o <= data_2;
@@ -116,7 +118,7 @@ BEGIN
                             data_8 <= data_7;
                             data_9 <= data_8;
 
-                        WHEN "11" =>
+                        when "11" =>
                             Data_1_o <= data_4;
                             Data_2_o <= data_5;
                             Data_3_o <= data_6;
@@ -127,19 +129,19 @@ BEGIN
                             Data_7_o <= Data_2_i;
                             Data_9_o <= Data_3_i;
 
-                            data_1 <= data_4;
-                            data_2 <= data_5;
-                            data_3 <= data_6;
-                            data_4 <= data_7;
-                            data_5 <= data_8;
-                            data_6 <= data_9;
-                            data_7 <= Data_1_i;
-                            data_8 <= Data_2_i;
-                            data_9 <= Data_3_i;
-                        WHEN OTHERS => err_o <= '1';
-                    END CASE;
-                WHEN OTHERS => err_o <= '1';
-            END CASE;
-        END IF;
-    END PROCESS;
-END Behavioral;
+                            data_1               <= data_4;
+                            data_2               <= data_5;
+                            data_3               <= data_6;
+                            data_4               <= data_7;
+                            data_5               <= data_8;
+                            data_6               <= data_9;
+                            data_7               <= Data_1_i;
+                            data_8               <= Data_2_i;
+                            data_9               <= Data_3_i;
+                        when others => err_o <= '1';
+                    end case;
+                when others => err_o <= '1';
+            end case;
+        end if;
+    end process;
+end Behavioral;

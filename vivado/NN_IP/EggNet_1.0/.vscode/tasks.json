@@ -1,0 +1,59 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"type": "docker-build",
+			"label": "docker-build",
+			"platform": "python",
+			"dockerBuild": {
+				"tag": "src:latest",
+				"dockerfile": "${workspaceFolder}/Dockerfile",
+				"context": "${workspaceFolder}",
+				"pull": true
+			}
+		},
+		{
+			"type": "docker-run",
+			"label": "docker-run: debug",
+			"presentation": {
+				"echo": true,
+				"reveal": "always",
+				"focus": false,
+				"panel": "shared",
+				"showReuseMessage": true,
+				"clear": false
+			},
+			"dependsOn": [
+				"docker-build"
+			],
+			"python": {
+				// This can be used to for the currently active file
+				"file": "${relativeFile}",
+				// or this configuration can be used to for the toplevel run.py
+				// "file": "run.py",
+				
+				"debugPort": 5678,
+				"wait": true
+			}
+		},
+		{
+			"type": "docker-run",
+			"label": "ghdl-docker",
+			"dockerRun": {
+				"image": "ghdl/ext:latest",
+				"volumes": [
+					{
+						"localPath": "${workspaceFolder}",
+						"containerPath": "/vivado_src"
+					}
+				],
+				// "command": "docker run -it --rm"
+			},
+			"python": {
+				"file": "${relativeFile}",
+				"debugPort": 5678,
+				"wait": true
+			}
+		}
+	]
+}
