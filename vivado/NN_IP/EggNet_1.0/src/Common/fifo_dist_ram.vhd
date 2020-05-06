@@ -1,22 +1,24 @@
 library IEEE;
-USE IEEE.STD_LOGIC_1164.ALL;
-USE IEEE.NUMERIC_STD.ALL;
+use IEEE.STD_LOGIC_1164.all;
+use IEEE.NUMERIC_STD.all;
 
 entity STD_FIFO is
-	Generic (
-		DATA_WIDTH      : integer := 8;
-		FIFO_DEPTH	    : integer := 256;
-    FIFO_STYLE      : string := "distributed"
+	generic
+	(
+		DATA_WIDTH : integer := 8;
+		FIFO_DEPTH : integer := 256;
+		FIFO_STYLE : string  := "distributed"
 	);
-	Port (
-		Clk_i		: in  STD_LOGIC;
-		Rst_i		: in  STD_LOGIC; -- Active High!
-		WriteEn_i	: in  STD_LOGIC;
-		Data_i	: in  STD_LOGIC_VECTOR (DATA_WIDTH - 1 downto 0);
-		ReadEn_i	: in  STD_LOGIC;
-		Data_o	: out STD_LOGIC_VECTOR (DATA_WIDTH - 1 downto 0);
-		Empty_o	: out STD_LOGIC;
-		Full_o	: out STD_LOGIC
+	port
+	(
+		Clk_i     : in STD_LOGIC;
+		Rst_i     : in STD_LOGIC; -- Active High!
+		WriteEn_i : in STD_LOGIC;
+		Data_i    : in STD_LOGIC_VECTOR (DATA_WIDTH - 1 downto 0);
+		ReadEn_i  : in STD_LOGIC;
+		Data_o    : out STD_LOGIC_VECTOR (DATA_WIDTH - 1 downto 0);
+		Empty_o   : out STD_LOGIC;
+		Full_o    : out STD_LOGIC
 	);
 end STD_FIFO;
 
@@ -27,9 +29,9 @@ begin
 	-- Memory Pointer Process
 	fifo_proc : process (Clk_i)
 		type FIFO_Memory is array (0 to FIFO_DEPTH - 1) of STD_LOGIC_VECTOR (DATA_WIDTH - 1 downto 0);
-		variable Memory : FIFO_Memory;
-        attribute ram_style : string;
-        attribute ram_style of Memory : variable is FIFO_STYLE;
+		variable Memory               : FIFO_Memory;
+		attribute ram_style           : string;
+		attribute ram_style of Memory : variable is FIFO_STYLE;
 
 		variable Head : natural range 0 to FIFO_DEPTH - 1;
 		variable Tail : natural range 0 to FIFO_DEPTH - 1;
@@ -59,8 +61,6 @@ begin
 						else
 							Tail := Tail + 1;
 						end if;
-
-
 					end if;
 				end if;
 
@@ -88,8 +88,8 @@ begin
 						Empty_o <= '1';
 					end if;
 				else
-					Empty_o	<= '0';
-					Full_o	<= '0';
+					Empty_o <= '0';
+					Full_o  <= '0';
 				end if;
 			end if;
 		end if;

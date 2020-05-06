@@ -5,15 +5,15 @@ use IEEE.NUMERIC_STD.all;
 package clogb2_Pkg is
 
 	-- # TODO Logarithms are not defined for negative values -> change interface to NATURAL instead of INTEGER
-	function clogb2 (bit_depth : INTEGER) return INTEGER;
+	function clogb2 (bit_depth : integer) return integer;
 
 end clogb2_Pkg;
 
 package body clogb2_Pkg is
 
-	function clogb2 (bit_depth : INTEGER) return INTEGER is
-		variable depth : INTEGER := bit_depth;
-		variable count : INTEGER := 1;
+	function clogb2 (bit_depth : integer) return integer is
+		variable depth             : integer := bit_depth;
+		variable count             : integer := 1;
 	begin
 		for i in 1 to bit_depth loop -- Works for up to 32 bit integers
 			if (bit_depth <= 2) then
