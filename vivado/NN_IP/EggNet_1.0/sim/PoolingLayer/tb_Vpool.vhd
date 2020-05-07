@@ -21,16 +21,19 @@ end entity tb_vpool;
 architecture rtl of tb_vpool is
 
     -- Signals for UUT
-    signal clk      : std_logic                                            := '0';
-    signal sim_done : std_logic                                            := '0';
-    signal rst      : std_logic                                            := '0';
-    signal valid_i  : std_logic                                            := '0';
-    signal valid_o  : std_logic                                            := '0';
-    signal x_i      : std_logic_vector(ACTIVATION_WIDTH_BITS - 1 downto 0) := (others => '0');
-    signal y_o      : std_logic_vector(ACTIVATION_WIDTH_BITS - 1 downto 0) := (others => '0');
-
-    signal dbg_cnt          : natural;
-    signal dbg_is_buffering : std_logic := '0';
+    signal clk               : std_logic                                            := '0';
+    signal sim_done          : std_logic                                            := '0';
+    signal rst               : std_logic                                            := '0';
+    signal valid_i           : std_logic                                            := '0';
+    signal valid_o           : std_logic                                            := '0';
+    signal x_i               : std_logic_vector(ACTIVATION_WIDTH_BITS - 1 downto 0) := (others => '0');
+    signal y_o               : std_logic_vector(ACTIVATION_WIDTH_BITS - 1 downto 0) := (others => '0');
+    signal dbg_cnt           : natural;
+    signal dbg_is_buffering  : std_logic := '0';
+    signal dbg_fifo_read_en  : std_logic := '0';
+    signal dbg_fifo_write_en : std_logic := '0';
+    signal dbg_fifo_empty    : std_logic := '0';
+    signal dbg_fifo_full     : std_logic := '0';
 
     -- Variables defined for VUNIT
     -- shared variable input_data, ref_output_data : integer_array_t;
@@ -44,10 +47,11 @@ architecture rtl of tb_vpool is
 
     -- Expected output type
     type test_output_sample is record
-        valid_o          : std_logic;
-        y_o              : integer;
-        dbg_is_buffering : std_logic;
-        dbg_cnt          : natural;
+        valid_o           : std_logic;
+        y_o               : integer;
+        dbg_is_buffering  : std_logic;
+        dbg_fifo_read_en  : std_logic;
+        dbg_fifo_write_en : std_logic;
     end record;
 
     type test_input_vector_t is array (natural range <>) of test_input_sample;
@@ -66,15 +70,15 @@ architecture rtl of tb_vpool is
     );
 
     constant test_output_vector : test_output_vector_t := (
-    ('0', 0, '1', 1),
-    ('0', 2, '1', 2),
-    ('0', 0, '0', 0),
-    ('1', 4, '0', 1),
-    ('1', 5, '0', 2),
-    ('1', 3, '1', 0),
-    ('0', 0, '1', 1),
-    ('0', 0, '1', 2),
-    ('0', 0, '0', 0)
+    ('0', 0, '1', '0', '1'),
+    ('0', 2, '1', '0', '1'),
+    ('0', 0, '1', '0', '1'),
+    ('1', 4, '0', '1', '0'),
+    ('1', 5, '0', '1', '0'),
+    ('1', 3, '1', '1', '0'),
+    ('0', 0, '1', '0', '1'),
+    ('0', 0, '1', '0', '1'),
+    ('0', 0, '0', '0', '1')
     );
 begin
 
@@ -88,15 +92,13 @@ begin
         valid_i  <= '0';
         rst      <= '1';
         wait for TB_PERIOD;
+        rst      <= '0';
 
         -- Read the data files
         -- input_data      := load_csv(tb_path & "input.csv");
         -- ref_output_data := load_csv(tb_path & "output.csv");
 
-        rst <= '0';
-        wait for TB_PERIOD;
-
-        info("Buffer: #   CNT    STATE  ");
+        info("Buffer: #   IS_BUFF FULL EMPTY");
 
         for i in test_output_vector'range loop
 
@@ -104,20 +106,26 @@ begin
             wait until falling_edge(clk);
             valid_i <= test_input_vector(i).valid_i;
             x_i     <= std_logic_vector(to_unsigned(test_input_vector(i).x_i, ACTIVATION_WIDTH_BITS));
+
             -- Check output
             wait until rising_edge(clk);
-            wait for TB_PERIOD/16;
-            info("        " & integer'image(i) & "    " & integer'image(dbg_cnt) & "      " & std_logic'image(dbg_is_buffering) & "  ");
-
-            check_equal(valid_o, test_output_vector(i).valid_o);
-            check_equal(dbg_is_buffering, test_output_vector(i).dbg_is_buffering);
-            check_equal(dbg_cnt, test_output_vector(i).dbg_cnt);
+            wait for TB_PERIOD/4;
+            info("        " & integer'image(i) & "    " & std_logic'image(dbg_is_buffering) & "  " & std_logic'image(dbg_fifo_full) & "  " & std_logic'image(dbg_fifo_empty) & "  ");
+            
+            -- Checks
+            --check_equal(valid_o, test_output_vector(i).valid_o, "Valid Flag wrong");
+            --check_equal(dbg_is_buffering, test_output_vector(i).dbg_is_buffering, "dbg_is_buffering wrong");
+            --check_equal(dbg_fifo_read_en, test_output_vector(i).dbg_fifo_read_en, "dbg_fifo_read_en wrong");
+            --check_equal(dbg_fifo_write_en, test_output_vector(i).dbg_fifo_write_en, "dbg_fifo_write_en wrong");
+            -- check_equal(dbg_cnt, test_output_vector(i).dbg_cnt, "cnt wrong");
 
             if valid_o = '1' then
-                check_equal(unsigned(y_o), test_output_vector(i).y_o);
+                -- check_equal(unsigned(y_o), test_output_vector(i).y_o);
             end if;
 
         end loop;
+
+        error("Not ready");
 
         sim_done <= '1';
         test_runner_cleanup(runner);
@@ -131,14 +139,18 @@ begin
             ACTIVATION_WIDTH_BITS => ACTIVATION_WIDTH_BITS
         )
         port map(
-            clk_i            => clk,
-            rst_i            => rst,
-            valid_i          => valid_i,
-            valid_o          => valid_o,
-            x_i              => x_i,
-            y_o              => y_o,
-            dbg_is_buffering => dbg_is_buffering,
-            dbg_cnt          => dbg_cnt
+            clk_i             => clk,
+            rst_i             => rst,
+            valid_i           => valid_i,
+            valid_o           => valid_o,
+            x_i               => x_i,
+            y_o               => y_o,
+            dbg_is_buffering  => dbg_is_buffering,
+            dbg_fifo_empty    => dbg_fifo_empty,
+            dbg_fifo_full     => dbg_fifo_full,
+            dbg_fifo_read_en  => dbg_fifo_read_en,
+            dbg_fifo_write_en => dbg_fifo_write_en,
+            dbg_cnt           => dbg_cnt
         );
 
 end architecture;

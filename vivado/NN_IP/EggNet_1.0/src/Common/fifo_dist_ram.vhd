@@ -3,14 +3,12 @@ use IEEE.STD_LOGIC_1164.all;
 use IEEE.NUMERIC_STD.all;
 
 entity STD_FIFO is
-	generic
-	(
+	generic (
 		DATA_WIDTH : integer := 8;
 		FIFO_DEPTH : integer := 256;
 		FIFO_STYLE : string  := "distributed"
 	);
-	port
-	(
+	port (
 		Clk_i     : in STD_LOGIC;
 		Rst_i     : in STD_LOGIC; -- Active High!
 		WriteEn_i : in STD_LOGIC;
@@ -81,7 +79,7 @@ begin
 				end if;
 
 				-- Update Empty_o and Full_o flags
-				if (Head = Tail) then
+				if (Head = Tail ) then
 					if Looped then
 						Full_o <= '1';
 					else

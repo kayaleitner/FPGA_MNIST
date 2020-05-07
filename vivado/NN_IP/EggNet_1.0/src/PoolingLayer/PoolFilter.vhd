@@ -6,7 +6,8 @@ use work.EggNetCommon.all;
 entity PoolFilter is
     generic (
         IMAGE_WIDTH           : natural; -- Width of the image
-        ACTIVATION_WIDTH_BITS : natural  -- bit width of the input
+        ACTIVATION_WIDTH_BITS : natural; -- bit width of the input
+        MEMORY_ARCH           : memory_type_t := DISTRIBUTED
         -- #TODO More generic implementation with more than one channel
         -- POOL_KERNEL_SIZE : natural := 2  -- width of the pooling layer
     );

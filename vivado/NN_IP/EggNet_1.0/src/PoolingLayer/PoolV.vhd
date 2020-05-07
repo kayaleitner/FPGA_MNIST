@@ -10,23 +10,28 @@ use work.EggNetCommon.all;
 entity VPool is
     generic (
         IMAGE_WIDTH           : natural; -- Width of the image
-        ACTIVATION_WIDTH_BITS : natural  -- bit width of the input
+        ACTIVATION_WIDTH_BITS : natural; -- bit width of the input
+        MEMORY_ARCH           : memory_type_t := DISTRIBUTED
         -- #TODO More generic implementation with more than one channel
         -- POOL_KERNEL_SIZE : natural := 2  -- width of the pooling layer
     );
     port (
-        
-    -- Public Interface
+
+        -- Public Interface
         clk_i   : in std_logic;
         rst_i   : in std_logic;
         valid_i : in std_logic;
         valid_o : out std_logic;
         x_i     : in std_logic_vector(ACTIVATION_WIDTH_BITS - 1 downto 0);
         y_o     : out std_logic_vector(ACTIVATION_WIDTH_BITS - 1 downto 0);
-        
+
         -- Test Interface
         dbg_is_buffering : out std_logic;
-        dbg_cnt          : out natural
+        dbg_cnt          : out natural;
+        dbg_fifo_empty   : out std_logic;
+        dbg_fifo_full    : out std_logic;
+        dbg_fifo_read_en : out std_logic;
+        dbg_fifo_write_en : out std_logic
     );
 end entity VPool;
 
@@ -44,61 +49,90 @@ architecture rtl of VPool is
     signal buffer_line : buffer_data_type (0 to HALF_IMAGE_WIDTH - 1);
     signal cnt         : buffer_count_t := 0;
 
+    -- FIFO Signals
+    signal s_fifo_out      : std_logic_vector(ACTIVATION_WIDTH_BITS - 1 downto 0);
+    signal s_fifo_full     : std_logic;
+    signal s_fifo_empty    : std_logic;
+    signal s_fifo_read_en  : std_logic := '0';
+    signal s_fifo_write_en : std_logic := '0';
+    signal is_buffering    : std_logic;
+
 begin
+
+    
+    -- is_buffering <= not rst_i and (is_buffering xor (s_fifo_empty or s_fifo_full)) after 1 ns;
+
+    -- Check if the code is buffering or not
+    dbg_is_buffering <= is_buffering;
+    dbg_fifo_empty   <= s_fifo_empty;
+    dbg_fifo_full    <= s_fifo_full;
+    dbg_fifo_read_en <= s_fifo_read_en;
+    dbg_fifo_write_en <= s_fifo_write_en;
 
     -- Setup Debug Signals
     dbg_cnt <= cnt;
-    dbg_is_buffering <= '1' when pool_state=BUFFERING else '0';
-    
 
-    main : process (clk_i)
+    -- Initialize the FIFO Memory
+    channelbuffer : entity work.STD_FIFO
+        generic map(
+            DATA_WIDTH => ACTIVATION_WIDTH_BITS,
+            FIFO_DEPTH => HALF_IMAGE_WIDTH)
+        port map(
+            Clk_i     => clk_i,
+            Rst_i     => rst_i,
+            Data_i    => x_i,
+            WriteEn_i => s_fifo_write_en,
+            ReadEn_i  => s_fifo_read_en,
+            Data_o    => s_fifo_out,
+            Full_o    => s_fifo_full,
+            Empty_o   => s_fifo_empty
+        );
+    process (clk_i, rst_i)
+
+        variable v_is_buffering : std_logic := '1';
     begin
         if rst_i = '1' then
-            -- Reset to all zeros
-            pool_state  <= BUFFERING;
-            buffer_line <= ZERO_BUFFER_LINE;
-            cnt         <= 0;
-
-            valid_o <= '0';
-            y_o     <= UNDEFINED_OUTPUT;
-        
+            is_buffering <= '1';
+            v_is_buffering := '1';
+            s_fifo_read_en <= '0';
+            s_fifo_write_en <= '0';
+            pool_state <= BUFFERING;
+            valid_o    <= '0';
+            y_o        <= UNDEFINED_OUTPUT;
         elsif rising_edge(clk_i) then
-            if valid_i = '0' then
-                -- In case we encounter an invalid input, just halt the operation
-                valid_o <= '0';
-                y_o     <= UNDEFINED_OUTPUT;
+
+            -- When ever a full or empty signal occurs toggle state
+            -- v_is_buffering := v_is_buffering xor (s_fifo_full or s_fifo_empty);
+            -- More safe implementation
+            if s_fifo_full = '1' then
+                v_is_buffering := '0';
+            elsif s_fifo_empty = '1' then
+                v_is_buffering := '1';
+            end if;
+
+            -- Update Signals for debugging
+            is_buffering <= v_is_buffering;
+
+            -- Update Read & Write Enables
+            s_fifo_write_en <= valid_i and is_buffering;
+            s_fifo_read_en  <= valid_i and not is_buffering;
+
+            
+            -- Pool
+            if v_is_buffering = '0' and valid_i = '1' then
+                -- Check if input is larger than FIFO
+                if unsigned(x_i) > unsigned(s_fifo_out) then
+                    y_o <= x_i;
+                else
+                    y_o <= s_fifo_out;
+                end if;
+
+                valid_o <= '1';
             else
-
-                -- Output the data
-                if pool_state = BUFFERING then
-                    -- Append value
-                    buffer_line(cnt) <= x_i;
-                    valid_o          <= '0';
-                else
-
-                    valid_o <= '1';
-
-                    -- Pool operation
-                    if unsigned(buffer_line(cnt)) < unsigned(x_i) then
-                        y_o <= buffer_line(cnt);
-                    else
-                        y_o <= x_i;
-                    end if;
-
-                end if;
-
-                -- Update the state
-                if cnt < HALF_IMAGE_WIDTH-1  then
-                    -- Range 0 ... Half_image_width-1
-                    cnt <= cnt + 1;
-                else
-                    -- Toggle state
-                    cnt        <= 0;
-                    pool_state <= BUFFERING when pool_state = POOLING else
-                        POOLING;
-                end if;
-
+                valid_o <= '0';    
+                y_o <= UNDEFINED_OUTPUT;
             end if;
         end if;
-    end process; -- main
+    end process;
+
 end architecture;

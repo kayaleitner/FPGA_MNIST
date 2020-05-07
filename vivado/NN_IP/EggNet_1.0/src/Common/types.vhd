@@ -18,6 +18,10 @@ package EggNetCommon is
     type U_CHANNEL_ARRAY is array (natural range <>) of unsigned;
 
     type channel_vector_t is array (natural range <>) of std_logic_vector;
+
+    
+    type memory_type_t is (DISTRIBUTED, NOT_DISTRIBUTED);
+        
 end package;
 
 package body EggNetCommon is
