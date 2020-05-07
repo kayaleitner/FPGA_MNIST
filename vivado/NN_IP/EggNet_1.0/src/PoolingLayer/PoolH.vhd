@@ -52,7 +52,7 @@ begin
                 valid_o <= '0';
                 y_o     <= UNDEFINED_OUTPUT;
                 -- Reset the state, because the 
-                buffer_state <= EMPTY;
+                -- buffer_state <= EMPTY;
             else
                 if buffer_state = EMPTY then
                     -- Current state is empty, so store the input in the buffer

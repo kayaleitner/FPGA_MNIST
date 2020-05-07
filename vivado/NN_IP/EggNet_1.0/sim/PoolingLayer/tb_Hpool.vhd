@@ -52,12 +52,14 @@ architecture rtl of tb_hpool is
     ('1', 2),
     ('1', 3), -- Test 2
     ('1', 4),
-    ('1', 4), -- Test 3
+    ('1', 4), -- Test 3: Wait until there is a valid result
     ('0', 2),
+    ('0', 2), 
+    ('0', 2),
+    ('1', 9), 
     ('0', 2), -- Test 4
-    ('0', 2),
-    ('1', 9), -- Test 5
-    ('1', 2)
+    ('1', 2), 
+    ('1', 3) 
     );
 
     constant test_output_vector : test_output_vector_t := (
@@ -67,10 +69,12 @@ architecture rtl of tb_hpool is
     ('1', 4),
     ('0', 0), -- Test 3
     ('0', 0),
-    ('0', 0), -- Test 4
+    ('0', 0), 
     ('0', 0),
-    ('0', 0), -- Test 5
-    ('1', 9)
+    ('1', 9), 
+    ('0', 0), -- Test 4
+    ('0', 0), 
+    ('1', 3) 
     );
 begin
 
