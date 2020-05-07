@@ -41,8 +41,15 @@
 | `WEIGHT_SHIFT_WIDTH_BITS`         | Bit-Width of the (multiplication) shift weights                                    |
 | `BIAS_WIDTH_BITS`                 | Bit-Width of the (additive) weights                                                |
 
-## Input Parameter
+## Input Parameter Layer Interface
 
-| Parameter | Description |
-| --------- | ----------- |
-|           |
+| Parameter   | Direction | Type                                 | Description |
+| ----------- | --------- | ------------------------------------ | ----------- |
+| `clk_i`     | `in`      | `std_logic`                          |
+| `rst_i`     | `in`      | `std_logic`                          |
+| `valid_i`   | `in`      | `std_logic`                          |
+| `valid_o`   | `out`     | `std_logic`                          |
+| `m_ready_i` | `in`      | `std_logic`                          |
+| `s_ready_o` | `out`     | `std_logic`                          |
+| `x_i`       | `in`      | `channel_vector_t(N_CHANNELS)(BITS)` |
+| `y_o`       | `out`     | `channel_vector_t(N_CHANNELS)(BITS)` |
