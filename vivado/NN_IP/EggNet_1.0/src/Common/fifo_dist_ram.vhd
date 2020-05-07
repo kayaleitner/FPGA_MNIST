@@ -14,9 +14,9 @@ entity STD_FIFO is
 		WriteEn_i : in STD_LOGIC;
 		Data_i    : in STD_LOGIC_VECTOR (DATA_WIDTH - 1 downto 0);
 		ReadEn_i  : in STD_LOGIC;
-		Data_o    : out STD_LOGIC_VECTOR (DATA_WIDTH - 1 downto 0);
-		Empty_o   : out STD_LOGIC;
-		Full_o    : out STD_LOGIC
+		Data_o    : out STD_LOGIC_VECTOR (DATA_WIDTH - 1 downto 0) := (others => '0');
+		Empty_o   : out STD_LOGIC := '0';
+		Full_o    : out STD_LOGIC := '1'
 	);
 end STD_FIFO;
 
