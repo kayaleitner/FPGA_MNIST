@@ -26,11 +26,11 @@ entity VPool is
         y_o     : out std_logic_vector(ACTIVATION_WIDTH_BITS - 1 downto 0);
 
         -- Test Interface
-        dbg_is_buffering : out std_logic;
-        dbg_cnt          : out natural;
-        dbg_fifo_empty   : out std_logic;
-        dbg_fifo_full    : out std_logic;
-        dbg_fifo_read_en : out std_logic;
+        dbg_is_buffering  : out std_logic;
+        dbg_cnt           : out natural;
+        dbg_fifo_empty    : out std_logic;
+        dbg_fifo_full     : out std_logic;
+        dbg_fifo_read_en  : out std_logic;
         dbg_fifo_write_en : out std_logic
     );
 end entity VPool;
@@ -58,15 +58,13 @@ architecture rtl of VPool is
     signal is_buffering    : std_logic;
 
 begin
-
-    
     -- is_buffering <= not rst_i and (is_buffering xor (s_fifo_empty or s_fifo_full)) after 1 ns;
 
     -- Check if the code is buffering or not
-    dbg_is_buffering <= is_buffering;
-    dbg_fifo_empty   <= s_fifo_empty;
-    dbg_fifo_full    <= s_fifo_full;
-    dbg_fifo_read_en <= s_fifo_read_en;
+    dbg_is_buffering  <= is_buffering;
+    dbg_fifo_empty    <= s_fifo_empty;
+    dbg_fifo_full     <= s_fifo_full;
+    dbg_fifo_read_en  <= s_fifo_read_en;
     dbg_fifo_write_en <= s_fifo_write_en;
 
     -- Setup Debug Signals
@@ -89,30 +87,26 @@ begin
         );
 
     -- When ever a full or empty signal occurs toggle state
-    -- v_is_buffering := v_is_buffering xor (s_fifo_full or s_fifo_empty);
+    -- is_buffering <= is_buffering xor (s_fifo_full or s_fifo_empty);
     -- More safe implementation        
-    is_buffering <= '0' when s_fifo_full = '1'  else 
-                    '1' when s_fifo_empty = '1' else 
-                    is_buffering; 
-    s_fifo_write_en <= valid_i and is_buffering;    
-    s_fifo_read_en  <= valid_i and not is_buffering;
-        
-    process (clk_i, rst_i)
+    is_buffering <= '0' when s_fifo_full = '1' else
+                    '1' when s_fifo_empty = '1' else
+                    is_buffering;
+
+    s_fifo_write_en <= (not rst_i) and valid_i and is_buffering;
+    s_fifo_read_en  <= (not rst_i) and valid_i and not is_buffering;
+    y_o             <= x_i when unsigned(x_i) > unsigned(s_fifo_out) else s_fifo_out;-- when rising_edge(clk_i);
+
+    -- The output data is valid, when the input is valid and the data from the fifo is valid. This is the
+    -- case when the fifo is not in buffering mode. To delay the signal it is done in a 
+    --valid_o         <= (not rst_i) and valid_i and not is_buffering when rising_edge(clk_i) else '0';
+    --valid_o         <= (not rst_i) and valid_i and not is_buffering when rising_edge(clk_i);
+    
+    process (clk_i)
     begin
-        if rst_i = '1' then
-            pool_state <= BUFFERING;
-            valid_o    <= '0';
-            y_o        <= (others => '0');
-        elsif rising_edge(clk_i) then
+        if rising_edge(clk_i) then
             -- Pool
             if is_buffering = '0' and valid_i = '1' then
-                -- Check if input is larger than FIFO
-                if unsigned(x_i) > unsigned(s_fifo_out) then
-                    y_o <= x_i;
-                else
-                    y_o <= s_fifo_out;
-                end if;
-
                 valid_o <= '1';
             else
                 valid_o <= '0';    

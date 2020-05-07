@@ -84,3 +84,4 @@
 
 # Always ignore vunit folders
 **/vunit_out
+**/tmp

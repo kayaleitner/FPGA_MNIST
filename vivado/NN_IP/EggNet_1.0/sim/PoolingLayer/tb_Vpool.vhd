@@ -58,12 +58,12 @@ architecture rtl of tb_vpool is
     type test_output_vector_t is array (natural range <>) of test_output_sample;
 
     constant test_input_vector : test_input_vector_t := (
-    ('1', 1), -- Buffer
-    ('1', 2),
-    ('1', 3),
+    ('1', 11), -- Buffer
+    ('1', 12),
+    ('1', 13),
     ('1', 4), -- Pool
     ('1', 5),
-    ('1', 0),
+    ('1', 14),
     ('1', 2), -- Buffer
     ('1', 2),
     ('1', 9)
@@ -73,17 +73,16 @@ architecture rtl of tb_vpool is
     ('0', 0, '1', '0', '1'),
     ('0', 2, '1', '0', '1'),
     ('0', 0, '1', '0', '1'),
-    ('1', 4, '0', '1', '0'),
-    ('1', 5, '0', '1', '0'),
-    ('1', 3, '1', '1', '0'),
+    ('1', 11, '0', '1', '0'),
+    ('1', 12, '0', '1', '0'),
+    ('1', 14, '0', '1', '0'),
     ('0', 0, '1', '0', '1'),
     ('0', 0, '1', '0', '1'),
-    ('0', 0, '0', '0', '1')
+    ('0', 0, '1', '0', '1')
     );
 begin
 
-    clk <= not clk after TB_PERIOD/2 when sim_done /= '1' else
-        '0';
+    clk <= not clk after TB_PERIOD/2 when sim_done /= '1' else '0';
 
     test_runner : process
     begin
@@ -99,7 +98,7 @@ begin
         -- ref_output_data := load_csv(tb_path & "output.csv");
 
         info("Buffer: #   IS_BUFF FULL EMPTY");
-
+        
         for i in test_output_vector'range loop
 
             -- Set inputs
@@ -109,23 +108,21 @@ begin
 
             -- Check output
             wait until rising_edge(clk);
-            wait for TB_PERIOD/4;
-            info("        " & integer'image(i) & "    " & std_logic'image(dbg_is_buffering) & "  " & std_logic'image(dbg_fifo_full) & "  " & std_logic'image(dbg_fifo_empty) & "  ");
+            --wait for TB_PERIOD/4;
             
+            info("        " & integer'image(i) & "    " & std_logic'image(dbg_is_buffering) & "  " & std_logic'image(valid_o) & "  " & std_logic'image(dbg_fifo_full) & "  " & std_logic'image(dbg_fifo_empty) & "  ");
             -- Checks
-            --check_equal(valid_o, test_output_vector(i).valid_o, "Valid Flag wrong");
-            --check_equal(dbg_is_buffering, test_output_vector(i).dbg_is_buffering, "dbg_is_buffering wrong");
-            --check_equal(dbg_fifo_read_en, test_output_vector(i).dbg_fifo_read_en, "dbg_fifo_read_en wrong");
-            --check_equal(dbg_fifo_write_en, test_output_vector(i).dbg_fifo_write_en, "dbg_fifo_write_en wrong");
-            -- check_equal(dbg_cnt, test_output_vector(i).dbg_cnt, "cnt wrong");
+            check_equal(valid_o, test_output_vector(i).valid_o, "valid_o wrong");
+            check_equal(dbg_is_buffering, test_output_vector(i).dbg_is_buffering, "dbg_is_buffering wrong");
+            check_equal(dbg_fifo_read_en, test_output_vector(i).dbg_fifo_read_en, "dbg_fifo_read_en wrong");
+            check_equal(dbg_fifo_write_en, test_output_vector(i).dbg_fifo_write_en, "dbg_fifo_write_en wrong");
+            
 
             if valid_o = '1' then
-                -- check_equal(unsigned(y_o), test_output_vector(i).y_o);
+                --check_equal(unsigned(y_o), test_output_vector(i).y_o);
             end if;
 
         end loop;
-
-        error("Not ready");
 
         sim_done <= '1';
         test_runner_cleanup(runner);
