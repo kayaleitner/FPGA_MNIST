@@ -1,0 +1,45 @@
+\subsection{Memory Controller}
+The task of the memory controller is to provide valid data for the NN-layers in every cycle. It receives data from the previous layer of from the DMA and stores it in a Block-RAM. If a full image or feature map is received, the memory controller starts sending the data to the next layer. Receiving and sending data is performed in parallel, which therefore doesn't lead to additional delay time.  In order to read the $3\times3$ kernel in every clock cycle a linebuffer is used to store 2 lines. This enables the memory controller to provide a $3\times1$ vector in every cycle. To get a $3\times3$ kernel additionally a shiftregister is used.  
+
+\subsubsection{Interfaces}
+\begin{itemize}
+	\item S\_LAYER: interface to previous layer
+	\item M\_LAYER: interface to next layer 
+	\item AXI\_lite: interface to AXI lite bus, is used to read BRAM data directly from processor (slow)
+\end{itemize}
+
+\subsubsection{Parameter}
+\begin{itemize}
+	\item BRAM\_ADDR\_WIDTH: integer: Address width of the connected Block-RAM
+	\item DATA\_WIDTH: integer: Data width of activations
+	\item IN\_CHANNEL\_NUMBER: integer: Number of input channels 
+	\item LAYER\_HEIGTH: integer: Height of input matrix 
+	\item LAYER\_WIDTH: integer: WIDTH of input matrix 
+	\item AXI4\_STREAM\_INPUT: integer: 1 for input layer else 0 
+	\item MEM\_CTRL\_ADDR: integer: Layer number of memory controller (used for AXI-lite interface)
+	\item C\_S\_AXIS\_TDATA\_WIDTH: integer: AXI-stream data width (required for input layer)
+	\item C\_S00\_AXI\_DATA\_WIDTH: integer: AXI-lite data width 
+\end{itemize}
+
+\subsection{AXI lite interface}
+It is used to read the BRAM data directly from the processor which can be used for debug purposes. Each memory controller is assigned a unique address via generics in VHDL. One \SI{32}{\bit} register of the AXI lite bus is used for all memory controller. If the processor writes all 0 to the register, debugging mode is deactivated.  Therefore the memory controller address start with 1 and not with 0. In Table~\ref{tab:hw-axi-lite} is shown how the \SI{32}{\bit} are separated.
+
+\begin{table}[hbt]
+  \centering
+  \begin{tabular}{l|lp{3in}}
+    \toprule
+    				              & Bit Address & Comment\\
+    \midrule
+    BRAM 				  & 23 downto 0  & Address of the block RAM \\
+    \SI{32}{\bit} vector  & 27 downto 24 & If the width of one BRAM register is higher than \SI{32}{\bit}, the \SI{32}{\bit} vector address can be used to select the required part of the vector.\\
+    Memory controller  	  & 31 downto 28 & Address of the memory controller used in the network starting with 1. If the address of the memory controller is selected debug mode is active. \\
+    \bottomrule
+  \end{tabular}
+  \caption{AXI Lite component Address}
+  \label{tab:hw-axi-lite}
+\end{table}
+
+
+
+
+ 

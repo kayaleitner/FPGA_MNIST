@@ -1,0 +1,31 @@
+\subsection{ARM Top-Level Software}
+The ARM top-level software receives the image data from a remote device and sends the results back to this device. Control of the hardware.
+
+\subsubsection{Requirements}
+Requirements of the ARM Top-Level Software can be summarized as
+\begin{itemize} 
+	\item Receive image data
+	\item Also use image data set already stored on device
+	\item send results to remote PC
+	\item Send and receive control signals from remote PC
+	\item Send image data to driver user layer and receive results from driver user layer
+	\item Send and receive status and control signals to driver user layer
+	\item Run at start-up 
+\end{itemize}
+
+Because the 
+
+\subsubsection{Dynamic Updating of the Bitstream}
+
+This was initially planned but would required more time to finish.
+
+Optional feature: Update Bitstream file using \texttt{/dev/xdevcfg}.
+
+Update: For newer versions it looks like \texttt{/dev/xdevcfg} doesn't exist anymore. The problem is discussed here \footnote{\url{https://forum.digilentinc.com/topic/18194-dynamically-load-bitstream-on-petalinux/}} and a potential solution can be found here. \footnote{\url{https://github.com/Digilent/zynq-dynamic-tools}}
+
+\subsubsection{Interface to remote PC}
+See Section \ref{subsec:InterfaceRemoteZed}.  
+\subsubsection{Interface to kernel layer}
+Python wrapper are used for the interface between the top level software which is programmed in python and the hardware drivers which are programmed in C. For usability a high level interface to the underlying C wrapper is made. 
+This header interface can then be wrapped to multiple target languages using \cite{Beazley:1996aa}. In our case this was done for Python and Numpy. 
+

@@ -1,5 +1,4 @@
-MNIST on FPGA
-===================
+# MNIST on FPGA
 
 ![GitHub](https://img.shields.io/github/license/marbleton/FPGA_MNIST)
 
@@ -7,22 +6,20 @@ MNIST on FPGA
 ![Python-Package CI Badge](https://github.com/marbleton/FPGA_MNIST/workflows/VHDL%20Testbenches/badge.svg)
 
 This is a university project at TU Vienna to create a neural network hardware accelerator with an FPGA.
-The network is designed and trained using _Pytorch_ and _Keras_ in Python. 
+The network is designed and trained using _Pytorch_ and _Keras_ in Python.
 Using _Xilinx Vivado_ the Neural Network is implemented on _Digilent Zedboard_ featuring a Zynq-7000 ARM/FPGA SoC.
-For easy using of the webapp a the FPGA can be controlled via a Webinterface based on Python Flask.  
-For more details see the [Specification Document](tex/specification/specification.pdf)
+The FPGA-Net can be controlled via a Webinterface based on Python Flask.  
+For more details see the [Specification Document](tex/documentation/documentation.pdf)
 
-Authors
-----------------
+## Authors
 
 Baischer Lukas, Leitner Anton, Kulnik Benjamin, Marschner Stefan, Cerv Miha
 
-Project Structure
-----------------
+## Project Structure
 
 `net`: Here is everything stored that is relevant for training and designing the network. Pretrained netork parameters are available for _torch_, _keras_ and in _numpy_ format.
 
-`vivado`: 
+`vivado`:
 This is the main project folder where the VHDL implementaiton of the neural network is stored. Additionally the linux driver software source files are stored in `vivado/Software`. For compiling and running the testbenches **ghdl 0.3.7**  and **Vivado 2017.4** have been used. Additional python is needed to generate some of the source files or to run some
 testbenches.
 
@@ -39,8 +36,8 @@ Contains the documentation of the project in Latex format. A precompiled PDF is 
 `data`:
 Contains project data, e.g. the _MNIST_ dataset.
 
-Software Overview
------------------
+## Software Overview
+
 
 ```text
 +----------------------------+    +-----------------------------+
@@ -60,8 +57,7 @@ Software Overview
 +----------------------------+    +-----------------------------+
 ```
 
-Tasks
-----------------
+## Tasks
 
 - [x] Train a Neural Network using Python
 - [x] Verfiy all the calculations
@@ -85,12 +81,12 @@ Other nice to have features, which will be tried to implement, if there is enoug
 
 ## Top Level Overview
 
-![System Overview](tex/specification/svg-extract/1-NN-concept_svg-tex.png "Top Level Overview")
+![System Overview](tex/documentation/svg-extract/1-NN-concept_svg-tex.png "Top Level Overview")
 
-For more details see the [Specification Document](tex/specification/specification.pdf)
+For more details see the [Specification Document](tex/documentation/documentation.pdf)
 
-Build
------
+## Build
+
 
 ### Requirements
 
@@ -125,13 +121,16 @@ with the rest of the project using the Vivado SDK or CMake.
 
 ## Additional Information and Further Reading
 
-Backpropagation in CNNs
- - https://jefkine.com/general/2016/09/05/backpropagation-in-convolutional-neural-networks/
- - https://medium.com/the-bioinformatics-press/only-numpy-understanding-back-propagation-for-max-pooling-layer-in-multi-layer-cnn-with-example-f7be891ee4b4
- - A guide to convolution arithmetic for deep learning: https://arxiv.org/pdf/1603.07285.pdf
+Backpropagation in CNNs:
 
-Vanishing Gradients Problem
+- https://jefkine.com/general/2016/09/05/backpropagation-in-convolutional-neural-networks/
+- https://medium.com/the-bioinformatics-press/only-numpy-understanding-back-propagation-for-max-pooling-layer-in-multi-layer-cnn-with-example-f7be891ee4b4
+- A guide to convolution arithmetic for deep learning: https://arxiv.org/pdf/1603.07285.pdf
+
+Vanishing Gradients Problem:
+
 - https://www.jefkine.com/general/2018/05/21/2018-05-21-vanishing-and-exploding-gradient-problems/
 
-Large-scale Learning with SVM and Convolutional Nets for Generic Object Categorization
-http://yann.lecun.com/exdb/publis/pdf/huang-lecun-06.pdf
+Large-scale Learning with SVM and Convolutional Nets for Generic Object Categorization:
+
+- http://yann.lecun.com/exdb/publis/pdf/huang-lecun-06.pdf

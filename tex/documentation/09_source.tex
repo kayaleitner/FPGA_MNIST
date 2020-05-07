@@ -1,0 +1,19 @@
+\subsection{Source Code}
+
+All the source code is licensed under the \emph{MIT} Licence and can be found on Github.
+\url{https://github.com/marbleton/FPGA\_MNIST}
+
+There are also the most up to date build instructions how to compile the project. Those are in short:
+
+Dependencies
+\begin{itemize}
+	\item Vivado 2017.4
+	\item Python 3.6 including Numpy \cite{Walt:2011aa}, SWIG \cite{Beazley:2003aa}, Keras \cite{Gulli:2017aa} and Torch \cite{Paszke:2019aa}
+\end{itemize}
+
+\begin{enumerate}
+	\item Train the network using the \texttt{net/train\_keras.py} script
+	\item Use the network \texttt{net/quant.py} script to quantize the trained network layers
+	\item Generate the VHDL files
+\end{enumerate}
+
