@@ -87,39 +87,25 @@ begin
             Full_o    => s_fifo_full,
             Empty_o   => s_fifo_empty
         );
-    process (clk_i, rst_i)
 
-        variable v_is_buffering : std_logic := '1';
+    -- When ever a full or empty signal occurs toggle state
+    -- v_is_buffering := v_is_buffering xor (s_fifo_full or s_fifo_empty);
+    -- More safe implementation        
+    is_buffering <= '0' when s_fifo_full = '1'  else 
+                    '1' when s_fifo_empty = '1' else 
+                    is_buffering; 
+    s_fifo_write_en <= valid_i and is_buffering;    
+    s_fifo_read_en  <= valid_i and not is_buffering;
+        
+    process (clk_i, rst_i)
     begin
         if rst_i = '1' then
-            is_buffering <= '1';
-            v_is_buffering := '1';
-            s_fifo_read_en <= '0';
-            s_fifo_write_en <= '0';
             pool_state <= BUFFERING;
             valid_o    <= '0';
-            y_o        <= UNDEFINED_OUTPUT;
+            y_o        <= (others => '0');
         elsif rising_edge(clk_i) then
-
-            -- When ever a full or empty signal occurs toggle state
-            -- v_is_buffering := v_is_buffering xor (s_fifo_full or s_fifo_empty);
-            -- More safe implementation
-            if s_fifo_full = '1' then
-                v_is_buffering := '0';
-            elsif s_fifo_empty = '1' then
-                v_is_buffering := '1';
-            end if;
-
-            -- Update Signals for debugging
-            is_buffering <= v_is_buffering;
-
-            -- Update Read & Write Enables
-            s_fifo_write_en <= valid_i and is_buffering;
-            s_fifo_read_en  <= valid_i and not is_buffering;
-
-            
             -- Pool
-            if v_is_buffering = '0' and valid_i = '1' then
+            if is_buffering = '0' and valid_i = '1' then
                 -- Check if input is larger than FIFO
                 if unsigned(x_i) > unsigned(s_fifo_out) then
                     y_o <= x_i;
@@ -130,7 +116,6 @@ begin
                 valid_o <= '1';
             else
                 valid_o <= '0';    
-                y_o <= UNDEFINED_OUTPUT;
             end if;
         end if;
     end process;
