@@ -1,1 +1,4 @@
 /Debug/
+build/
+src/eggnet_wrap.c
+src/EggNetDriverCore.py

@@ -62,7 +62,8 @@ typedef enum egg_error_e {
     EGG_ERROR_NULL_PTR,   /// NULL Pointer Error
     EGG_ERROR_DEVICE_COMMUNICATION_FAILED,
     EGG_ERROR_INIT_FAILDED,
-    EGG_ERROR_UDEF
+    EGG_ERROR_UDEF,
+    EGG_ERROR_MALLOC_FAIL
 } egg_error_t;
 
 typedef struct uio_singleton_s {
@@ -91,7 +92,7 @@ typedef struct network_s {
     layer_t**  				layers;
     pixel_t**         		results;
     uint32_t		 		result_number;
-    const pixel_t* restrict	img_ptr;
+    const pixel_t* __restrict	img_ptr;
     uint8_t           		debug_active;
     uint8_t           		selected_layer;   // 0 = No channel selected -> overall status
 

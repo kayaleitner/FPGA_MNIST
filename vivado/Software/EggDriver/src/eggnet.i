@@ -12,14 +12,7 @@
 
 
 /* Defines the name of the (python) module */
-%module EggNetDriverCore
-
-
-// For Python 2 compatibiltiy 
-%pythonbegin %{
-    from __future__ import absolute_import, print
-%}
-
+%module EggnetDriver
 
 
 %{
@@ -46,6 +39,9 @@
 
 /* Include support for numpy */
 %include "numpy.i"
+
+/* turn on director wrapping Callback */
+%feature("director") EggCallback;
 
 %init %{
 // Import Numpy Arrays
@@ -76,8 +72,12 @@ import_array();
       (uint8_t **data_out, int *batch_out, int *out_h, int *out_w, int *out_ch)    
 };
 
-%apply (int** ARGOUTVIEW_ARRAY2, int *DIM1, int *DIM2) {
+%apply (int** ARGOUTVIEWM_ARRAY2, int *DIM1, int *DIM2) {
     (int **results, int *batch_out, int *n)
+};
+
+%apply (uint8_t **ARGOUTVIEWM_ARRAY1, int *DIM1) {
+    (uint8_t **results, int *p_res_batch)
 };
 
 // Inplace array typemaps
