@@ -81,6 +81,20 @@ egg_error_t get_results(pixel_t*** results, uint32_t* result_number, network_t* 
 		return EGG_ERROR_UDEF;
 }
 
+
+static inline void encode_base64(char dest[static 4], const uint8_t src[static 3])
+{
+    const uint8_t input[] = { (src[0] >> 2u) & 63, ((src[0] << 4u) | (src[1] >> 4)) & 63, ((src[1] << 2) | (src[2] >> 6)) & 63, src[2] & 63 };
+
+    for (unsigned int i = 0; i < 4; ++i)
+        dest[i] = input[i] + 'A'
+                  + (((25 - input[i]) >> 8) & 6)
+                  - (((51 - input[i]) >> 8) & 75)
+                  - (((61 - input[i]) >> 8) & 15)
+                  + (((62 - input[i]) >> 8) & 3);
+
+}
+
 /**
  * Free results
  * @param network Pointer to network structure

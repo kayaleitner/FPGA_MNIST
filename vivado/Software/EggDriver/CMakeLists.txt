@@ -10,7 +10,7 @@ project(EggnetDriver C)
 #set(THREADS_PREFER_PTHREAD_FLAG ON)
 #find_package(Threads REQUIRED)
 # find_package(Python REQUIRED COMPONENTS Interpreter Development NumPy)
-#find_package(Python 3.6 REQUIRED COMPONENTS Interpreter Devlopment NumPy)
+find_package(Python 3.6 REQUIRED COMPONENTS Interpreter Devlopment NumPy)
 
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
@@ -33,22 +33,13 @@ target_link_libraries(EggnetTest PUBLIC EggnetDriver)
 target_include_directories(
     EggnetDriver
         BEFORE
-    PUBLIC 
-        ${CMAKE_CURRENT_SOURCE_DIR}/../sysroots/linux/usr/include/arm-linux-gnueabihf
-        ${CMAKE_CURRENT_SOURCE_DIR}/../sysroots/linux/usr/include/
-    PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src
+    PRIVATE 
+        ${CMAKE_CURRENT_SOURCE_DIR}/src
+        ${Python_INCLUDE_DIR}
+        ${NumPy_INCLUDE_DIR}
 )
 
 # See: http://swig.org/Doc4.0/Python.html#Python_nn4
-#
-target_link_directories(
-    EggnetDriver
-        BEFORE
-    PUBLIC
-        ${CMAKE_CURRENT_SOURCE_DIR}/../sysroots/linux/usr/lib/
-        ${CMAKE_CURRENT_SOURCE_DIR}/../sysroots/linux/lib/arm-linux-gnueabihf
-)
-
 # Link with pthreads
 target_link_libraries(EggnetDriver PUBLIC pthreads)
 
@@ -83,7 +74,7 @@ target_link_directories(PyEggnetDriver
         ${CMAKE_CURRENT_SOURCE_DIR}/../sysroots/python3.6/lib
 )
 
-target_link_libraries(PyEggnetDriver PRIVATE python3.6m)
-set_property(TARGET PyEggnetDriver PROPERTY POSITION_INDEPENDENT_CODE ON)
+# target_link_libraries(PyEggnetDriver PRIVATE python3.6m)
+# set_property(TARGET PyEggnetDriver PROPERTY POSITION_INDEPENDENT_CODE ON)
 
 
