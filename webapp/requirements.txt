@@ -4,7 +4,7 @@ Flask==1.1.1
 Flask-WTF==0.14.3
 idx2numpy==1.2.2
 itsdangerous==1.1.0
-Jinja2==2.11.1
+Jinja2==2.11.3
 MarkupSafe==1.1.1
 numpy==1.18.1
 packaging==20.3
